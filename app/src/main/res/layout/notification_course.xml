@@ -1,72 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#18181B"
+    android:background="#2E1C21"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    tools:ignore="HardcodedText">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:baselineAligned="true">
+        android:gravity="center_vertical">
+
         <TextView
             android:id="@+id/tv_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="09:55-12:20"
-            android:textColor="#FAFAFA"
+            android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold" />
+
         <TextView
             android:id="@+id/tv_location"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:text="环宇楼A504"
-            android:textColor="#FAFAFA"
+            android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/tv_course_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="习近平新时代中国特色社会主义思想概论"
-        android:textColor="#A1A1AA"
-        android:textSize="14sp" />
-
-    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="#3F3F46" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="#B3FFFFFF"
+        android:textSize="13sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- RemoteViews 不支持 <View>，使用 <FrameLayout> 替代作为分割线 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:background="#1AFFFFFF" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-        <TextView
-            android:id="@+id/tv_countdown"
+
+        <Chronometer
+            android:id="@+id/chronometer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:text="20分钟后上课"
-            android:textColor="#EF4444"
-            android:textSize="16sp" />
-        <TextView
+            android:textColor="#E11D48"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- 忽略触摸目标过小的警告，保持通知栏 UI 紧凑精致 -->
+        <Button
+            android:id="@+id/btn_mute"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="32dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:background="#3F3F46"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
+            android:backgroundTint="#40FFFFFF"
             android:text="上课免打扰"
-            android:textColor="#D4D4D8"
-            android:textSize="12sp" />
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            tools:ignore="TouchTargetSizeCheck" />
     </RelativeLayout>
 </LinearLayout>

@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.app.TimePickerDialog
 import android.content.BroadcastReceiver
@@ -15,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -152,9 +154,11 @@ object SettingsKeys {
     val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
     val CURRENT_SCHEDULE_ID = stringPreferencesKey("current_schedule_id")
 
-    // 语音播报相关设置
-    val VOICE_BROADCAST_ENABLED = booleanPreferencesKey("voice_broadcast_enabled")
-    val VOICE_ADVANCE_MINS = intPreferencesKey("voice_advance_mins")
+    // 课前提醒相关设置
+    val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
+    val REMINDER_VOICE_ENABLED = booleanPreferencesKey("reminder_voice_enabled")
+    val REMINDER_NOTIFY_ENABLED = booleanPreferencesKey("reminder_notify_enabled")
+    val REMINDER_ADVANCE_MINS = intPreferencesKey("reminder_advance_mins")
 
     // 小组件毛玻璃
     val WIDGET_TRANSLUCENT = booleanPreferencesKey("widget_translucent")
@@ -318,19 +322,27 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val warnTimetableError = application.dataStore.data.map { it[SettingsKeys.WARN_TIMETABLE_ERROR] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val autoUpdate = application.dataStore.data.map { it[SettingsKeys.AUTO_UPDATE] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    val voiceBroadcastEnabled = application.dataStore.data.map { it[SettingsKeys.VOICE_BROADCAST_ENABLED] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
-    val voiceAdvanceMins = application.dataStore.data.map { it[SettingsKeys.VOICE_ADVANCE_MINS] ?: 20 }.stateIn(viewModelScope, SharingStarted.Lazily, 20)
+    val reminderEnabled = application.dataStore.data.map { it[SettingsKeys.REMINDER_ENABLED] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    val reminderVoiceEnabled = application.dataStore.data.map { it[SettingsKeys.REMINDER_VOICE_ENABLED] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+    val reminderNotifyEnabled = application.dataStore.data.map { it[SettingsKeys.REMINDER_NOTIFY_ENABLED] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+    val reminderAdvanceMins = application.dataStore.data.map { it[SettingsKeys.REMINDER_ADVANCE_MINS] ?: 20 }.stateIn(viewModelScope, SharingStarted.Lazily, 20)
 
     val widgetTranslucent = application.dataStore.data.map { it[SettingsKeys.WIDGET_TRANSLUCENT] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
 
-    fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) = viewModelScope.launch {
-        getApplication<Application>().dataStore.edit { it[key] = value }
+    fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[key] = value }
+            scheduleNextAlarm() // 重新计算闹钟
+        }
     }
     fun updateSetting(key: Preferences.Key<Float>, value: Float) = viewModelScope.launch {
         getApplication<Application>().dataStore.edit { it[key] = value }
     }
-    fun updateSetting(key: Preferences.Key<Int>, value: Int) = viewModelScope.launch {
-        getApplication<Application>().dataStore.edit { it[key] = value }
+    fun updateSetting(key: Preferences.Key<Int>, value: Int) {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[key] = value }
+            scheduleNextAlarm() // 重新计算闹钟
+        }
     }
     fun updateSetting(key: Preferences.Key<String>, value: String) = viewModelScope.launch {
         getApplication<Application>().dataStore.edit { it[key] = value }
@@ -355,7 +367,6 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     init {
         viewModelScope.launch {
             ensureBuiltInTimetablesExist()
-
             val savedId = getApplication<Application>().dataStore.data.map { it[SettingsKeys.CURRENT_SCHEDULE_ID] }.firstOrNull()
             val groups = appDao.getAllScheduleGroups().firstOrNull()
             if (groups.isNullOrEmpty()) {
@@ -364,6 +375,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 val targetId = if (savedId != null && groups.any { it.id == savedId }) savedId else groups.first().id
                 switchSchedule(targetId)
             }
+            scheduleNextAlarm() // 初始化计算一次闹钟
         }
     }
 
@@ -452,6 +464,13 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // 手动触发计算下一次课程闹钟
+    fun scheduleNextAlarm() {
+        viewModelScope.launch {
+            ReminderEngine.calculateAndScheduleNext(getApplication(), appDao)
+        }
+    }
+
     fun toggleTheme(isDark: Boolean) { updateSetting(SettingsKeys.IS_DARK_THEME, isDark) }
 
     fun changeWeek(week: Int) {
@@ -503,6 +522,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 appDao.updateScheduleGroup(it.copy(startDate = dateStr))
                 _currentWeek.value = calculateWeekFromStartDate(dateStr)
                 notifyWidgetUpdate()
+                scheduleNextAlarm()
             }
         }
     }
@@ -519,6 +539,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 appDao.updateScheduleGroup(it.copy(startDate = sdf.format(cal.time)))
                 notifyWidgetUpdate()
+                scheduleNextAlarm()
             }
         }
     }
@@ -530,6 +551,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             val group = appDao.getScheduleGroupFlow(id).firstOrNull()
             _currentWeek.value = if (group != null && group.startDate.isNotEmpty()) calculateWeekFromStartDate(group.startDate) else 1
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -559,6 +581,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     switchSchedule(groups.first { it.id != id }.id)
                 } else {
                     notifyWidgetUpdate()
+                    scheduleNextAlarm()
                 }
             }
         }
@@ -569,6 +592,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             appDao.getScheduleGroupFlow(_currentScheduleId.value).firstOrNull()?.let {
                 appDao.updateScheduleGroup(it.copy(timetableId = timetableId))
                 notifyWidgetUpdate()
+                scheduleNextAlarm()
             }
         }
     }
@@ -580,6 +604,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             appDao.deleteTimeNodes(tid)
             appDao.insertTimeNodes(nodes.map { it.copy(timetableId = tid, id = UUID.randomUUID().toString()) })
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -590,6 +615,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 appDao.deleteTimeNodes(id)
                 appDao.deleteTimetableGroup(id)
                 notifyWidgetUpdate()
+                scheduleNextAlarm()
             }
         }
     }
@@ -608,6 +634,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             val newEnd = (newStart + span).coerceIn(1, 12)
             appDao.insertOverride(CourseOverride(courseId, newDay, newStart, newEnd))
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -615,6 +642,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             appDao.insertCourse(Course(UUID.randomUUID().toString(), _currentScheduleId.value, name, location, teacher, day, start, end, "[8,9,10,11,12]", color))
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -622,6 +650,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             appDao.updateCourse(Course(id, _currentScheduleId.value, name, location, teacher, day, start, end, weeks, color))
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -629,6 +658,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             appDao.deleteCourse(courseId)
             notifyWidgetUpdate()
+            scheduleNextAlarm()
         }
     }
 
@@ -655,6 +685,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
                 notifyWidgetUpdate()
+                scheduleNextAlarm()
                 onResult(true)
             } catch (e: Exception) {
                 onResult(false)
@@ -818,7 +849,6 @@ class MainActivity : ComponentActivity() {
             Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
                 DotMatrixBackground(isDark = isDark)
 
-                // 替换原有的 Box 为 AnimatedContent 实现全局路由动画
                 AnimatedContent(
                     targetState = currentRoute,
                     transitionSpec = {
@@ -912,8 +942,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        "voice_settings" -> {
-                            VoiceSettingsScreen(
+                        "reminder_settings" -> {
+                            ReminderSettingsScreen(
                                 viewModel = viewModel,
                                 isDark = isDark,
                                 onBack = { currentRoute = "main" }
@@ -924,7 +954,6 @@ class MainActivity : ComponentActivity() {
                                 containerColor = Color.Transparent,
                                 bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
                             ) { paddingValues ->
-                                // 为底部导航的 Tab 切换增加交叉淡化动画
                                 Crossfade(
                                     targetState = currentTab,
                                     label = "tab_anim",
@@ -950,7 +979,7 @@ class MainActivity : ComponentActivity() {
                                                 onWebViewImportClick = { currentRoute = "webview_import" },
                                                 onShareCodeClick = { showShareCodeDialog = true },
                                                 onCreateScheduleClick = { showCreateScheduleDialog = true },
-                                                onVoiceSettingsClick = { currentRoute = "voice_settings" }
+                                                onReminderSettingsClick = { currentRoute = "reminder_settings" }
                                             )
                                         } else {
                                             ProfileScreen(isDark = isDark, onThemeToggle = { viewModel.toggleTheme(it) })
@@ -1064,7 +1093,7 @@ fun NavBarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Str
 fun TimetableScreen(
     viewModel: ScheduleViewModel, courses: List<DisplayCourse>, timeNodes: List<TimeNode>, currentWeek: Int, totalWeeks: Int, scheduleGroups: List<ScheduleGroup>, currentScheduleId: String, isDark: Boolean,
     onAddClick: () -> Unit, onManageCoursesClick: () -> Unit, onManageTimetablesClick: () -> Unit, onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit,
-    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onVoiceSettingsClick: () -> Unit
+    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onReminderSettingsClick: () -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -1075,7 +1104,7 @@ fun TimetableScreen(
     var showAddMenu by remember { mutableStateOf(false) }
     var showMoreSheet by remember { mutableStateOf(false) }
     var showDeleteScheduleDialog by remember { mutableStateOf(false) }
-    var showImportBlockDialog by remember { mutableStateOf(false) } // 导入防呆拦截
+    var showImportBlockDialog by remember { mutableStateOf(false) }
 
     val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
     val currentScheduleName = currentSchedule?.name ?: "课表"
@@ -1111,7 +1140,7 @@ fun TimetableScreen(
                         DropdownMenuItem(text = { Text("从教务导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = {
                             showAddMenu = false
                             if (courses.isNotEmpty()) {
-                                showImportBlockDialog = true // 触发防呆拦截弹窗
+                                showImportBlockDialog = true
                             } else {
                                 onWebViewImportClick()
                             }
@@ -1244,7 +1273,7 @@ fun TimetableScreen(
             onTimetableManageClick = onManageTimetablesClick,
             onScheduleSettingsClick = onScheduleSettingsClick,
             onGlobalSettingsClick = onGlobalSettingsClick,
-            onVoiceSettingsClick = onVoiceSettingsClick,
+            onReminderSettingsClick = onReminderSettingsClick,
             onDeleteScheduleClick = { showDeleteScheduleDialog = true }
         )
     }
@@ -1300,12 +1329,9 @@ fun TimetableGrid(
         if (startDate.isNotEmpty()) {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             calendar.time = sdf.parse(startDate) ?: Date()
-
-            // 先重置回这一周的周一
             while (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                 calendar.add(Calendar.DAY_OF_YEAR, -1)
             }
-            // 加上正确的偏离周次（基于天数加减防止夏令时周越界错误喵）
             calendar.add(Calendar.DAY_OF_YEAR, (displayedWeek - 1) * 7)
 
             currentMonth = calendar.get(Calendar.MONTH) + 1
@@ -1447,7 +1473,6 @@ fun TimetableGrid(
                                         val badgeText = if (isOddOnly) "[非本周(单)]" else if (isEvenOnly) "[非本周(双)]" else "[非本周]"
                                         Text(badgeText, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
                                     }
-                                    // 课程名获取剩余的弹性空间（但不会强制占满把 Row 挤掉）
                                     Text(
                                         text = course.name,
                                         fontSize = 11.sp,
@@ -1457,7 +1482,6 @@ fun TimetableGrid(
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
-                                    // 限制高度最大为卡片的高度的 50%，如果内容很长最多显示4行，不会再因为 55dp 绝对判断导致消失了喵
                                     Row(
                                         verticalAlignment = Alignment.Top,
                                         modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).heightIn(max = cardHeight * 0.5f)
@@ -1662,52 +1686,17 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     }
 }
 
-// 闹钟调度器，处理系统级精确闹钟注册及间隙动态计算逻辑
-object AlarmScheduler {
-    fun scheduleNextCourseAlarm(context: Context, courseName: String, location: String, targetTriggerTimeMillis: Long, requestCode: Int = 0) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-        val intent = Intent(context, CourseAlarmReceiver::class.java).apply {
-            putExtra("COURSE_NAME", courseName)
-            putExtra("LOCATION", location)
-        }
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, targetTriggerTimeMillis, pendingIntent)
-                }
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, targetTriggerTimeMillis, pendingIntent)
-            }
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-        }
-    }
-
-    // 专门用于计算提醒时间，满足：课间休息短于设置时间时，上一节刚下课就立刻播报
-    fun calculateDynamicAlarmTime(courseStartTimeMillis: Long, prevCourseEndTimeMillis: Long?, advanceMins: Int): Long {
-        val idealAlarmTime = courseStartTimeMillis - advanceMins * 60 * 1000L
-        if (prevCourseEndTimeMillis != null && idealAlarmTime < prevCourseEndTimeMillis) {
-            return prevCourseEndTimeMillis
-        }
-        return idealAlarmTime
-    }
-}
-
 @Composable
-fun VoiceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: () -> Unit) {
+fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: () -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
+    val context = LocalContext.current
 
-    val voiceBroadcastEnabled by viewModel.voiceBroadcastEnabled.collectAsState()
-    val voiceAdvanceMins by viewModel.voiceAdvanceMins.collectAsState()
+    val reminderEnabled by viewModel.reminderEnabled.collectAsState()
+    val reminderNotifyEnabled by viewModel.reminderNotifyEnabled.collectAsState()
+    val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
+    val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
 
     BackHandler { onBack() }
 
@@ -1721,41 +1710,76 @@ fun VoiceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: (
         ) {
             Icon(Icons.Rounded.ArrowBack, contentDescription = "Back", tint = textColor, modifier = Modifier.clickable { onBack() }.padding(8.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("语音播报", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
+            Text("课前提醒", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
                     Column {
-                        SettingCheckboxItem(
-                            title = "开启上课语音播报提醒",
-                            checked = voiceBroadcastEnabled,
-                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.VOICE_BROADCAST_ENABLED, it) },
+                        SettingCheckboxItemWithSubtext(
+                            title = "启用上课提醒",
+                            subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限。",
+                            checked = reminderEnabled,
+                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ENABLED, it) },
                             textColor = textColor,
                             borderColor = borderColor,
                             isDark = isDark,
-                            showBottomBorder = voiceBroadcastEnabled
+                            showBottomBorder = reminderEnabled
                         )
 
-                        if (voiceBroadcastEnabled) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("提前播报时间: $voiceAdvanceMins 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                        if (reminderEnabled) {
+                            Column(modifier = Modifier.padding(16.dp).background(if(isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp)).padding(16.dp)) {
+                                Text("提前提醒时间: $reminderAdvanceMins 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                                 Slider(
-                                    value = voiceAdvanceMins.toFloat(),
-                                    onValueChange = { viewModel.updateSetting(SettingsKeys.VOICE_ADVANCE_MINS, it.roundToInt()) },
+                                    value = reminderAdvanceMins.toFloat(),
+                                    onValueChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ADVANCE_MINS, it.roundToInt()) },
                                     valueRange = 1f..30f,
                                     steps = 28,
                                     colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息的时间短于您设置的提前时间，系统将在上一节课刚下课时立刻为您播报。",
+                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报。",
                                     fontSize = 10.sp,
                                     color = textColor.copy(alpha = 0.6f),
                                     lineHeight = 14.sp
                                 )
                             }
+
+                            SettingCheckboxItem(
+                                title = "显示漂亮的通知栏卡片",
+                                checked = reminderNotifyEnabled,
+                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, it) },
+                                textColor = textColor,
+                                borderColor = borderColor,
+                                isDark = isDark,
+                                showBottomBorder = true
+                            )
+
+                            SettingCheckboxItem(
+                                title = "开启语音播报",
+                                checked = reminderVoiceEnabled,
+                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_VOICE_ENABLED, it) },
+                                textColor = textColor,
+                                borderColor = borderColor,
+                                isDark = isDark,
+                                showBottomBorder = true
+                            )
+
+                            SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
+                                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                                    context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                                    Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    // 注册一个供测试的假动作
+                                    val triggerTime = System.currentTimeMillis() + 10000
+                                    val classStartTime = triggerTime + reminderAdvanceMins * 60000
+                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】习近平新时代中国特色...", "环宇楼A504", "09:55-12:20", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled)
+                                    Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
+                                }
+                            })
                         }
                     }
                 }
@@ -1811,19 +1835,7 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                         )
                         SettingItemWithSubtext(title = "自定义空视图图片", subtext = "这个是空视图图片！就是没有课的时候显示的图片！目前仅在日视图小组件和周视图小组件生效。长按可以关闭~", textColor = textColor, borderColor = borderColor)
                         SettingCheckboxItem(title = "根据桌面壁纸更改主题色", checked = materialYou, onCheckedChange = { viewModel.updateSetting(SettingsKeys.MATERIAL_YOU, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
-                        SettingCheckboxItemWithSubtext(title = "课表下方增加留白区域", subtext = "开启后，课表下方会多出一段空白区域，便于将底部的课程滑动至屏幕中间查看", checked = bottomBlank, onCheckedChange = { viewModel.updateSetting(SettingsKeys.BOTTOM_BLANK, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
-                        SettingCheckboxItem(title = "提示时间表配置错误", checked = warnTimetableError, onCheckedChange = { viewModel.updateSetting(SettingsKeys.WARN_TIMETABLE_ERROR, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
-
-                        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                        SettingValueItem(title = "上课提醒 (测试5秒后提醒)", value = "点击测试", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                                context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                                Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
-                            } else {
-                                AlarmScheduler.scheduleNextCourseAlarm(context, "测试课程", "测试地点", System.currentTimeMillis() + 5000)
-                                Toast.makeText(context, "已设置 5 秒后的上课提醒喵！", Toast.LENGTH_SHORT).show()
-                            }
-                        })
+                        SettingCheckboxItemWithSubtext(title = "课表下方增加留白区域", subtext = "开启后，课表下方会多出一段空白区域，便于将底部的课程滑动至屏幕中间查看", checked = bottomBlank, onCheckedChange = { viewModel.updateSetting(SettingsKeys.BOTTOM_BLANK, it) }, showBottomBorder = false, textColor = textColor, borderColor = borderColor, isDark = isDark)
                     }
                 }
                 Spacer(modifier = Modifier.height(32.dp))
@@ -1850,7 +1862,7 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                                 Toast.makeText(context, "无法打开系统设置", Toast.LENGTH_SHORT).show()
                             }
                         })
-                        SettingItemWithSubtext(title = "忽略电池优化", subtext = "忽略后，桌面小部件的刷新也许会更稳定一些哦", textColor = textColor, borderColor = borderColor, onClick = {
+                        SettingItemWithSubtext(title = "忽略电池优化", subtext = "忽略后，桌面小部件的刷新也许会更稳定一些哦，课前提醒也能更准时", textColor = textColor, borderColor = borderColor, onClick = {
                             try {
                                 val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -2646,7 +2658,7 @@ fun MoreMenuBottomSheet(
     onBrowseWeek: (Int) -> Unit, onSwitchSchedule: (String) -> Unit,
     onCreateScheduleClick: () -> Unit,
     onDismiss: () -> Unit, onManageCoursesClick: () -> Unit, onTimetableManageClick: () -> Unit,
-    onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit, onVoiceSettingsClick: () -> Unit,
+    onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit, onReminderSettingsClick: () -> Unit,
     onDeleteScheduleClick: () -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
@@ -2657,7 +2669,6 @@ fun MoreMenuBottomSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = if (isDark) BgDark else BgLight, dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp).navigationBarsPadding().verticalScroll(rememberScrollState())) {
 
-            // --- 修改当前周模块 ---
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("修改当前周", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Surface(
@@ -2685,7 +2696,6 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- 课表快速切换模块 ---
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("课表", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.weight(1f))
@@ -2725,13 +2735,12 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- 功能网格模块 ---
             data class MenuItem(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit)
             val menuItems = listOf(
                 MenuItem("上课时间", Icons.Rounded.Schedule) { onDismiss(); onTimetableManageClick() },
                 MenuItem("已添课程", Icons.Rounded.EventNote) { onDismiss(); onManageCoursesClick() },
                 MenuItem("课表设置", Icons.Rounded.Tune) { onDismiss(); onScheduleSettingsClick() },
-                MenuItem("语音播报", Icons.Rounded.Campaign) { onDismiss(); onVoiceSettingsClick() },
+                MenuItem("课前提醒", Icons.Rounded.Campaign) { onDismiss(); onReminderSettingsClick() },
                 MenuItem("全局配置", Icons.Rounded.Settings) { onDismiss(); onGlobalSettingsClick() }
             )
 
@@ -2755,7 +2764,6 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- 专属危险操作区 ---
             OutlinedButton(
                 onClick = { onDismiss(); onDeleteScheduleClick() },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -2770,8 +2778,6 @@ fun MoreMenuBottomSheet(
         }
     }
 }
-
-// --- 6. 个人与设置视图 ---
 
 @Composable
 fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
@@ -2817,7 +2823,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v1.0.1", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v1.1.0", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
@@ -2831,16 +2837,174 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
     }
 }
 
-// --- 7. 通知与提醒服务 ---
+// --- 7. 自动提醒服务与调度引擎 ---
+
+object ReminderEngine {
+    private const val REQUEST_CODE_REMIND = 1001
+    private const val REQUEST_CODE_CANCEL = 1002
+
+    suspend fun calculateAndScheduleNext(context: Context, appDao: AppDao) {
+        val prefs = context.dataStore.data.firstOrNull() ?: return
+        val enabled = prefs[SettingsKeys.REMINDER_ENABLED] ?: false
+        if (!enabled) return
+
+        val advanceMins = prefs[SettingsKeys.REMINDER_ADVANCE_MINS] ?: 20
+        val isVoiceOn = prefs[SettingsKeys.REMINDER_VOICE_ENABLED] ?: true
+        val isNotifyOn = prefs[SettingsKeys.REMINDER_NOTIFY_ENABLED] ?: true
+
+        val savedId = prefs[SettingsKeys.CURRENT_SCHEDULE_ID] ?: return
+        val groups = appDao.getAllScheduleGroups().firstOrNull() ?: return
+        val currentSchedule = groups.find { it.id == savedId } ?: return
+
+        // 计算当前周次与时间
+        val cal = Calendar.getInstance()
+        var currentWeek = 1
+        if (currentSchedule.startDate.isNotEmpty()) {
+            try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
+                while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
+                val currentCalForWeek = Calendar.getInstance()
+                while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
+                val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
+                currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
+                if (currentWeek < 1) currentWeek = 1
+            } catch (e: Exception) {}
+        }
+
+        val rawCourses = appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: return
+        val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
+        val overrideMap = overrides.associateBy { it.courseId }
+        val timeNodes = appDao.getTimeNodes(currentSchedule.timetableId)
+        val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+
+        val currentTimeMillis = System.currentTimeMillis()
+        var nextTriggerTimeMillis = Long.MAX_VALUE
+        var nextCourseToRemind: Course? = null
+        var nextCourseStartStr = ""
+        var nextCourseEndStr = ""
+
+        // 简易预测：最多推算未来3天的课，找出最近的一个未开课的
+        for (dayOffset in 0..3) {
+            val evalCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, dayOffset) }
+            val evalDayOfWeek = if (evalCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else evalCal.get(Calendar.DAY_OF_WEEK) - 1
+            // TODO: 如果跨周需要根据 dayOffset 动态计算，这里暂用本周周次简化判断
+
+            val validCourses = rawCourses.mapNotNull { course ->
+                val over = overrideMap[course.id]
+                val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
+                val effectiveStart = over?.newStartNode ?: course.startNode
+                val effectiveEnd = over?.newEndNode ?: course.endNode
+                if (effectiveDay != evalDayOfWeek) return@mapNotNull null
+
+                val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                if (!weeksList.contains(currentWeek)) return@mapNotNull null // 简化版未处理单双周
+
+                val startNodeInfo = timeNodeMap[effectiveStart] ?: return@mapNotNull null
+                val endNodeInfo = timeNodeMap[effectiveEnd] ?: return@mapNotNull null
+
+                val courseTimeCal = evalCal.clone() as Calendar
+                val timeParts = startNodeInfo.startTime.split(":")
+                courseTimeCal.set(Calendar.HOUR_OF_DAY, timeParts[0].toInt())
+                courseTimeCal.set(Calendar.MINUTE, timeParts[1].toInt())
+                courseTimeCal.set(Calendar.SECOND, 0)
+
+                val triggerTime = courseTimeCal.timeInMillis - advanceMins * 60000L
+
+                if (triggerTime > currentTimeMillis) {
+                    Triple(course, triggerTime, "${startNodeInfo.startTime}-${endNodeInfo.endTime}")
+                } else null
+            }
+
+            if (validCourses.isNotEmpty()) {
+                val closest = validCourses.minByOrNull { it.second }!!
+                nextTriggerTimeMillis = closest.second
+                nextCourseToRemind = closest.first
+                nextCourseStartStr = closest.third.split("-")[0]
+                nextCourseEndStr = closest.third.split("-")[1]
+                break
+            }
+        }
+
+        if (nextCourseToRemind != null) {
+            val classStartCal = Calendar.getInstance().apply { timeInMillis = nextTriggerTimeMillis + advanceMins * 60000L }
+            scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartCal.timeInMillis, isNotifyOn, isVoiceOn)
+        }
+    }
+
+    fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, showNotify: Boolean, playVoice: Boolean) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+
+        // 1. 注册提醒弹出的闹钟
+        val showIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
+            action = "ACTION_SHOW_REMINDER"
+            putExtra("COURSE_NAME", courseName)
+            putExtra("LOCATION", location)
+            putExtra("TIME_STR", timeStr)
+            putExtra("CLASS_START_MILLIS", classStartMillis)
+            putExtra("SHOW_NOTIFY", showNotify)
+            putExtra("PLAY_VOICE", playVoice)
+        }
+        val showPending = PendingIntent.getBroadcast(context, REQUEST_CODE_REMIND, showIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        // 2. 注册自动取消(上课时)的闹钟
+        val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
+        val cancelPending = PendingIntent.getBroadcast(context, REQUEST_CODE_CANCEL, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerMillis, showPending)
+            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classStartMillis, cancelPending)
+        } catch (e: SecurityException) { e.printStackTrace() }
+    }
+}
+
+class CourseAlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        when (intent.action) {
+            "ACTION_SHOW_REMINDER" -> {
+                val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
+                val showNotify = intent.getBooleanExtra("SHOW_NOTIFY", true)
+
+                // 如果需要播报语音或创建复杂通知，唤起我们的 ShortService
+                val serviceIntent = Intent(context, CourseForegroundService::class.java).apply {
+                    putExtra("COURSE_NAME", intent.getStringExtra("COURSE_NAME"))
+                    putExtra("LOCATION", intent.getStringExtra("LOCATION"))
+                    putExtra("TIME_STR", intent.getStringExtra("TIME_STR"))
+                    putExtra("CLASS_START_MILLIS", intent.getLongExtra("CLASS_START_MILLIS", 0L))
+                    putExtra("SHOW_NOTIFY", showNotify)
+                    putExtra("PLAY_VOICE", playVoice)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            }
+            "ACTION_DISMISS_REMINDER" -> {
+                // 上课铃响，或者用户点击了免打扰，取消持久化通知
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(1001)
+
+                // 重新调度下一次课
+                val pendingResult = goAsync()
+                kotlinx.coroutines.GlobalScope.launch {
+                    ReminderEngine.calculateAndScheduleNext(context, AppDatabase.getDatabase(context).appDao())
+                    pendingResult.finish()
+                }
+            }
+        }
+    }
+}
 
 class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
     private var tts: TextToSpeech? = null
     private val CHANNEL_ID = "CourseAlarmChannel"
     private var pendingSpeakText: String? = null
+    private var playVoice = true
 
     override fun onCreate() {
         super.onCreate()
-        tts = TextToSpeech(this, this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
         }
@@ -2849,11 +3013,27 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val courseName = intent?.getStringExtra("COURSE_NAME") ?: "未知课程"
         val location = intent?.getStringExtra("LOCATION") ?: "未知地点"
+        val timeStr = intent?.getStringExtra("TIME_STR") ?: "00:00"
+        val classStartMillis = intent?.getLongExtra("CLASS_START_MILLIS", 0L) ?: 0L
+        val showNotify = intent?.getBooleanExtra("SHOW_NOTIFY", true) ?: true
+        playVoice = intent?.getBooleanExtra("PLAY_VOICE", true) ?: true
 
+        // 构造极简风自定义布局 RemoteViews
         val remoteViews = RemoteViews(packageName, R.layout.notification_course)
-        remoteViews.setTextViewText(R.id.tv_time, "09:55-12:20")
-        remoteViews.setTextViewText(R.id.tv_location, location)
+        remoteViews.setTextViewText(R.id.tv_time, timeStr)
+        remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
         remoteViews.setTextViewText(R.id.tv_course_name, courseName)
+
+        // 绑定倒计时
+        if (classStartMillis > 0) {
+            remoteViews.setChronometer(R.id.chronometer, classStartMillis, "%s 后上课", true)
+            remoteViews.setChronometerCountDown(R.id.chronometer, true)
+        }
+
+        // 免打扰/取消按钮
+        val cancelIntent = Intent(this, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
+        val cancelPending = PendingIntent.getBroadcast(this, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
@@ -2861,31 +3041,75 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
             .setCustomContentView(remoteViews)
             .setCustomBigContentView(remoteViews)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true) // 持续显示直到上课
             .build()
 
+        // 启动前台服务。对于 Android 14 我们使用 shortService
         if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(1, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
+            startForeground(1001, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
         } else {
-            startForeground(1, notification)
+            startForeground(1001, notification)
         }
 
-        val textToSpeak = "您接下来在 $location 有一节 $courseName 课。"
-        if (tts != null) {
-            tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
+        // 如果用户关闭了通知，我们立刻将其转为普通 Service 并在播完语音后消灭
+        if (!showNotify) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
         }
-        pendingSpeakText = textToSpeak
+
+        if (playVoice) {
+            val textToSpeak = "您接下来在 $location 有一节 $courseName 课。请准备。"
+            if (tts == null) {
+                tts = TextToSpeech(this, this)
+                pendingSpeakText = textToSpeak
+            } else {
+                tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
+                finishServiceSafely(showNotify)
+            }
+        } else {
+            finishServiceSafely(showNotify)
+        }
 
         return START_NOT_STICKY
     }
 
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
+        if (status == TextToSpeech.SUCCESS && playVoice) {
             tts?.language = Locale.CHINESE
             pendingSpeakText?.let {
                 tts?.speak(it, TextToSpeech.QUEUE_FLUSH, null, null)
                 pendingSpeakText = null
+
+                // 给 TTS 一定时间播报完毕，再安全退出 Service (卡片不会消失)
+                kotlinx.coroutines.GlobalScope.launch {
+                    kotlinx.coroutines.delay(6000)
+                    finishServiceSafely(true)
+                }
+            }
+        } else {
+            finishServiceSafely(true)
+        }
+    }
+
+    private fun finishServiceSafely(keepNotification: Boolean) {
+        if (keepNotification) {
+            // 安全退出服务，但通过 DETACH 保留通知栏卡片，直到被主动 Cancel
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_DETACH)
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
             }
         }
+        stopSelf()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -2894,20 +3118,6 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
         tts?.stop()
         tts?.shutdown()
         super.onDestroy()
-    }
-}
-
-class CourseAlarmReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val serviceIntent = Intent(context, CourseForegroundService::class.java).apply {
-            putExtra("COURSE_NAME", intent.getStringExtra("COURSE_NAME"))
-            putExtra("LOCATION", intent.getStringExtra("LOCATION"))
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
-        }
     }
 }
 
@@ -2935,8 +3145,7 @@ class CourseWidget : GlanceAppWidget() {
                 val currentCalForWeek = Calendar.getInstance()
                 while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
                 val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
-                val diffDays = diffMillis / (1000 * 60 * 60 * 24)
-                currentWeek = (diffDays / 7).toInt() + 1
+                currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
                 if (currentWeek < 1) currentWeek = 1
             } catch (e: Exception) {}
         }
@@ -3029,7 +3238,6 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
             )
         }
 
-        // 补充底部的剩余空间并展示可爱的颜文字
         if (todayCourses.isEmpty()) {
             GlanceSpacer(modifier = GlanceModifier.defaultWeight())
             GlanceText(
