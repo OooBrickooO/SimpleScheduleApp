@@ -1,6 +1,5 @@
 package com.example.simpleschedule // 请修改为你真实的包名
 
-import android.Manifest
 import android.app.Application
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
@@ -11,12 +10,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.util.Base64
 import android.webkit.JavascriptInterface
@@ -30,13 +32,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -66,7 +65,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -97,6 +95,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewModelScope
 import androidx.room.*
 
+// Glance 相关导入
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.appwidget.GlanceAppWidget
@@ -106,7 +105,6 @@ import androidx.glance.appwidget.updateAll
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.action.clickable as glanceClickable
 import androidx.glance.background as glanceBackground
-import androidx.glance.layout.Alignment as GlanceAlignment
 import androidx.glance.layout.Column as GlanceColumn
 import androidx.glance.layout.Row as GlanceRow
 import androidx.glance.layout.Spacer as GlanceSpacer
@@ -114,11 +112,13 @@ import androidx.glance.layout.fillMaxSize as glanceFillMaxSize
 import androidx.glance.layout.fillMaxWidth as glanceFillMaxWidth
 import androidx.glance.layout.height as glanceHeight
 import androidx.glance.layout.padding as glancePadding
-import androidx.glance.layout.width as glanceWidth
 import androidx.glance.text.Text as GlanceText
 import androidx.glance.text.TextStyle
 import androidx.glance.text.FontWeight as GlanceFontWeight
+import androidx.glance.text.TextAlign as GlanceTextAlign
 import androidx.glance.unit.ColorProvider
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.cornerRadius
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -155,6 +155,9 @@ object SettingsKeys {
     // 语音播报相关设置
     val VOICE_BROADCAST_ENABLED = booleanPreferencesKey("voice_broadcast_enabled")
     val VOICE_ADVANCE_MINS = intPreferencesKey("voice_advance_mins")
+
+    // 小组件毛玻璃
+    val WIDGET_TRANSLUCENT = booleanPreferencesKey("widget_translucent")
 }
 
 // --- 1. 数据层 (Data Layer: Room Entities) ---
@@ -318,6 +321,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val voiceBroadcastEnabled = application.dataStore.data.map { it[SettingsKeys.VOICE_BROADCAST_ENABLED] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val voiceAdvanceMins = application.dataStore.data.map { it[SettingsKeys.VOICE_ADVANCE_MINS] ?: 20 }.stateIn(viewModelScope, SharingStarted.Lazily, 20)
 
+    val widgetTranslucent = application.dataStore.data.map { it[SettingsKeys.WIDGET_TRANSLUCENT] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+
     fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) = viewModelScope.launch {
         getApplication<Application>().dataStore.edit { it[key] = value }
     }
@@ -437,10 +442,11 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         val defaultGroup = ScheduleGroup("default_id", "默认课表", "tt_cjlu", sdf.format(cal.time))
         appDao.insertScheduleGroup(defaultGroup)
         _currentScheduleId.value = defaultGroup.id
-        _currentWeek.value = 1
+        _currentWeek.value = 9
+        insertMockData()
     }
 
-    private fun notifyWidgetUpdate() {
+    fun notifyWidgetUpdate() {
         viewModelScope.launch {
             CourseWidget().updateAll(getApplication())
         }
@@ -626,17 +632,11 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun importFromJson(jsonString: String, onResult: (Boolean, String) -> Unit) {
+    fun importFromJson(jsonString: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
-                val targetScheduleId = _currentScheduleId.value
-                val existingCourses = appDao.getCoursesBySchedule(targetScheduleId).firstOrNull()
-                if (!existingCourses.isNullOrEmpty()) {
-                    onResult(false, "当前课表已有课程，请新建一个空白课表后再导入，以免数据覆盖弄乱喵！")
-                    return@launch
-                }
-
                 val array = JSONArray(jsonString)
+                val targetScheduleId = _currentScheduleId.value
                 for (i in 0 until array.length()) {
                     val obj = array.getJSONObject(i)
                     appDao.insertCourse(
@@ -655,20 +655,34 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     )
                 }
                 notifyWidgetUpdate()
-                onResult(true, "导入成功")
+                onResult(true)
             } catch (e: Exception) {
-                onResult(false, "解析失败")
+                onResult(false)
             }
         }
     }
 
-    fun importFromShareCode(code: String, onResult: (Boolean, String) -> Unit) {
+    fun importFromShareCode(code: String, onResult: (Boolean) -> Unit) {
         try {
             val jsonString = String(Base64.decode(code, Base64.DEFAULT), Charsets.UTF_8)
             importFromJson(jsonString, onResult)
         } catch (e: Exception) {
-            onResult(false, "无效口令")
+            onResult(false)
         }
+    }
+
+    private suspend fun insertMockData() {
+        val mockCourses = listOf(
+            Course("1", "default_id", "高等数学A2", "翔宇楼206", "缪周倩", 1, 1, 2, "[8,9,10]", "blue"),
+            Course("2", "default_id", "大学物理A1", "环宇楼A201", "尚曼玉", 3, 1, 2, "[8,9]", "pink"),
+            Course("3", "default_id", "模拟电子线路", "环宇楼A505", "潘晨", 4, 1, 2, "[8,9,10]", "indigo"),
+            Course("4", "default_id", "概率论与数理统计", "环宇楼A301", "朱文静", 5, 1, 2, "[8,9,10]", "purple"),
+            Course("5", "default_id", "大学英语5", "环宇楼D505", "陆崔崔", 2, 3, 4, "[8,9]", "slate"),
+            Course("6", "default_id", "物理实验A", "未排地点", "张海岛", 5, 6, 8, "[10]", "rose"),
+            Course("7", "default_id", "习近平新时代中国特色社会主义思想概论", "环宇楼A504", "刘世吾", 1, 3, 5, "[8,9]", "rose"),
+            Course("8", "default_id", "超长课程测试", "测试楼101", "系统", 2, 6, 6, "[8]", "purple")
+        )
+        appDao.insertAllCourses(mockCourses)
     }
 }
 
@@ -751,239 +765,242 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowCompat.setDecorFitsSystemWindows(window, false) // 开启边缘到边缘渲染，适配底部虚拟按键
         setContent {
+            // Android 13+ 运行时通知权限申请
+            val context = LocalContext.current
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+            }
+
             val isSystemDark = isSystemInDarkTheme()
             val isDarkSetting by viewModel.isDarkTheme.collectAsState()
             val isDark = isDarkSetting ?: isSystemDark
 
-            val colorScheme = if (isDark) darkColorScheme(
-                background = BgDark, surface = Color(0xFF18181B), onBackground = TextDark, onSurface = TextDark, primary = Color(0xFF90CDF4), onPrimary = Color.Black
-            ) else lightColorScheme(
-                background = BgLight, surface = Color.White, onBackground = TextLight, onSurface = TextLight, primary = Color(0xFF3182CE), onPrimary = Color.White
-            )
+            val currentWeek by viewModel.currentWeek.collectAsState()
+            val displayCourses by viewModel.displayCourses.collectAsState()
+            val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+            val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+            val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+            val timetableGroups by viewModel.timetableGroups.collectAsState()
+            val totalWeeks by viewModel.totalWeeks.collectAsState()
 
-            MaterialTheme(colorScheme = colorScheme) {
-                val context = LocalContext.current
+            val animatedBgColor by animateColorAsState(if (isDark) BgDark else BgLight, tween(500), label = "bg")
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    val permissionLauncher = rememberLauncherForActivityResult(
-                        contract = ActivityResultContracts.RequestPermission(),
-                        onResult = { isGranted ->
-                            if (!isGranted) Toast.makeText(context, "未授予通知权限，上课提醒无法显示弹窗喵", Toast.LENGTH_SHORT).show()
+            // 生命周期绑定：每次回到应用都会精准刷新周数
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        viewModel.refreshCurrentWeek()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+
+            var currentRoute by remember { mutableStateOf("main") }
+            var currentTab by remember { mutableIntStateOf(0) }
+            var courseToEdit by remember { mutableStateOf<Course?>(null) }
+            var editingTimetableId by remember { mutableStateOf<String?>(null) }
+            var showAddDialog by remember { mutableStateOf(false) }
+            var showShareCodeDialog by remember { mutableStateOf(false) }
+            var showCreateScheduleDialog by remember { mutableStateOf(false) }
+
+            Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
+                DotMatrixBackground(isDark = isDark)
+
+                // 替换原有的 Box 为 AnimatedContent 实现全局路由动画
+                AnimatedContent(
+                    targetState = currentRoute,
+                    transitionSpec = {
+                        val springSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
+                        (fadeIn(animationSpec = springSpec) + scaleIn(initialScale = 0.95f, animationSpec = springSpec)) togetherWith fadeOut(animationSpec = springSpec)
+                    },
+                    label = "route_anim",
+                    modifier = Modifier.fillMaxSize()
+                ) { route ->
+                    when (route) {
+                        "course_management" -> {
+                            CourseManagementScreen(
+                                courses = displayCourses.map { it.course }.distinctBy { it.id },
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" },
+                                onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                onDeleteCourse = { viewModel.deleteCourse(it) }
+                            )
+                        }
+                        "timetable_list" -> {
+                            val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
+                            TimetableListScreen(
+                                timetables = timetableGroups,
+                                currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" },
+                                onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
+                                onEdit = { id -> editingTimetableId = id; currentRoute = "timetable_edit" },
+                                onDelete = { viewModel.deleteTimetable(it) }
+                            )
+                        }
+                        "timetable_edit" -> {
+                            TimetableEditScreen(
+                                timetableId = editingTimetableId,
+                                timetables = timetableGroups,
+                                viewModel = viewModel,
+                                isDark = isDark,
+                                onBack = { currentRoute = "timetable_list" },
+                                onSave = { id, name, nodes ->
+                                    viewModel.saveTimetable(id, name, nodes)
+                                    currentRoute = "timetable_list"
+                                }
+                            )
+                        }
+                        "schedule_settings" -> {
+                            ScheduleSettingsScreen(
+                                viewModel = viewModel,
+                                scheduleGroups = scheduleGroups,
+                                currentScheduleId = currentScheduleId,
+                                currentWeek = currentWeek,
+                                timeNodeCount = activeTimeNodes.size,
+                                totalWeeks = totalWeeks,
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" },
+                                onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
+                                onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
+                                onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
+                                onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
+                                onManageTimetableClick = { currentRoute = "timetable_list" },
+                                onManageCoursesClick = { currentRoute = "course_management" },
+                                onMoreAppearanceClick = { currentRoute = "appearance_settings" }
+                            )
+                        }
+                        "appearance_settings" -> {
+                            AppearanceSettingsScreen(
+                                viewModel = viewModel,
+                                isDark = isDark,
+                                onBack = { currentRoute = "schedule_settings" }
+                            )
+                        }
+                        "global_settings" -> {
+                            GlobalSettingsScreen(
+                                viewModel = viewModel,
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" },
+                                onAdjustCourseClick = { currentRoute = "adjust_course" }
+                            )
+                        }
+                        "adjust_course" -> {
+                            AdjustCourseScreen(isDark = isDark, onBack = { currentRoute = "global_settings" })
+                        }
+                        "webview_import" -> {
+                            WebViewImportScreen(
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" },
+                                onImport = { json ->
+                                    viewModel.importFromJson(json) { success ->
+                                        Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
+                                        if (success) currentRoute = "main"
+                                    }
+                                }
+                            )
+                        }
+                        "voice_settings" -> {
+                            VoiceSettingsScreen(
+                                viewModel = viewModel,
+                                isDark = isDark,
+                                onBack = { currentRoute = "main" }
+                            )
+                        }
+                        else -> {
+                            Scaffold(
+                                containerColor = Color.Transparent,
+                                bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
+                            ) { paddingValues ->
+                                // 为底部导航的 Tab 切换增加交叉淡化动画
+                                Crossfade(
+                                    targetState = currentTab,
+                                    label = "tab_anim",
+                                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                                ) { tab ->
+                                    Box(modifier = Modifier.padding(paddingValues)) {
+                                        if (tab == 0) {
+                                            TimetableScreen(
+                                                viewModel = viewModel,
+                                                courses = displayCourses,
+                                                timeNodes = activeTimeNodes,
+                                                currentWeek = currentWeek,
+                                                totalWeeks = totalWeeks,
+                                                scheduleGroups = scheduleGroups,
+                                                currentScheduleId = currentScheduleId,
+                                                isDark = isDark,
+                                                onAddClick = { courseToEdit = null; showAddDialog = true },
+                                                onManageCoursesClick = { currentRoute = "course_management" },
+                                                onManageTimetablesClick = { currentRoute = "timetable_list" },
+                                                onScheduleSettingsClick = { currentRoute = "schedule_settings" },
+                                                onGlobalSettingsClick = { currentRoute = "global_settings" },
+                                                onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                                onWebViewImportClick = { currentRoute = "webview_import" },
+                                                onShareCodeClick = { showShareCodeDialog = true },
+                                                onCreateScheduleClick = { showCreateScheduleDialog = true },
+                                                onVoiceSettingsClick = { currentRoute = "voice_settings" }
+                                            )
+                                        } else {
+                                            ProfileScreen(isDark = isDark, onThemeToggle = { viewModel.toggleTheme(it) })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (showAddDialog) {
+                    CourseEditDialog(
+                        isDark = isDark,
+                        initialCourse = courseToEdit,
+                        onDismiss = { showAddDialog = false; courseToEdit = null },
+                        onConfirm = { id, name, loc, t, d, s, e, c, w ->
+                            if (id == null) {
+                                viewModel.addCustomCourse(name, loc, t, d, s, e, c)
+                            } else {
+                                viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w)
+                            }
+                            showAddDialog = false
+                            courseToEdit = null
                         }
                     )
-                    LaunchedEffect(Unit) {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
                 }
 
-                val currentWeek by viewModel.currentWeek.collectAsState()
-                val displayCourses by viewModel.displayCourses.collectAsState()
-                val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-                val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-                val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
-                val timetableGroups by viewModel.timetableGroups.collectAsState()
-                val totalWeeks by viewModel.totalWeeks.collectAsState()
-
-                val animatedBgColor by animateColorAsState(if (isDark) BgDark else BgLight, tween(500), label = "bg")
-
-                val lifecycleOwner = LocalLifecycleOwner.current
-                DisposableEffect(lifecycleOwner) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshCurrentWeek()
-                    }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                if (showShareCodeDialog) {
+                    ShareCodeDialog(
+                        isDark = isDark,
+                        onDismiss = { showShareCodeDialog = false },
+                        onConfirm = { code ->
+                            viewModel.importFromShareCode(code) { success ->
+                                Toast.makeText(context, if (success) "口令解析成功" else "无效口令", Toast.LENGTH_SHORT).show()
+                                if(success) showShareCodeDialog = false
+                            }
+                        }
+                    )
                 }
 
-                var currentRoute by remember { mutableStateOf("main") }
-                var currentTab by remember { mutableIntStateOf(0) }
-                var courseToEdit by remember { mutableStateOf<Course?>(null) }
-                var editingTimetableId by remember { mutableStateOf<String?>(null) }
-                var showAddDialog by remember { mutableStateOf(false) }
-                var showShareCodeDialog by remember { mutableStateOf(false) }
-                var showCreateScheduleDialog by remember { mutableStateOf(false) }
-
-                Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
-                    DotMatrixBackground(isDark = isDark)
-
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        when (currentRoute) {
-                            "course_management" -> {
-                                CourseManagementScreen(
-                                    courses = displayCourses.map { it.course }.distinctBy { it.id },
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" },
-                                    onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                    onDeleteCourse = { viewModel.deleteCourse(it) }
-                                )
-                            }
-                            "timetable_list" -> {
-                                val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
-                                TimetableListScreen(
-                                    timetables = timetableGroups,
-                                    currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" },
-                                    onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
-                                    onEdit = { id -> editingTimetableId = id; currentRoute = "timetable_edit" },
-                                    onDelete = { viewModel.deleteTimetable(it) }
-                                )
-                            }
-                            "timetable_edit" -> {
-                                TimetableEditScreen(
-                                    timetableId = editingTimetableId,
-                                    timetables = timetableGroups,
-                                    viewModel = viewModel,
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "timetable_list" },
-                                    onSave = { id, name, nodes ->
-                                        viewModel.saveTimetable(id, name, nodes)
-                                        currentRoute = "timetable_list"
-                                    }
-                                )
-                            }
-                            "schedule_settings" -> {
-                                ScheduleSettingsScreen(
-                                    viewModel = viewModel,
-                                    scheduleGroups = scheduleGroups,
-                                    currentScheduleId = currentScheduleId,
-                                    currentWeek = currentWeek,
-                                    timeNodeCount = activeTimeNodes.size,
-                                    totalWeeks = totalWeeks,
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" },
-                                    onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
-                                    onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
-                                    onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
-                                    onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
-                                    onManageTimetableClick = { currentRoute = "timetable_list" },
-                                    onManageCoursesClick = { currentRoute = "course_management" },
-                                    onMoreAppearanceClick = { currentRoute = "appearance_settings" }
-                                )
-                            }
-                            "appearance_settings" -> {
-                                AppearanceSettingsScreen(
-                                    viewModel = viewModel,
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "schedule_settings" }
-                                )
-                            }
-                            "global_settings" -> {
-                                GlobalSettingsScreen(
-                                    viewModel = viewModel,
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" },
-                                    onAdjustCourseClick = { currentRoute = "adjust_course" }
-                                )
-                            }
-                            "adjust_course" -> {
-                                AdjustCourseScreen(isDark = isDark, onBack = { currentRoute = "global_settings" })
-                            }
-                            "webview_import" -> {
-                                WebViewImportScreen(
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" },
-                                    onImport = { json ->
-                                        viewModel.importFromJson(json) { success, msg ->
-                                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                            if (success) currentRoute = "main"
-                                        }
-                                    }
-                                )
-                            }
-                            "voice_settings" -> {
-                                VoiceSettingsScreen(
-                                    viewModel = viewModel,
-                                    isDark = isDark,
-                                    onBack = { currentRoute = "main" }
-                                )
-                            }
-                            else -> {
-                                Scaffold(
-                                    containerColor = Color.Transparent,
-                                    bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
-                                ) { paddingValues ->
-                                    Box(modifier = Modifier.padding(paddingValues)) {
-                                        AnimatedContent(
-                                            targetState = currentTab,
-                                            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-                                            label = "tab_anim"
-                                        ) { tab ->
-                                            if (tab == 0) {
-                                                TimetableScreen(
-                                                    viewModel = viewModel,
-                                                    courses = displayCourses,
-                                                    timeNodes = activeTimeNodes,
-                                                    currentWeek = currentWeek,
-                                                    totalWeeks = totalWeeks,
-                                                    scheduleGroups = scheduleGroups,
-                                                    currentScheduleId = currentScheduleId,
-                                                    isDark = isDark,
-                                                    onAddClick = { courseToEdit = null; showAddDialog = true },
-                                                    onManageCoursesClick = { currentRoute = "course_management" },
-                                                    onManageTimetablesClick = { currentRoute = "timetable_list" },
-                                                    onScheduleSettingsClick = { currentRoute = "schedule_settings" },
-                                                    onGlobalSettingsClick = { currentRoute = "global_settings" },
-                                                    onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                                    onWebViewImportClick = { currentRoute = "webview_import" },
-                                                    onShareCodeClick = { showShareCodeDialog = true },
-                                                    onCreateScheduleClick = { showCreateScheduleDialog = true },
-                                                    onVoiceSettingsClick = { currentRoute = "voice_settings" }
-                                                )
-                                            } else {
-                                                ProfileScreen(isDark = isDark, onThemeToggle = { viewModel.toggleTheme(it) })
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                if (showCreateScheduleDialog) {
+                    CreateScheduleDialog(
+                        isDark = isDark,
+                        onDismiss = { showCreateScheduleDialog = false },
+                        onConfirm = { name ->
+                            viewModel.createNewSchedule(name)
+                            showCreateScheduleDialog = false
                         }
-
-                        if (showAddDialog) {
-                            CourseEditDialog(
-                                isDark = isDark,
-                                initialCourse = courseToEdit,
-                                onDismiss = { showAddDialog = false; courseToEdit = null },
-                                onConfirm = { id, name, loc, t, d, s, e, c, w ->
-                                    if (id == null) {
-                                        viewModel.addCustomCourse(name, loc, t, d, s, e, c)
-                                    } else {
-                                        viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w)
-                                    }
-                                    showAddDialog = false
-                                    courseToEdit = null
-                                }
-                            )
-                        }
-
-                        if (showShareCodeDialog) {
-                            ShareCodeDialog(
-                                isDark = isDark,
-                                onDismiss = { showShareCodeDialog = false },
-                                onConfirm = { code ->
-                                    viewModel.importFromShareCode(code) { success, msg ->
-                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                                        if(success) showShareCodeDialog = false
-                                    }
-                                }
-                            )
-                        }
-
-                        if (showCreateScheduleDialog) {
-                            CreateScheduleDialog(
-                                isDark = isDark,
-                                onDismiss = { showCreateScheduleDialog = false },
-                                onConfirm = { name ->
-                                    viewModel.createNewSchedule(name)
-                                    showCreateScheduleDialog = false
-                                }
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
@@ -1021,7 +1038,7 @@ fun BottomNavBar(isDark: Boolean, currentTab: Int, onTabSelected: (Int) -> Unit)
             .fillMaxWidth()
             .background(if (isDark) BgDark.copy(alpha = 0.9f) else BgLight.copy(alpha = 0.9f))
             .border(0.5.dp, borderColor)
-            .navigationBarsPadding()
+            .navigationBarsPadding() // 处理底部的虚拟按键避让
             .padding(vertical = 12.dp, horizontal = 32.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
@@ -1032,11 +1049,9 @@ fun BottomNavBar(isDark: Boolean, currentTab: Int, onTabSelected: (Int) -> Unit)
 
 @Composable
 fun NavBarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, isActive: Boolean, color: Color, onClick: () -> Unit) {
-    val scale by animateFloatAsState(if (isActive) 1.15f else 1.0f, tween(300), label = "nav_scale")
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick).scale(scale)
+        modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
     ) {
         Icon(imageVector = icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.height(4.dp))
@@ -1060,6 +1075,7 @@ fun TimetableScreen(
     var showAddMenu by remember { mutableStateOf(false) }
     var showMoreSheet by remember { mutableStateOf(false) }
     var showDeleteScheduleDialog by remember { mutableStateOf(false) }
+    var showImportBlockDialog by remember { mutableStateOf(false) } // 导入防呆拦截
 
     val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
     val currentScheduleName = currentSchedule?.name ?: "课表"
@@ -1092,7 +1108,14 @@ fun TimetableScreen(
                     DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }, modifier = Modifier.background(if (isDark) Color(0xFF18181B) else Color.White).border(0.5.dp, borderColor)) {
                         DropdownMenuItem(text = { Text("手动添加课程", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onAddClick() })
                         Divider(color = borderColor, thickness = 0.5.dp)
-                        DropdownMenuItem(text = { Text("从教务导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onWebViewImportClick() })
+                        DropdownMenuItem(text = { Text("从教务导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = {
+                            showAddMenu = false
+                            if (courses.isNotEmpty()) {
+                                showImportBlockDialog = true // 触发防呆拦截弹窗
+                            } else {
+                                onWebViewImportClick()
+                            }
+                        })
                         DropdownMenuItem(text = { Text("分享口令导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onShareCodeClick() })
                     }
                 }
@@ -1108,37 +1131,48 @@ fun TimetableScreen(
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
             val weekForThisPage = page + 1
             val coursesForThisPage = remember(courses, weekForThisPage, showNotThisWeek) {
-                val currentWeekCourses = courses.filter { dc ->
+                val occupiedSlots = mutableSetOf<String>()
+
+                val currentCourses = courses.filter { dc ->
                     val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
                     weeksList.contains(weekForThisPage)
+                }.map { dc ->
+                    for (node in dc.displayStartNode..dc.displayEndNode) {
+                        occupiedSlots.add("${dc.displayDay}_$node")
+                    }
+                    Pair(dc, false)
                 }
-                val occupiedSlots = currentWeekCourses.flatMap { dc ->
-                    (dc.displayStartNode..dc.displayEndNode).map { node -> Pair(dc.displayDay, node) }
-                }.toMutableSet()
 
-                courses.mapNotNull { dc ->
-                    val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                    val isCurrent = weeksList.contains(weekForThisPage)
-                    var isFuture = false
-                    var isVis = isCurrent
-
-                    if (!isCurrent) {
-                        val future = weeksList.filter { it > weekForThisPage }.sorted()
-                        if (future.isNotEmpty() && (future.first() - weekForThisPage <= 3)) {
-                            val courseSlots = (dc.displayStartNode..dc.displayEndNode).map { node -> Pair(dc.displayDay, node) }
-                            val hasOverlap = courseSlots.any { slot -> occupiedSlots.contains(slot) }
-
-                            if (!hasOverlap) {
-                                isVis = showNotThisWeek
-                                isFuture = true
-                                occupiedSlots.addAll(courseSlots)
-                            } else {
-                                isVis = false
+                val futureCourses = mutableListOf<Pair<DisplayCourse, Boolean>>()
+                if (showNotThisWeek) {
+                    val potentialFutures = courses.mapNotNull { dc ->
+                        val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                        if (!weeksList.contains(weekForThisPage)) {
+                            val futureWeeks = weeksList.filter { it > weekForThisPage }.sorted()
+                            if (futureWeeks.isNotEmpty() && (futureWeeks.first() - weekForThisPage <= 3)) {
+                                return@mapNotNull Pair(dc, futureWeeks.first())
                             }
                         }
+                        null
+                    }.sortedBy { it.second }
+
+                    for ((dc, _) in potentialFutures) {
+                        var hasConflict = false
+                        for (node in dc.displayStartNode..dc.displayEndNode) {
+                            if (occupiedSlots.contains("${dc.displayDay}_$node")) {
+                                hasConflict = true
+                                break
+                            }
+                        }
+                        if (!hasConflict) {
+                            for (node in dc.displayStartNode..dc.displayEndNode) {
+                                occupiedSlots.add("${dc.displayDay}_$node")
+                            }
+                            futureCourses.add(Pair(dc, true))
+                        }
                     }
-                    if (isVis) Pair(dc, isFuture) else null
                 }
+                currentCourses + futureCourses
             }
             TimetableGrid(
                 viewModel = viewModel,
@@ -1151,6 +1185,20 @@ fun TimetableScreen(
                 onCourseClick = { course, isFuture -> selectedCourseWithWeek = Pair(course, if (isFuture) 0 else weekForThisPage) }
             )
         }
+    }
+
+    if (showImportBlockDialog) {
+        AlertDialog(
+            onDismissRequest = { showImportBlockDialog = false },
+            title = { Text("无法导入", fontWeight = FontWeight.Bold) },
+            text = { Text("当前课表中已经有数据啦！\n为了避免数据混乱叠加在一起，请先去【新建一个空白的课表】，然后再进行教务导入哦喵！") },
+            confirmButton = {
+                TextButton(onClick = { showImportBlockDialog = false }) { Text("知道啦", color = textColor, fontWeight = FontWeight.Bold) }
+            },
+            containerColor = if (isDark) Color(0xFF18181B) else Color.White,
+            titleContentColor = textColor,
+            textContentColor = textColor.copy(alpha = 0.8f)
+        )
     }
 
     if (selectedCourseWithWeek != null) {
@@ -1253,9 +1301,11 @@ fun TimetableGrid(
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             calendar.time = sdf.parse(startDate) ?: Date()
 
+            // 先重置回这一周的周一
             while (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                 calendar.add(Calendar.DAY_OF_YEAR, -1)
             }
+            // 加上正确的偏离周次（基于天数加减防止夏令时周越界错误喵）
             calendar.add(Calendar.DAY_OF_YEAR, (displayedWeek - 1) * 7)
 
             currentMonth = calendar.get(Calendar.MONTH) + 1
@@ -1390,9 +1440,14 @@ fun TimetableGrid(
                                     Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(palette.accent))
                                 }
                                 Column(modifier = Modifier.fillMaxSize().padding(start = 6.dp, top = 4.dp, end = 4.dp, bottom = 4.dp)) {
+                                    val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
                                     if (isFuture) {
-                                        Text("[非本周]", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
+                                        val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
+                                        val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
+                                        val badgeText = if (isOddOnly) "[非本周(单)]" else if (isEvenOnly) "[非本周(双)]" else "[非本周]"
+                                        Text(badgeText, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
                                     }
+                                    // 课程名获取剩余的弹性空间（但不会强制占满把 Row 挤掉）
                                     Text(
                                         text = course.name,
                                         fontSize = 11.sp,
@@ -1400,11 +1455,12 @@ fun TimetableGrid(
                                         color = if (isFuture) textColor.copy(alpha = 0.5f) else palette.text,
                                         lineHeight = 14.sp,
                                         overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f, fill = false)
                                     )
+                                    // 限制高度最大为卡片的高度的 50%，如果内容很长最多显示4行，不会再因为 55dp 绝对判断导致消失了喵
                                     Row(
                                         verticalAlignment = Alignment.Top,
-                                        modifier = Modifier.padding(top = 4.dp).heightIn(max = cardHeight * 0.5f)
+                                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).heightIn(max = cardHeight * 0.5f)
                                     ) {
                                         Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = if (isFuture) textColor.copy(alpha = 0.4f) else palette.text.copy(alpha = 0.7f), modifier = Modifier.size(10.dp).padding(top = 1.dp))
                                         Spacer(modifier = Modifier.width(2.dp))
@@ -1476,7 +1532,13 @@ fun ScheduleSettingsScreen(
                             textStyle = androidx.compose.ui.text.TextStyle(textAlign = TextAlign.End, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f)),
                             singleLine = true,
                             modifier = Modifier.width(150.dp),
-                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent)
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = textColor,
+                                unfocusedTextColor = textColor.copy(alpha = 0.6f),
+                                cursorColor = textColor
+                            )
                         )
                     }
                 }
@@ -1600,6 +1662,7 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     }
 }
 
+// 闹钟调度器，处理系统级精确闹钟注册及间隙动态计算逻辑
 object AlarmScheduler {
     fun scheduleNextCourseAlarm(context: Context, courseName: String, location: String, targetTriggerTimeMillis: Long, requestCode: Int = 0) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
@@ -1627,6 +1690,7 @@ object AlarmScheduler {
         }
     }
 
+    // 专门用于计算提醒时间，满足：课间休息短于设置时间时，上一节刚下课就立刻播报
     fun calculateDynamicAlarmTime(courseStartTimeMillis: Long, prevCourseEndTimeMillis: Long?, advanceMins: Int): Long {
         val idealAlarmTime = courseStartTimeMillis - advanceMins * 60 * 1000L
         if (prevCourseEndTimeMillis != null && idealAlarmTime < prevCourseEndTimeMillis) {
@@ -1713,6 +1777,7 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
     val materialYou by viewModel.materialYou.collectAsState()
     val warnTimetableError by viewModel.warnTimetableError.collectAsState()
     val autoUpdate by viewModel.autoUpdate.collectAsState()
+    val widgetTranslucent by viewModel.widgetTranslucent.collectAsState()
 
     BackHandler { onBack() }
 
@@ -1733,8 +1798,18 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
             item {
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
                     Column {
-                        SettingItemWithSubtext(title = "自定义空视图图片", subtext = "这个是空视图图片！就是没有课的时候显示的图片！目前仅在日视图小组件和周视图小组件生效。长按可以关闭~", textColor = textColor, borderColor = borderColor)
                         SettingItemWithSubtext(title = "将课表添加到桌面", subtext = "有日视图和周视图可选哦，能否添加成功取决于系统，如果添加不了可以去桌面手动添加。添加成功后，可以左右滑动桌面看看系统把课表放到哪一页了", textColor = textColor, borderColor = borderColor)
+                        SettingCheckboxItemWithSubtext(
+                            title = "桌面小部件半透明/毛玻璃化",
+                            subtext = "开启后小部件背景将变为半透明（具体的毛玻璃模糊效果取决于系统桌面启动器支持）",
+                            checked = widgetTranslucent,
+                            onCheckedChange = {
+                                viewModel.updateSetting(SettingsKeys.WIDGET_TRANSLUCENT, it)
+                                viewModel.notifyWidgetUpdate()
+                            },
+                            textColor = textColor, borderColor = borderColor, isDark = isDark
+                        )
+                        SettingItemWithSubtext(title = "自定义空视图图片", subtext = "这个是空视图图片！就是没有课的时候显示的图片！目前仅在日视图小组件和周视图小组件生效。长按可以关闭~", textColor = textColor, borderColor = borderColor)
                         SettingCheckboxItem(title = "根据桌面壁纸更改主题色", checked = materialYou, onCheckedChange = { viewModel.updateSetting(SettingsKeys.MATERIAL_YOU, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
                         SettingCheckboxItemWithSubtext(title = "课表下方增加留白区域", subtext = "开启后，课表下方会多出一段空白区域，便于将底部的课程滑动至屏幕中间查看", checked = bottomBlank, onCheckedChange = { viewModel.updateSetting(SettingsKeys.BOTTOM_BLANK, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
                         SettingCheckboxItem(title = "提示时间表配置错误", checked = warnTimetableError, onCheckedChange = { viewModel.updateSetting(SettingsKeys.WARN_TIMETABLE_ERROR, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
@@ -1757,7 +1832,7 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                 Text("课程设置", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
                     Column {
-                        SettingValueItem(title = "设置当前课表", value = "", textColor = textColor, borderColor = borderColor, onClick = {  })
+                        SettingValueItem(title = "设置当前课表", value = "", textColor = textColor, borderColor = borderColor, onClick = { /* Navigate to schedule selection if needed */ })
                         SettingItemWithSubtext(title = "日期之间调课", subtext = "将某天的课移动到另一天", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = onAdjustCourseClick)
                     }
                 }
@@ -1882,7 +1957,19 @@ fun ShareCodeDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (String) 
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("分享口令导入", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("在此粘贴口令") }, modifier = Modifier.fillMaxWidth().height(120.dp))
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = { code = it },
+                    label = { Text("在此粘贴口令", color = textColor.copy(alpha = 0.6f)) },
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedBorderColor = textColor,
+                        unfocusedBorderColor = textColor.copy(alpha = 0.5f),
+                        cursorColor = textColor
+                    )
+                )
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("取消", color = textColor.copy(alpha = 0.5f)) }
@@ -1906,7 +1993,7 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
 
     BackHandler { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
+    Column(modifier = Modifier.fillMaxSize().imePadding()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1921,7 +2008,13 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                 modifier = Modifier.weight(1f).height(50.dp),
                 singleLine = true,
                 textStyle = androidx.compose.ui.text.TextStyle(color = textColor),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = borderColor, unfocusedBorderColor = borderColor)
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = borderColor,
+                    unfocusedBorderColor = borderColor,
+                    focusedTextColor = textColor,
+                    unfocusedTextColor = textColor,
+                    cursorColor = textColor
+                )
             )
             TextButton(onClick = { loadUrl = url }) {
                 Text("访问", color = textColor, fontWeight = FontWeight.Bold)
@@ -1937,7 +2030,7 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
             }
         }
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding()) {
             AndroidView(factory = { ctx ->
                 WebView(ctx).apply {
                     settings.javaScriptEnabled = true
@@ -1962,105 +2055,101 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                 }
             }, update = { it.loadUrl(loadUrl) }, modifier = Modifier.fillMaxSize())
         }
-
         Button(
             onClick = {
-                // 基于最新HTML完全重构，从底层提取的提取脚本喵！绝对精准！
                 val jsCode = """
                     javascript:(function() {
                         try {
                             var courses = [];
                             var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
-                            var table = document.getElementById('kbgrid_table_0');
+                            var nodes = document.querySelectorAll('.kbcontent, .timetable_con');
                             
-                            if (!table) {
-                                window.Android.passData("ERROR:未找到课表表格，请确保已进入「个人课表查询」页面且已显示课表！");
+                            if (nodes.length === 0) {
+                                window.Android.passData("ERROR:未找到课程节点，请确保已进入「个人课表查询」页面且已显示课表！");
                                 return;
                             }
 
-                            var tds = table.querySelectorAll('td[id]');
-                            tds.forEach(function(td) {
-                                var match = td.id.match(/^(\d+)-(\d+)$/);
-                                if (!match) return;
-
-                                var dayOfWeek = parseInt(match[1]);
-                                var baseStartNode = parseInt(match[2]);
-                                var rowspan = parseInt(td.getAttribute('rowspan') || '1');
-                                var baseEndNode = baseStartNode + rowspan - 1;
-
-                                var cons = td.querySelectorAll('.timetable_con');
-                                cons.forEach(function(con) {
-                                    var titleEl = con.querySelector('.title');
-                                    if (!titleEl) return;
-                                    var name = titleEl.innerText.replace(/[★○●◇【调】\[调\]]/g, '').trim();
-
-                                    var teacher = '';
-                                    var location = '未排地点';
-                                    var timeStr = '';
-
-                                    var ps = con.querySelectorAll('p');
-                                    ps.forEach(function(p) {
-                                        var titleSpan = p.querySelector('span[title]');
-                                        var titleAttr = titleSpan ? titleSpan.getAttribute('title') : '';
-                                        var textContent = p.innerText.trim();
-
-                                        if (titleAttr.indexOf('教师') !== -1 || titleAttr.indexOf('老师') !== -1) {
-                                            teacher = textContent.replace('教师', '').replace('：', '').trim();
-                                        } else if (titleAttr.indexOf('地点') !== -1 || titleAttr.indexOf('教室') !== -1) {
-                                            location = textContent.trim();
-                                        } else if (titleAttr.indexOf('节/周') !== -1 || textContent.indexOf('节') !== -1 || textContent.indexOf('周') !== -1) {
-                                            timeStr = textContent;
-                                        }
-                                    });
-
-                                    var startNode = baseStartNode;
-                                    var endNode = baseEndNode;
-                                    var nodeMatch = timeStr.match(/\((\d+)[-~](\d+)节?\)/);
-                                    if (nodeMatch) {
-                                        startNode = parseInt(nodeMatch[1]);
-                                        endNode = parseInt(nodeMatch[2]);
+                            nodes.forEach(function(node) {
+                                var td = node.closest('td');
+                                if (!td || !td.id) return;
+                                var dayOfWeek = parseInt(td.id.split('-')[0]);
+                                
+                                var htmlBlocks = node.innerHTML.split(/<hr[^>]*>/i);
+                                
+                                htmlBlocks.forEach(function(html) {
+                                    var tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = html;
+                                    
+                                    var textContent = tempDiv.innerText.trim();
+                                    if (!textContent) return;
+                                    
+                                    var titleNode = tempDiv.querySelector('.title font, font[title="课程"], font.color-font');
+                                    var name = titleNode ? titleNode.innerText.replace(/[★○●◇]/g, '').trim() : '';
+                                    if (!name) {
+                                         var lines = textContent.split('\n').filter(l => l.trim() !== '');
+                                         if(lines.length > 0) name = lines[0].replace(/[★○●◇]/g, '').trim();
                                     }
-
+                                    
+                                    var timeText = '', location = '未排地点', teacher = '';
+                                    
+                                    var ps = tempDiv.querySelectorAll('p, font, span');
+                                    if (ps.length > 0) {
+                                        ps.forEach(function(p) {
+                                            var text = p.innerText.trim();
+                                            if (text.includes('节/周') || text.includes('节)') || text.match(/\d+-\d+节/)) timeText = text;
+                                            if (text.includes('校区') || text.includes('楼') || text.includes('教室') || p.getAttribute('title') === '教室') location = text;
+                                            if (p.getAttribute('title') === '老师' || text.match(/[\u4e00-\u9fa5]{2,4}/)) {
+                                                if(!teacher && text !== name && !text.includes('周') && !text.includes('楼')) {
+                                                    teacher = text;
+                                                }
+                                            }
+                                        });
+                                    } else {
+                                        var lines = textContent.split('\n').map(l => l.trim()).filter(l => l !== '');
+                                        lines.forEach(function(line) {
+                                            if (line.match(/\d+-\d+节/)) timeText = line;
+                                            else if (line.match(/楼|教室|校区/)) location = line;
+                                        });
+                                    }
+                                    
+                                    var startNode = 1, endNode = 2;
                                     var weeksArr = [];
-                                    var cleanWeekStr = timeStr.replace(/\(?\d+[-~]\d+节?\)?/g, '');
-                                    var weekRegex = /([0-9\-\~\,\s，]+)(?:周|节)?\s*[\(（\[]?([单双])?周?[\)）\]]?/g;
-                                    var wMatch;
-                                    while ((wMatch = weekRegex.exec(cleanWeekStr)) !== null) {
-                                        var rangeStr = wMatch[1];
-                                        var type = wMatch[2] || '';
-                                        if (!type) {
-                                            if (cleanWeekStr.includes('单')) type = '单';
-                                            if (cleanWeekStr.includes('双')) type = '双';
-                                        }
-                                        var parts = rangeStr.split(/[,，\s]+/);
-                                        parts.forEach(function(part) {
-                                            var rMatch = part.match(/(\d+)[\-\~](\d+)/);
-                                            if (rMatch) {
-                                                var s = parseInt(rMatch[1]);
-                                                var e = parseInt(rMatch[2]);
-                                                for (var i = s; i <= e; i++) {
-                                                    if (type === '单' && i % 2 === 0) continue;
-                                                    if (type === '双' && i % 2 !== 0) continue;
-                                                    if (!weeksArr.includes(i)) weeksArr.push(i);
+                                    
+                                    var timeMatch = timeText.match(/\((\d+)-(\d+)节\)(.*)/) || timeText.match(/(\d+)-(\d+)节(.*)/);
+                                    if (timeMatch) {
+                                        startNode = parseInt(timeMatch[1]);
+                                        endNode = parseInt(timeMatch[2]);
+                                        var weekStr = timeMatch[3].replace(/\s+/g, '');
+                                        
+                                        var parts = weekStr.split(/[,，、]+/);
+                                        parts.forEach(function(p) {
+                                            var isOdd = p.indexOf('单') !== -1;
+                                            var isEven = p.indexOf('双') !== -1;
+                                            var rangeMatch = p.match(/(\d+)-(\d+)/);
+                                            if (rangeMatch) {
+                                                for(var i = parseInt(rangeMatch[1]); i <= parseInt(rangeMatch[2]); i++) {
+                                                    if (isOdd && i % 2 === 0) continue;
+                                                    if (isEven && i % 2 !== 0) continue;
+                                                    weeksArr.push(i);
                                                 }
                                             } else {
-                                                var singleMatch = part.match(/(\d+)/);
+                                                var singleMatch = p.match(/(\d+)/);
                                                 if (singleMatch) {
-                                                    var w = parseInt(singleMatch[1]);
-                                                    if (type === '单' && w % 2 === 0) return;
-                                                    if (type === '双' && w % 2 !== 0) return;
-                                                    if (!weeksArr.includes(w)) weeksArr.push(w);
+                                                    var wNum = parseInt(singleMatch[1]);
+                                                    if (isOdd && wNum % 2 === 0) return;
+                                                    if (isEven && wNum % 2 !== 0) return;
+                                                    weeksArr.push(wNum);
                                                 }
                                             }
                                         });
                                     }
-
+                                    
                                     if (!name || weeksArr.length === 0) return;
-
+                                    
                                     var nameHash = 0;
                                     for(var i=0; i<name.length; i++) nameHash += name.charCodeAt(i);
                                     var colorTheme = colorList[nameHash % colorList.length];
-
+                                    
                                     courses.push({
                                         name: name,
                                         location: location.replace('上课地点：', '').trim(),
@@ -2068,7 +2157,7 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                                         dayOfWeek: dayOfWeek,
                                         startNode: startNode,
                                         endNode: endNode,
-                                        weeks: JSON.stringify(weeksArr.sort((a,b)=>a-b)),
+                                        weeks: JSON.stringify(weeksArr),
                                         colorTheme: colorTheme
                                     });
                                 });
@@ -2092,7 +2181,7 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                 """.trimIndent()
                 webViewRef?.evaluateJavascript(jsCode, null)
             },
-            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp).height(50.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp).navigationBarsPadding(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if(isDark) BgDark else BgLight)
         ) {
@@ -2215,7 +2304,19 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
             item {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("时间表名称") }, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("时间表名称", color = textColor.copy(alpha = 0.6f)) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedBorderColor = textColor,
+                        unfocusedBorderColor = textColor.copy(alpha = 0.5f),
+                        cursorColor = textColor
+                    )
+                )
                 Row(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("每节课时长相同", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                     Switch(checked = isSameDuration, onCheckedChange = { isSameDuration = it }, colors = SwitchDefaults.colors(checkedThumbColor = if (isDark) BgDark else BgLight, checkedTrackColor = textColor))
@@ -2224,7 +2325,20 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
                 if (isSameDuration) {
                     Row(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("一节课时长 (分钟)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                        OutlinedTextField(value = classDuration, onValueChange = { classDuration = it }, modifier = Modifier.width(80.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                        OutlinedTextField(
+                            value = classDuration,
+                            onValueChange = { classDuration = it },
+                            modifier = Modifier.width(80.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = textColor,
+                                unfocusedTextColor = textColor,
+                                focusedBorderColor = textColor,
+                                unfocusedBorderColor = textColor.copy(alpha = 0.5f),
+                                cursorColor = textColor
+                            )
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -2357,7 +2471,12 @@ fun CourseDetailSheet(displayCourse: DisplayCourse, clickedWeek: Int, isDark: Bo
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(12.dp).background(palette.accent))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = if (clickedWeek > 0) "WEEK $clickedWeek" else "STARTS W${weeksList.firstOrNull() ?: 1}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), letterSpacing = 1.sp)
+
+                val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
+                val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
+                val modeText = if (isOddOnly) " (单周)" else if (isEvenOnly) " (双周)" else ""
+
+                Text(text = if (clickedWeek > 0) "WEEK $clickedWeek$modeText" else "STARTS W${weeksList.firstOrNull() ?: 1}$modeText", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), letterSpacing = 1.sp)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(course.name, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = textColor, lineHeight = 32.sp)
@@ -2400,7 +2519,20 @@ fun CreateScheduleDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (Str
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("新建课表", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("例如：大二上学期") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("例如：大二上学期", color = textColor.copy(alpha = 0.6f)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor,
+                        focusedBorderColor = textColor,
+                        unfocusedBorderColor = textColor.copy(alpha = 0.5f),
+                        cursorColor = textColor
+                    )
+                )
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("取消", color = textColor.copy(alpha = 0.5f)) }
@@ -2432,16 +2564,34 @@ fun CourseEditDialog(isDark: Boolean, initialCourse: Course?, onDismiss: () -> U
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(if (initialCourse == null) "添加课程" else "编辑课程", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("课程名称") }, singleLine = true)
+                OutlinedTextField(
+                    value = name, onValueChange = { name = it }, label = { Text("课程名称", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = loc, onValueChange = { loc = it }, label = { Text("上课地点") }, singleLine = true)
+                OutlinedTextField(
+                    value = loc, onValueChange = { loc = it }, label = { Text("上课地点", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = teacher, onValueChange = { teacher = it }, label = { Text("授课教师") }, singleLine = true)
+                OutlinedTextField(
+                    value = teacher, onValueChange = { teacher = it }, label = { Text("授课教师", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = day, onValueChange = { day = it }, label = { Text("星期(1-7)") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                    OutlinedTextField(value = start, onValueChange = { start = it }, label = { Text("起始节") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                    OutlinedTextField(value = end, onValueChange = { end = it }, label = { Text("结束节") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                    OutlinedTextField(
+                        value = day, onValueChange = { day = it }, label = { Text("星期(1-7)", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                    )
+                    OutlinedTextField(
+                        value = start, onValueChange = { start = it }, label = { Text("起始节", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                    )
+                    OutlinedTextField(
+                        value = end, onValueChange = { end = it }, label = { Text("结束节", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                    )
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -2507,26 +2657,27 @@ fun MoreMenuBottomSheet(
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = if (isDark) BgDark else BgLight, dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp).navigationBarsPadding().verticalScroll(rememberScrollState())) {
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "修改当前周",
-                    fontSize = 14.sp,
-                    color = textColor.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .clickable {
-                            onDismiss()
-                            onScheduleSettingsClick()
-                        }
-                        .padding(4.dp)
-                )
+            // --- 修改当前周模块 ---
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("修改当前周", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Surface(
+                    color = primaryColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.clickable { onDismiss(); onScheduleSettingsClick() }
+                ) {
+                    Text(
+                        text = "前往设置 >",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryColor,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            var localSliderValue by remember(currentPagerWeek) { mutableFloatStateOf(currentPagerWeek.toFloat()) }
+            Spacer(modifier = Modifier.height(12.dp))
             Slider(
-                value = localSliderValue,
-                onValueChange = { localSliderValue = it },
-                onValueChangeFinished = { onBrowseWeek(localSliderValue.roundToInt()) },
+                value = currentPagerWeek.toFloat(),
+                onValueChange = { onBrowseWeek(it.roundToInt()) },
                 valueRange = 1f..totalWeeks.toFloat().coerceAtLeast(2f),
                 steps = (totalWeeks - 2).coerceAtLeast(0),
                 colors = SliderDefaults.colors(thumbColor = primaryColor, activeTrackColor = primaryColor, inactiveTrackColor = primaryColor.copy(alpha = 0.2f))
@@ -2534,6 +2685,7 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- 课表快速切换模块 ---
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("课表", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.weight(1f))
@@ -2573,6 +2725,7 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // --- 功能网格模块 ---
             data class MenuItem(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit)
             val menuItems = listOf(
                 MenuItem("上课时间", Icons.Rounded.Schedule) { onDismiss(); onTimetableManageClick() },
@@ -2602,6 +2755,7 @@ fun MoreMenuBottomSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // --- 专属危险操作区 ---
             OutlinedButton(
                 onClick = { onDismiss(); onDeleteScheduleClick() },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -2623,7 +2777,7 @@ fun MoreMenuBottomSheet(
 fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
-    val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
+    val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
     val uriHandler = LocalUriHandler.current
 
     Column(
@@ -2702,14 +2856,11 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
         remoteViews.setTextViewText(R.id.tv_course_name, courseName)
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // 使用更通用的内置图标
-            .setContentTitle("上课提醒：$courseName")
-            .setContentText("接下来在 $location 有课")
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(remoteViews)
             .setCustomBigContentView(remoteViews)
-            .setPriority(NotificationCompat.PRIORITY_MAX) // 提高优先级
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // 开启默认声音和震动
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
         if (Build.VERSION.SDK_INT >= 34) {
@@ -2767,6 +2918,7 @@ class CourseWidget : GlanceAppWidget() {
         val appDao = AppDatabase.getDatabase(context).appDao()
         val prefs = context.dataStore.data.firstOrNull()
         val savedId = prefs?.get(SettingsKeys.CURRENT_SCHEDULE_ID)
+        val isTranslucent = prefs?.get(SettingsKeys.WIDGET_TRANSLUCENT) ?: false
 
         val scheduleGroups = appDao.getAllScheduleGroups().firstOrNull() ?: emptyList()
         val currentSchedule = scheduleGroups.find { it.id == savedId } ?: scheduleGroups.firstOrNull()
@@ -2818,21 +2970,23 @@ class CourseWidget : GlanceAppWidget() {
         }.sortedBy { it.displayStartNode }
 
         provideContent {
-            CourseWidgetContent(context, todayCourses, timeNodeMap)
+            CourseWidgetContent(context, todayCourses, timeNodeMap, isTranslucent)
         }
     }
 }
 
 @Suppress("RestrictedApi")
 @Composable
-fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>) {
+fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean) {
     val intent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 
     GlanceColumn(
         modifier = GlanceModifier.glanceFillMaxSize()
-            .glanceBackground(ColorProvider(Color(0xFF18181B)))
+            .appWidgetBackground()
+            .cornerRadius(16.dp)
+            .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
             .glancePadding(16.dp)
             .glanceClickable(actionStartActivity(intent))
     ) {
@@ -2841,15 +2995,6 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
             style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
         )
         GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
-
-        if (todayCourses.isEmpty()) {
-            GlanceColumn(modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 32.dp), horizontalAlignment = GlanceAlignment.CenterHorizontally) {
-                GlanceText(
-                    text = "✧*｡٩(ˊᗜˋ*)و✧*｡",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.25f)), fontSize = 32.sp, fontWeight = GlanceFontWeight.Bold)
-                )
-            }
-        }
 
         val showCourses = todayCourses.take(4)
 
@@ -2860,11 +3005,13 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
             val timeStr = "${startNode?.startTime ?: ""} - ${endNode?.endTime ?: ""}"
 
             val palette = getPalette(course.colorTheme, isDark = true)
+            val cardAlpha = if (isTranslucent) 0.7f else 1.0f
 
             GlanceColumn(
                 modifier = GlanceModifier
                     .glanceFillMaxWidth()
-                    .glanceBackground(ColorProvider(palette.bg))
+                    .cornerRadius(12.dp)
+                    .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
                     .glancePadding(12.dp)
                     .glanceClickable(actionStartActivity(intent))
             ) {
@@ -2879,6 +3026,23 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
             GlanceText(
                 text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
                 style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
+            )
+        }
+
+        // 补充底部的剩余空间并展示可爱的颜文字
+        if (todayCourses.isEmpty()) {
+            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            GlanceText(
+                text = "(๑•̀ㅂ•́)و✧\n今天没有课啦！",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 16.sp, textAlign = GlanceTextAlign.Center),
+                modifier = GlanceModifier.glanceFillMaxWidth()
+            )
+        } else if (todayCourses.size <= 4) {
+            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            GlanceText(
+                text = "(ฅ´ω`ฅ) 加油喵~",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
+                modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
             )
         }
     }
