@@ -1,6 +1,8 @@
 package com.example.simpleschedule // 请修改为你真实的包名
 
 import android.app.Application
+import androidx.work.*
+import java.util.concurrent.TimeUnit
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -36,6 +38,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -70,6 +73,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -375,7 +379,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 val targetId = if (savedId != null && groups.any { it.id == savedId }) savedId else groups.first().id
                 switchSchedule(targetId)
             }
-            scheduleNextAlarm() // 初始化计算一次闹钟
+            scheduleNextAlarm()
+            // 在每次启动应用时也确保注册下一次小组件更新的闹钟
+            ReminderEngine.scheduleNextWidgetUpdate(getApplication(), appDao)
         }
     }
 
@@ -461,6 +467,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun notifyWidgetUpdate() {
         viewModelScope.launch {
             CourseWidget().updateAll(getApplication())
+            ReminderEngine.scheduleNextWidgetUpdate(getApplication(), appDao)
         }
     }
 
@@ -782,6 +789,7 @@ fun getPalette(theme: String, isDark: Boolean): CoursePalette {
         "rose" -> if (isDark) CoursePalette(Color(0xFF331B22), Color(0xFF881337), Color(0xFFFECDD3), Color(0xFFE11D48)) else CoursePalette(Color(0xFFFFF1F2), Color(0xFFFECDD3), Color(0xFF9F1239), Color(0xFFE11D48))
         "purple" -> if (isDark) CoursePalette(Color(0xFF1C1228), Color(0xFF581C87), Color(0xFFD8B4FE), Color(0xFF9333EA)) else CoursePalette(Color(0xFFFAF5FF), Color(0xFFE9D5FF), Color(0xFF581C87), Color(0xFF9333EA))
         "slate" -> if (isDark) CoursePalette(Color(0xFF0F1218), Color(0xFF334155), Color(0xFFCBD5E1), Color(0xFF64748B)) else CoursePalette(Color(0xFFF8FAFC), Color(0xFFE2E8F0), Color(0xFF334155), Color(0xFF64748B))
+        // 保留原有的颜色以兼容已有数据
         "green" -> if (isDark) CoursePalette(Color(0xFF121C17), Color(0xFF166534), Color(0xFF86EFAC), Color(0xFF16A34A)) else CoursePalette(Color(0xFFF0FDF4), Color(0xFFBBF7D0), Color(0xFF166534), Color(0xFF16A34A))
         "orange" -> if (isDark) CoursePalette(Color(0xFF241711), Color(0xFF9A3412), Color(0xFFFDBA74), Color(0xFFEA580C)) else CoursePalette(Color(0xFFFFF7ED), Color(0xFFFED7AA), Color(0xFF9A3412), Color(0xFFEA580C))
         "red" -> if (isDark) CoursePalette(Color(0xFF261414), Color(0xFF991B1B), Color(0xFFFCA5A5), Color(0xFFDC2626)) else CoursePalette(Color(0xFFFEF2F2), Color(0xFFFECACA), Color(0xFF991B1B), Color(0xFFDC2626))
@@ -805,11 +813,25 @@ class MainActivity : ComponentActivity() {
             ) { }
 
             LaunchedEffect(Unit) {
+                // 1. 请求通知权限
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
+                // 2. 主动检查精确闹钟权限，如果没有则弹出强警告（防断连关键）
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                    Toast.makeText(context, "注意：请前往设置允许应用的「精确闹钟」权限，否则桌面卡片将无法准时刷新喵！", Toast.LENGTH_LONG).show()
+                }
+
+                // 3. 注册 WorkManager 的兜底循环任务（每30分钟执行一次，防止被荣耀杀后台后彻底失联）
+                val fallbackRequest = PeriodicWorkRequestBuilder<WidgetUpdateWorker>(30, TimeUnit.MINUTES).build()
+                WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                    "WidgetFallback",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    fallbackRequest
+                )
             }
 
             val isSystemDark = isSystemInDarkTheme()
@@ -849,6 +871,7 @@ class MainActivity : ComponentActivity() {
             Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
                 DotMatrixBackground(isDark = isDark)
 
+                // 替换原有的 Box 为 AnimatedContent 实现全局路由动画
                 AnimatedContent(
                     targetState = currentRoute,
                     transitionSpec = {
@@ -1329,9 +1352,12 @@ fun TimetableGrid(
         if (startDate.isNotEmpty()) {
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             calendar.time = sdf.parse(startDate) ?: Date()
+
+            // 先重置回这一周的周一
             while (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
                 calendar.add(Calendar.DAY_OF_YEAR, -1)
             }
+            // 加上正确的偏离周次（基于天数加减防止夏令时周越界错误喵）
             calendar.add(Calendar.DAY_OF_YEAR, (displayedWeek - 1) * 7)
 
             currentMonth = calendar.get(Calendar.MONTH) + 1
@@ -1408,6 +1434,12 @@ fun TimetableGrid(
                         val baseOffsetY = cellHeightDp.dp * (displayCourse.displayStartNode - 1)
                         val cardHeight = cellHeightDp.dp * (displayCourse.displayEndNode - displayCourse.displayStartNode + 1)
 
+                        // 课程卡片入场动画 (弹性缩放+透明度)
+                        var isVisible by remember { mutableStateOf(false) }
+                        LaunchedEffect(displayCourse.course.id) { isVisible = true }
+                        val alphaAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0f, animationSpec = tween(400), label = "alpha")
+                        val scaleAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0.8f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "scale")
+
                         Box(
                             modifier = Modifier
                                 .offset {
@@ -1418,6 +1450,11 @@ fun TimetableGrid(
                                     }
                                 }
                                 .size(width = colWidthDp, height = cardHeight)
+                                .graphicsLayer {
+                                    alpha = alphaAnim
+                                    scaleX = scaleAnim
+                                    scaleY = scaleAnim
+                                }
                                 .padding(2.5.dp)
                                 .let { if (isDragging) it.shadow(12.dp, RoundedCornerShape(cornerRadiusDp.dp)) else it }
                                 .pointerInput(course.id) {
@@ -1473,6 +1510,7 @@ fun TimetableGrid(
                                         val badgeText = if (isOddOnly) "[非本周(单)]" else if (isEvenOnly) "[非本周(双)]" else "[非本周]"
                                         Text(badgeText, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
                                     }
+                                    // 课程名获取剩余的弹性空间（但不会强制占满把 Row 挤掉）
                                     Text(
                                         text = course.name,
                                         fontSize = 11.sp,
@@ -1482,6 +1520,7 @@ fun TimetableGrid(
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
+                                    // 限制高度最大为卡片的高度的 50%，如果内容很长最多显示4行，不会再因为 55dp 绝对判断导致消失了喵
                                     Row(
                                         verticalAlignment = Alignment.Top,
                                         modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).heightIn(max = cardHeight * 0.5f)
@@ -2238,7 +2277,7 @@ fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: Strin
                 items(timetables) { tGroup ->
                     var showMenu by remember { mutableStateOf(false) }
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).clickable { onSelect(tGroup.id) }.padding(20.dp),
+                        modifier = Modifier.fillMaxWidth().animateContentSize().padding(bottom = 12.dp).background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).clickable { onSelect(tGroup.id) }.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(tGroup.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -2335,7 +2374,7 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (isSameDuration) {
-                    Row(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Row(modifier = Modifier.fillMaxWidth().animateContentSize().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("一节课时长 (分钟)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                         OutlinedTextField(
                             value = classDuration,
@@ -2357,7 +2396,7 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
                 Text("具体时间节点", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp))
             }
             itemsIndexed(nodes) { index, node ->
-                Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.fillMaxWidth().animateContentSize().padding(bottom = 12.dp).background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("第 ${node.nodeIndex} 节", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.width(60.dp))
                     Spacer(modifier = Modifier.weight(1f))
                     Text(node.startTime, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.clickable {
@@ -2428,7 +2467,7 @@ fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, onBack: () ->
             items(courses) { course ->
                 val palette = getPalette(course.colorTheme, isDark)
                 Box(
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).clip(RoundedCornerShape(8.dp)).background(palette.bg).border(0.5.dp, palette.border, RoundedCornerShape(8.dp)).pointerInput(Unit) {
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).animateContentSize().clip(RoundedCornerShape(8.dp)).background(palette.bg).border(0.5.dp, palette.border, RoundedCornerShape(8.dp)).pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = { onDeleteCourse(course.id) },
                             onDrag = { _, _ -> }, onDragEnd = {}, onDragCancel = {}
@@ -2823,7 +2862,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v1.1.0", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v1.2.0", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
@@ -2888,7 +2927,6 @@ object ReminderEngine {
         for (dayOffset in 0..3) {
             val evalCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, dayOffset) }
             val evalDayOfWeek = if (evalCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else evalCal.get(Calendar.DAY_OF_WEEK) - 1
-            // TODO: 如果跨周需要根据 dayOffset 动态计算，这里暂用本周周次简化判断
 
             val validCourses = rawCourses.mapNotNull { course ->
                 val over = overrideMap[course.id]
@@ -2898,7 +2936,7 @@ object ReminderEngine {
                 if (effectiveDay != evalDayOfWeek) return@mapNotNull null
 
                 val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                if (!weeksList.contains(currentWeek)) return@mapNotNull null // 简化版未处理单双周
+                if (!weeksList.contains(currentWeek)) return@mapNotNull null
 
                 val startNodeInfo = timeNodeMap[effectiveStart] ?: return@mapNotNull null
                 val endNodeInfo = timeNodeMap[effectiveEnd] ?: return@mapNotNull null
@@ -2957,16 +2995,97 @@ object ReminderEngine {
             alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classStartMillis, cancelPending)
         } catch (e: SecurityException) { e.printStackTrace() }
     }
+
+    // 精确计算并注册下一次桌面小组件刷新（下课时或午夜）
+    suspend fun scheduleNextWidgetUpdate(context: Context, appDao: AppDao) {
+        val prefs = context.dataStore.data.firstOrNull() ?: return
+        val savedId = prefs[SettingsKeys.CURRENT_SCHEDULE_ID] ?: return
+        val groups = appDao.getAllScheduleGroups().firstOrNull() ?: return
+        val currentSchedule = groups.find { it.id == savedId } ?: return
+
+        val cal = Calendar.getInstance()
+        val todayDayOfWeek = if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else cal.get(Calendar.DAY_OF_WEEK) - 1
+
+        var currentWeek = 1
+        if (currentSchedule.startDate.isNotEmpty()) {
+            try {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
+                while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
+                val currentCalForWeek = Calendar.getInstance()
+                while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
+                val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
+                currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
+                if (currentWeek < 1) currentWeek = 1
+            } catch (e: Exception) {}
+        }
+
+        val rawCourses = appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList()
+        val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
+        val overrideMap = overrides.associateBy { it.courseId }
+        val timeNodes = appDao.getTimeNodes(currentSchedule.timetableId)
+        val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+
+        val todayCoursesEndMillis = rawCourses.mapNotNull { course ->
+            val over = overrideMap[course.id]
+            val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
+            if (effectiveDay != todayDayOfWeek) return@mapNotNull null
+
+            val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+            if (!weeksList.contains(currentWeek)) return@mapNotNull null
+
+            val effectiveEnd = over?.newEndNode ?: course.endNode
+            val endNodeInfo = timeNodeMap[effectiveEnd] ?: return@mapNotNull null
+
+            val timeParts = endNodeInfo.endTime.split(":")
+            if (timeParts.size != 2) return@mapNotNull null
+
+            val endCal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, timeParts[0].toInt())
+                set(Calendar.MINUTE, timeParts[1].toInt())
+                set(Calendar.SECOND, 2) // 下课后2秒准时刷新小组件
+                set(Calendar.MILLISECOND, 0)
+            }
+            val millis = endCal.timeInMillis
+            if (millis > System.currentTimeMillis()) millis else null
+        }
+
+        var nextUpdateMillis = todayCoursesEndMillis.minOrNull()
+
+        // 如果今天没课了或者课都上完了，设置到第二天凌晨 00:00:01 更新
+        if (nextUpdateMillis == null) {
+            val midnightCal = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 1)
+            }
+            nextUpdateMillis = midnightCal.timeInMillis
+        }
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_UPDATE_WIDGET" }
+        val pendingIntent = PendingIntent.getBroadcast(context, 1003, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, nextUpdateMillis!!, pendingIntent)
+        } catch (e: Exception) {}
+    }
 }
 
 class CourseAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED, "ACTION_UPDATE_WIDGET" -> {
+                // 开机或者闹钟触发时，利用 WorkManager 执行高优先级的一次性更新任务，彻底解决协程中途被杀的问题
+                val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                WorkManager.getInstance(context).enqueue(workRequest)
+            }
             "ACTION_SHOW_REMINDER" -> {
                 val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
                 val showNotify = intent.getBooleanExtra("SHOW_NOTIFY", true)
 
-                // 如果需要播报语音或创建复杂通知，唤起我们的 ShortService
                 val serviceIntent = Intent(context, CourseForegroundService::class.java).apply {
                     putExtra("COURSE_NAME", intent.getStringExtra("COURSE_NAME"))
                     putExtra("LOCATION", intent.getStringExtra("LOCATION"))
@@ -2982,16 +3101,12 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 }
             }
             "ACTION_DISMISS_REMINDER" -> {
-                // 上课铃响，或者用户点击了免打扰，取消持久化通知
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
 
-                // 重新调度下一次课
-                val pendingResult = goAsync()
-                kotlinx.coroutines.GlobalScope.launch {
-                    ReminderEngine.calculateAndScheduleNext(context, AppDatabase.getDatabase(context).appDao())
-                    pendingResult.finish()
-                }
+                // 下课时同样交由守护 Worker 重新计算下一节课
+                val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                WorkManager.getInstance(context).enqueue(workRequest)
             }
         }
     }
@@ -3002,12 +3117,15 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
     private val CHANNEL_ID = "CourseAlarmChannel"
     private var pendingSpeakText: String? = null
     private var playVoice = true
+    private var showNotify = true
+    private var isTtsReady = false
 
     override fun onCreate() {
         super.onCreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
         }
+        tts = TextToSpeech(this, this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -3015,22 +3133,19 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
         val location = intent?.getStringExtra("LOCATION") ?: "未知地点"
         val timeStr = intent?.getStringExtra("TIME_STR") ?: "00:00"
         val classStartMillis = intent?.getLongExtra("CLASS_START_MILLIS", 0L) ?: 0L
-        val showNotify = intent?.getBooleanExtra("SHOW_NOTIFY", true) ?: true
+        showNotify = intent?.getBooleanExtra("SHOW_NOTIFY", true) ?: true
         playVoice = intent?.getBooleanExtra("PLAY_VOICE", true) ?: true
 
-        // 构造极简风自定义布局 RemoteViews
         val remoteViews = RemoteViews(packageName, R.layout.notification_course)
         remoteViews.setTextViewText(R.id.tv_time, timeStr)
         remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
         remoteViews.setTextViewText(R.id.tv_course_name, courseName)
 
-        // 绑定倒计时
         if (classStartMillis > 0) {
             remoteViews.setChronometer(R.id.chronometer, classStartMillis, "%s 后上课", true)
             remoteViews.setChronometerCountDown(R.id.chronometer, true)
         }
 
-        // 免打扰/取消按钮
         val cancelIntent = Intent(this, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
         val cancelPending = PendingIntent.getBroadcast(this, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
@@ -3041,17 +3156,15 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
             .setCustomContentView(remoteViews)
             .setCustomBigContentView(remoteViews)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setOngoing(true) // 持续显示直到上课
+            .setOngoing(true)
             .build()
 
-        // 启动前台服务。对于 Android 14 我们使用 shortService
         if (Build.VERSION.SDK_INT >= 34) {
             startForeground(1001, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
         } else {
             startForeground(1001, notification)
         }
 
-        // 如果用户关闭了通知，我们立刻将其转为普通 Service 并在播完语音后消灭
         if (!showNotify) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -3062,13 +3175,17 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
         }
 
         if (playVoice) {
-            val textToSpeak = "您接下来在 $location 有一节 $courseName 课。请准备。"
-            if (tts == null) {
-                tts = TextToSpeech(this, this)
-                pendingSpeakText = textToSpeak
-            } else {
+            val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
+            if (isTtsReady && tts != null) {
                 tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
-                finishServiceSafely(showNotify)
+                waitAndFinish(showNotify)
+            } else {
+                pendingSpeakText = textToSpeak
+                // 防止 TTS 引擎一直不就绪导致服务挂起
+                kotlinx.coroutines.GlobalScope.launch {
+                    kotlinx.coroutines.delay(6000)
+                    if (pendingSpeakText != null) finishServiceSafely(showNotify)
+                }
             }
         } else {
             finishServiceSafely(showNotify)
@@ -3079,25 +3196,35 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS && playVoice) {
-            tts?.language = Locale.CHINESE
-            pendingSpeakText?.let {
-                tts?.speak(it, TextToSpeech.QUEUE_FLUSH, null, null)
-                pendingSpeakText = null
-
-                // 给 TTS 一定时间播报完毕，再安全退出 Service (卡片不会消失)
-                kotlinx.coroutines.GlobalScope.launch {
-                    kotlinx.coroutines.delay(6000)
-                    finishServiceSafely(true)
+            val result = tts?.setLanguage(Locale.CHINESE)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                isTtsReady = false
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    Toast.makeText(applicationContext, "语音播报失败：系统缺少中文TTS引擎或语音包，请前往系统设置下载", Toast.LENGTH_LONG).show()
+                }
+                finishServiceSafely(showNotify)
+            } else {
+                isTtsReady = true
+                pendingSpeakText?.let {
+                    tts?.speak(it, TextToSpeech.QUEUE_FLUSH, null, null)
+                    pendingSpeakText = null
+                    waitAndFinish(showNotify)
                 }
             }
         } else {
-            finishServiceSafely(true)
+            finishServiceSafely(showNotify)
+        }
+    }
+
+    private fun waitAndFinish(keepNotification: Boolean) {
+        kotlinx.coroutines.GlobalScope.launch {
+            kotlinx.coroutines.delay(6000) // 等待语音说完再解绑服务
+            finishServiceSafely(keepNotification)
         }
     }
 
     private fun finishServiceSafely(keepNotification: Boolean) {
         if (keepNotification) {
-            // 安全退出服务，但通过 DETACH 保留通知栏卡片，直到被主动 Cancel
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 stopForeground(STOP_FOREGROUND_DETACH)
             }
@@ -3171,7 +3298,7 @@ class CourseWidget : GlanceAppWidget() {
             if (!weeksList.contains(currentWeek)) return@mapNotNull null
 
             val endNodeInfo = timeNodeMap[effectiveEnd]
-            if (endNodeInfo != null && endNodeInfo.endTime < currentTimeStr) {
+            if (endNodeInfo != null && endNodeInfo.endTime <= currentTimeStr) {
                 return@mapNotNull null
             }
 
@@ -3252,6 +3379,25 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
                 style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
                 modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
             )
+        }
+    }
+}
+
+// --- 9. 后台守护任务 (WorkManager) ---
+
+class WidgetUpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
+    override suspend fun doWork(): Result {
+        return try {
+            val appDao = AppDatabase.getDatabase(applicationContext).appDao()
+            // 1. 强制刷新小组件 UI
+            CourseWidget().updateAll(applicationContext)
+            // 2. 重新注册下一个精确闹钟
+            ReminderEngine.scheduleNextWidgetUpdate(applicationContext, appDao)
+            // 3. 重新检查和注册课前提醒
+            ReminderEngine.calculateAndScheduleNext(applicationContext, appDao)
+            Result.success()
+        } catch (e: Exception) {
+            Result.retry()
         }
     }
 }

@@ -57,7 +57,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
     // Room 数据库
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")
