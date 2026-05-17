@@ -2836,17 +2836,17 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
 
         Row(modifier = Modifier.fillMaxWidth().background(surfaceColor).border(0.5.dp, borderColor).padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.size(56.dp).background(textColor), contentAlignment = Alignment.Center) {
-                Text("G", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (isDark) BgDark else BgLight)
+                Text("S", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = if (isDark) BgDark else BgLight)
             }
             Spacer(modifier = Modifier.width(20.dp))
             Column {
-                Text("Gemi User", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
-                Text("ID: 849201", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
+                Text("Made By 视界Seekai", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
+                Text("BiliBili:174109373", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
-        Text("APPEARANCE", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f), letterSpacing = 1.sp)
+        Text("亮暗模式(APPEARANCE)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f), letterSpacing = 1.sp)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2862,14 +2862,14 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v1.2.0", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本(Version)", value = "v1.4.0.516", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
                     showBottomBorder = false,
                     textColor = textColor,
                     borderColor = borderColor,
-                    onClick = { uriHandler.openUri("https://github.com/yourname/SimpleSchedule") }
+                    onClick = { uriHandler.openUri("https://github.com/OooBrickooO/SimpleScheduleApp") }
                 )
             }
         }
