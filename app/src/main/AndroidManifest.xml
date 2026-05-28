@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 允许设置精确闹钟的权限 -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- 接收开机广播的权限，用于重新注册后台闹钟和小组件午夜更新 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:usesCleartextTraffic="true"
@@ -19,8 +20,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SimpleSchedule">
 
-        <service android:name=".CourseForegroundService" android:foregroundServiceType="shortService" />
-        <receiver android:name=".CourseAlarmReceiver" />
+        <receiver android:name=".CourseAlarmReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="ACTION_UPDATE_WIDGET" />
+                <action android:name="ACTION_SHOW_REMINDER" />
+                <action android:name="ACTION_DISMISS_REMINDER" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".CourseWidgetReceiver"

@@ -1,22 +1,18 @@
 package com.example.simpleschedule // 请修改为你真实的包名
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.app.TimePickerDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
-import android.os.PowerManager
-import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -1079,7 +1075,7 @@ fun BottomNavBar(isDark: Boolean, currentTab: Int, onTabSelected: (Int) -> Unit)
             .fillMaxWidth()
             .background(if (isDark) BgDark.copy(alpha = 0.9f) else BgLight.copy(alpha = 0.9f))
             .border(0.5.dp, borderColor)
-            .navigationBarsPadding() // 处理底部的虚拟按键避让
+            .navigationBarsPadding()
             .padding(vertical = 12.dp, horizontal = 32.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
@@ -1291,6 +1287,7 @@ fun TimetableScreen(
     }
 }
 
+@SuppressLint("MissingPermission")
 @Composable
 fun TimetableGrid(
     viewModel: ScheduleViewModel,
@@ -1321,42 +1318,48 @@ fun TimetableGrid(
     val hideTime by viewModel.hideTime.collectAsState()
     val vibration by viewModel.vibration.collectAsState()
 
-    val allDays = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
-    val visualColMap = mutableMapOf<Int, Int>()
-    var colIdx = 0
-    for (day in 1..7) {
-        if ((day == 6 && !showSat) || (day == 7 && !showSun)) continue
-        visualColMap[day] = colIdx++
+    val allDays = remember { listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN") }
+
+    val visualColMap = remember(showSat, showSun) {
+        mutableMapOf<Int, Int>().apply {
+            var colIdx = 0
+            for (day in 1..7) {
+                if ((day == 6 && !showSat) || (day == 7 && !showSun)) continue
+                put(day, colIdx++)
+            }
+        }
     }
-    val daysCount = colIdx.coerceAtLeast(1)
+    val daysCount = remember(visualColMap) { visualColMap.size.coerceAtLeast(1) }
 
     val timeColWidthDp = 45.dp
     val maxRow = timeNodes.size.coerceAtLeast(1)
     val scrollState = rememberScrollState()
 
-    val calendar = Calendar.getInstance()
-    var currentMonth = 1
-    val dateList = mutableListOf<Int>()
-    try {
-        if (startDate.isNotEmpty()) {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            calendar.time = sdf.parse(startDate) ?: Date()
-
-            while (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
-                calendar.add(Calendar.DAY_OF_YEAR, -1)
+    val (dateList, currentMonth) = remember(startDate, displayedWeek) {
+        val dates = mutableListOf<Int>()
+        var monthVal = 1
+        val calendar = Calendar.getInstance()
+        try {
+            if (startDate.isNotEmpty()) {
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                calendar.time = sdf.parse(startDate) ?: Date()
+                while (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+                    calendar.add(Calendar.DAY_OF_YEAR, -1)
+                }
+                calendar.add(Calendar.DAY_OF_YEAR, (displayedWeek - 1) * 7)
+                monthVal = calendar.get(Calendar.MONTH) + 1
+                for (i in 0..6) {
+                    dates.add(calendar.get(Calendar.DAY_OF_MONTH))
+                    calendar.add(Calendar.DAY_OF_YEAR, 1)
+                }
+            } else {
+                repeat(7) { dates.add(1) }
             }
-            calendar.add(Calendar.DAY_OF_YEAR, (displayedWeek - 1) * 7)
-
-            currentMonth = calendar.get(Calendar.MONTH) + 1
-            for (i in 0..6) {
-                dateList.add(calendar.get(Calendar.DAY_OF_MONTH))
-                calendar.add(Calendar.DAY_OF_YEAR, 1)
-            }
-        } else {
-            for (i in 0..6) { dateList.add(1) }
+        } catch (e: Exception) {
+            dates.clear()
+            repeat(7) { dates.add(1) }
         }
-    } catch (e: Exception) {
-        for (i in 0..6) { dateList.add(1) }
+        Pair(dates, monthVal)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -1448,7 +1451,7 @@ fun TimetableGrid(
                                         onDragStart = {
                                             isDragging = true
                                             if (vibration && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+                                                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                                             }
                                         },
                                         onDrag = { change, dragAmount ->
@@ -1771,7 +1774,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             }
 
                             SettingCheckboxItem(
-                                title = "显示通知栏卡片",
+                                title = "显示漂亮的通知栏卡片",
                                 checked = reminderNotifyEnabled,
                                 onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, it) },
                                 textColor = textColor,
@@ -2823,13 +2826,13 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
             }
             Spacer(modifier = Modifier.width(20.dp))
             Column {
-                Text("Made By 视界Seekai", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
-                Text("BiliBili:174109373", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
+                Text("Made By 视界Seekai ", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
+                Text("QQ:1057282231", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
             }
         }
 
         Spacer(modifier = Modifier.height(48.dp))
-        Text("亮暗模式切换(APPEARANCE)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f), letterSpacing = 1.sp)
+        Text("亮暗模式切换(默认跟随系统)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f), letterSpacing = 1.sp)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2845,7 +2848,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "1.5.0.520", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v1.6.0.528", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
@@ -2951,6 +2954,7 @@ object ReminderEngine {
         }
     }
 
+    @SuppressLint("MissingPermission")
     fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, showNotify: Boolean, playVoice: Boolean) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
 
@@ -2971,11 +2975,8 @@ object ReminderEngine {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
-            // 使用 AlarmClock 彻底穿透大部分国产系统的后台杀戮，确保准时唤醒！
             val alarmClockInfo = android.app.AlarmManager.AlarmClockInfo(triggerMillis, showPending)
             alarmManager.setAlarmClock(alarmClockInfo, showPending)
-
-            // 下课自动取消就不用 AlarmClock 啦，避免频繁显示闹钟图标
             alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classStartMillis, cancelPending)
         } catch (e: SecurityException) { e.printStackTrace() }
     }
@@ -3057,6 +3058,9 @@ object ReminderEngine {
 }
 
 class CourseAlarmReceiver : BroadcastReceiver() {
+    private var tts: TextToSpeech? = null
+
+    @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, "ACTION_UPDATE_WIDGET" -> {
@@ -3064,21 +3068,37 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 WorkManager.getInstance(context).enqueue(workRequest)
             }
             "ACTION_SHOW_REMINDER" -> {
-                val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
+                val courseName = intent.getStringExtra("COURSE_NAME") ?: "未知课程"
+                val location = intent.getStringExtra("LOCATION") ?: "未知地点"
+                val timeStr = intent.getStringExtra("TIME_STR") ?: "00:00"
+                val classStartMillis = intent.getLongExtra("CLASS_START_MILLIS", 0L)
                 val showNotify = intent.getBooleanExtra("SHOW_NOTIFY", true)
+                val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
 
-                val serviceIntent = Intent(context, CourseForegroundService::class.java).apply {
-                    putExtra("COURSE_NAME", intent.getStringExtra("COURSE_NAME"))
-                    putExtra("LOCATION", intent.getStringExtra("LOCATION"))
-                    putExtra("TIME_STR", intent.getStringExtra("TIME_STR"))
-                    putExtra("CLASS_START_MILLIS", intent.getLongExtra("CLASS_START_MILLIS", 0L))
-                    putExtra("SHOW_NOTIFY", showNotify)
-                    putExtra("PLAY_VOICE", playVoice)
+                if (showNotify) {
+                    showNotification(context, courseName, location, timeStr, classStartMillis)
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent)
-                } else {
-                    context.startService(serviceIntent)
+
+                if (playVoice) {
+                    val pendingResult = goAsync()
+                    val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
+                    tts = TextToSpeech(context) { status ->
+                        if (status == TextToSpeech.SUCCESS) {
+                            val result = tts?.setLanguage(Locale.CHINESE)
+                            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                                tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, "CourseTTS")
+                            } else {
+                                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                    Toast.makeText(context, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        }
+                        kotlinx.coroutines.GlobalScope.launch {
+                            kotlinx.coroutines.delay(6000)
+                            try { tts?.stop(); tts?.shutdown() } catch (e: Exception) {}
+                            pendingResult.finish()
+                        }
+                    }
                 }
             }
             "ACTION_DISMISS_REMINDER" -> {
@@ -3090,33 +3110,17 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
         }
     }
-}
 
-class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
-    private var tts: TextToSpeech? = null
-    private val CHANNEL_ID = "CourseAlarmChannel"
-    private var pendingSpeakText: String? = null
-    private var playVoice = true
-    private var showNotify = true
-    private var isTtsReady = false
+    @SuppressLint("MissingPermission")
+    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val CHANNEL_ID = "CourseAlarmChannel"
 
-    override fun onCreate() {
-        super.onCreate()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
+            notificationManager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
         }
-        tts = TextToSpeech(this, this)
-    }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val courseName = intent?.getStringExtra("COURSE_NAME") ?: "未知课程"
-        val location = intent?.getStringExtra("LOCATION") ?: "未知地点"
-        val timeStr = intent?.getStringExtra("TIME_STR") ?: "00:00"
-        val classStartMillis = intent?.getLongExtra("CLASS_START_MILLIS", 0L) ?: 0L
-        showNotify = intent?.getBooleanExtra("SHOW_NOTIFY", true) ?: true
-        playVoice = intent?.getBooleanExtra("PLAY_VOICE", true) ?: true
-
-        val remoteViews = RemoteViews(packageName, R.layout.notification_course)
+        val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
         remoteViews.setTextViewText(R.id.tv_time, timeStr)
         remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
         remoteViews.setTextViewText(R.id.tv_course_name, courseName)
@@ -3126,11 +3130,11 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
             remoteViews.setChronometerCountDown(R.id.chronometer, true)
         }
 
-        val cancelIntent = Intent(this, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
-        val cancelPending = PendingIntent.getBroadcast(this, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
+        val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(remoteViews)
@@ -3139,91 +3143,7 @@ class CourseForegroundService : Service(), TextToSpeech.OnInitListener {
             .setOngoing(true)
             .build()
 
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(1001, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
-        } else {
-            startForeground(1001, notification)
-        }
-
-        if (!showNotify) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-            } else {
-                @Suppress("DEPRECATION")
-                stopForeground(true)
-            }
-        }
-
-        if (playVoice) {
-            val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
-            if (isTtsReady && tts != null) {
-                tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, null)
-                waitAndFinish(showNotify)
-            } else {
-                pendingSpeakText = textToSpeak
-                kotlinx.coroutines.GlobalScope.launch {
-                    kotlinx.coroutines.delay(6000)
-                    if (pendingSpeakText != null) finishServiceSafely(showNotify)
-                }
-            }
-        } else {
-            finishServiceSafely(showNotify)
-        }
-
-        return START_NOT_STICKY
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS && playVoice) {
-            val result = tts?.setLanguage(Locale.CHINESE)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                isTtsReady = false
-                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    Toast.makeText(applicationContext, "语音播报失败：系统缺少中文TTS引擎或语音包，请前往系统设置下载", Toast.LENGTH_LONG).show()
-                }
-                finishServiceSafely(showNotify)
-            } else {
-                isTtsReady = true
-                pendingSpeakText?.let {
-                    tts?.speak(it, TextToSpeech.QUEUE_FLUSH, null, null)
-                    pendingSpeakText = null
-                    waitAndFinish(showNotify)
-                }
-            }
-        } else {
-            finishServiceSafely(showNotify)
-        }
-    }
-
-    private fun waitAndFinish(keepNotification: Boolean) {
-        kotlinx.coroutines.GlobalScope.launch {
-            kotlinx.coroutines.delay(6000)
-            finishServiceSafely(keepNotification)
-        }
-    }
-
-    private fun finishServiceSafely(keepNotification: Boolean) {
-        if (keepNotification) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_DETACH)
-            }
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-            } else {
-                @Suppress("DEPRECATION")
-                stopForeground(true)
-            }
-        }
-        stopSelf()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
-        super.onDestroy()
+        notificationManager.notify(1001, notification)
     }
 }
 
@@ -3277,7 +3197,6 @@ class CourseWidget : GlanceAppWidget() {
             if (!weeksList.contains(currentWeek)) return@mapNotNull null
 
             val endNodeInfo = timeNodeMap[effectiveEnd]
-            // 修补时间判定bug！改成 <= 让它一到下课这一分钟立刻抹去！
             if (endNodeInfo != null && endNodeInfo.endTime <= currentTimeStr) {
                 return@mapNotNull null
             }
@@ -3306,8 +3225,9 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
             .glancePadding(16.dp)
             .glanceClickable(actionStartActivity(intent))
     ) {
+        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
         GlanceText(
-            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 ${todayCourses.size} 门课要上",
+            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
             style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
         )
         GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
