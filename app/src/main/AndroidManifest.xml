@@ -23,6 +23,7 @@
         <receiver android:name=".CourseAlarmReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="ACTION_UPDATE_WIDGET" />
                 <action android:name="ACTION_SHOW_REMINDER" />
                 <action android:name="ACTION_DISMISS_REMINDER" />

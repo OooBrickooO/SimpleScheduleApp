@@ -1779,7 +1779,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             }
 
                             SettingCheckboxItem(
-                                title = "显示漂亮的通知栏卡片",
+                                title = "显示通知栏提醒",
                                 checked = reminderNotifyEnabled,
                                 onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, it) },
                                 textColor = textColor,
@@ -1789,7 +1789,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启语音播报",
+                                title = "开启语音播报（暂未实现，没音源）",
                                 checked = reminderVoiceEnabled,
                                 onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_VOICE_ENABLED, it) },
                                 textColor = textColor,
@@ -1806,7 +1806,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 } else {
                                     val triggerTime = System.currentTimeMillis() + 10000
                                     val classStartTime = triggerTime + reminderAdvanceMins * 60000
-                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】习近平新时代中国特色...", "环宇楼A504", "09:55-12:20", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled)
+                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled)
                                     Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
                                 }
                             })
@@ -3122,7 +3122,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v1.7.0.528", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v1.7.4.603", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
