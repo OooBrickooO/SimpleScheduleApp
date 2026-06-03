@@ -1,6 +1,8 @@
 package com.example.simpleschedule // 请修改为你真实的包名
 
 import android.annotation.SuppressLint
+import java.io.InputStream
+import jxl.Workbook
 import android.app.Application
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
@@ -381,6 +383,22 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         val existingGroups = appDao.getAllTimetableGroups().firstOrNull() ?: emptyList()
         val existingIds = existingGroups.map { it.id }
 
+        if (!existingIds.contains("tt_lzjtu")) {
+            appDao.insertTimetableGroup(TimetableGroup("tt_lzjtu", "兰州交通大学"))
+            appDao.insertTimeNodes(listOf(
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 1, startTime = "08:00", endTime = "08:50"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 2, startTime = "09:00", endTime = "09:50"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 3, startTime = "10:10", endTime = "11:00"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 4, startTime = "11:10", endTime = "12:00"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 5, startTime = "14:30", endTime = "15:20"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 6, startTime = "15:30", endTime = "16:20"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 7, startTime = "16:40", endTime = "17:30"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 8, startTime = "17:40", endTime = "18:30"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 9, startTime = "19:30", endTime = "20:20"),
+                TimeNode(timetableId = "tt_lzjtu", nodeIndex = 10, startTime = "20:30", endTime = "21:20")
+            ))
+        }
+
         if (!existingIds.contains("tt_cjlu")) {
             appDao.insertTimetableGroup(TimetableGroup("tt_cjlu", "中国计量大学"))
             appDao.insertTimeNodes(listOf(
@@ -449,11 +467,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
-        val defaultGroup = ScheduleGroup("default_id", "默认课表", "tt_cjlu", sdf.format(cal.time))
+        val defaultGroup = ScheduleGroup("default_id", "空白课表", "tt_cjlu", sdf.format(cal.time))
         appDao.insertScheduleGroup(defaultGroup)
         _currentScheduleId.value = defaultGroup.id
         _currentWeek.value = 9
-        insertMockData()
     }
 
     fun notifyWidgetUpdate() {
@@ -700,19 +717,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private suspend fun insertMockData() {
-        val mockCourses = listOf(
-            Course("1", "default_id", "高等数学A2", "翔宇楼206", "缪周倩", 1, 1, 2, "[8,9,10]", "blue"),
-            Course("2", "default_id", "大学物理A1", "环宇楼A201", "尚曼玉", 3, 1, 2, "[8,9]", "pink"),
-            Course("3", "default_id", "模拟电子线路", "环宇楼A505", "潘晨", 4, 1, 2, "[8,9,10]", "indigo"),
-            Course("4", "default_id", "概率论与数理统计", "环宇楼A301", "朱文静", 5, 1, 2, "[8,9,10]", "purple"),
-            Course("5", "default_id", "大学英语5", "环宇楼D505", "陆崔崔", 2, 3, 4, "[8,9]", "slate"),
-            Course("6", "default_id", "物理实验A", "未排地点", "张海岛", 5, 6, 8, "[10]", "rose"),
-            Course("7", "default_id", "习近平新时代中国特色社会主义思想概论", "环宇楼A504", "刘世吾", 1, 3, 5, "[8,9]", "rose"),
-            Course("8", "default_id", "超长课程测试", "测试楼101", "系统", 2, 6, 6, "[8]", "purple")
-        )
-        appDao.insertAllCourses(mockCourses)
-    }
+
 }
 
 // --- 辅助函数 ---
@@ -2028,6 +2033,25 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
     var loadUrl by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
+    val xlsPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    val jsonData = parseQingGuoXls(inputStream)
+                    if (jsonData != null && jsonData != "[]") {
+                        onImport(jsonData)
+                    } else {
+                        Toast.makeText(context, "未提取到课程，请检查XLS文件格式", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "读取或解析文件失败: ${e.message}", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+            }
+        }
+    }
+
     BackHandler { onBack() }
 
     Column(modifier = Modifier.fillMaxSize().imePadding()) {
@@ -2065,8 +2089,36 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
             OutlinedButton(onClick = { url = "http://syjw.zjhu.edu.cn/"; loadUrl = url }, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
                 Text("湖州师范", fontSize = 12.sp, color = textColor)
             }
+            OutlinedButton(onClick = { url = "https://jwgl.lzjtu.edu.cn/jsxsd/"; loadUrl = url }, modifier = Modifier.height(36.dp), contentPadding = PaddingValues(horizontal = 12.dp)) {
+                Text("兰州交大", fontSize = 12.sp, color = textColor)
+            }
         }
 
+        if (loadUrl.contains("lzjtu")) {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "由于该校教务系统环境限制，请在电脑端或浏览器自行导出课表为 .xls 文件，然后通过下方按钮导入。",
+                    color = textColor,
+                    fontSize = 15.sp,
+                    modifier = Modifier.padding(bottom = 24.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+                Button(
+                    onClick = { xlsPickerLauncher.launch("application/vnd.ms-excel") },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if (isDark) BgDark else BgLight)
+                ) {
+                    Text("选择 XLS 文件并导入", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        if (!loadUrl.contains("lzjtu")) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding()) {
             AndroidView(factory = { ctx ->
                 WebView(ctx).apply {
@@ -2094,7 +2146,112 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
         }
         Button(
             onClick = {
-                val jsCode = """
+                val jsCode = if (loadUrl.contains("lzjtu")) {
+                    """
+                    javascript:(function() {
+                        try {
+                            var courses = [];
+                            var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
+                            var nodes = document.querySelectorAll('.kbcontent, .kbcontent1');
+
+                            if (nodes.length === 0) {
+                                window.Android.passData("ERROR:未找到课程节点，请确保已进入课表页面！");
+                                return;
+                            }
+
+                            nodes.forEach(function(node) {
+                                var idStr = node.id;
+                                if (!idStr) return;
+                                var parts = idStr.split('-');
+                                if (parts.length < 3) return;
+
+                                var nameNode = node.querySelector('a');
+                                if (!nameNode) return;
+                                var name = nameNode.innerText.trim();
+                                if (!name) return;
+
+                                var teacherNode = node.querySelector('font[title="教师"]');
+                                var teacher = teacherNode ? teacherNode.innerText.trim() : '';
+
+                                var locationNode = node.querySelector('font[title="教室"]');
+                                var location = locationNode ? locationNode.innerText.trim() : '未排地点';
+
+                                var timeNode = node.querySelector('font[title="周次(节次)"]');
+                                if (!timeNode) return;
+                                var timeText = timeNode.innerText.trim();
+
+                                var weekStr = timeText.split('(周)')[0];
+                                var sectionStr = timeText.match(/\[(\d+)-(\d+)节\]/);
+                                var startNode = 1, endNode = 2;
+                                if (sectionStr) {
+                                    startNode = parseInt(sectionStr[1], 10);
+                                    endNode = parseInt(sectionStr[2], 10);
+                                } else {
+                                    var tr = node.closest('tr');
+                                    if(tr) {
+                                        var th = tr.querySelector('th');
+                                        if(th && th.innerText.match(/\((\d+),(\d+)小节\)/)) {
+                                            var m = th.innerText.match(/\((\d+),(\d+)小节\)/);
+                                            startNode = parseInt(m[1], 10);
+                                            endNode = parseInt(m[2], 10);
+                                        }
+                                    }
+                                }
+                                
+                                var dayOfWeek = parseInt(parts[1], 10);
+
+                                var weeksArr = [];
+                                var weekParts = weekStr.split(',');
+                                weekParts.forEach(function(p) {
+                                    var rangeMatch = p.match(/(\d+)-(\d+)/);
+                                    if (rangeMatch) {
+                                        for(var i = parseInt(rangeMatch[1], 10); i <= parseInt(rangeMatch[2], 10); i++) {
+                                            weeksArr.push(i);
+                                        }
+                                    } else {
+                                        var singleMatch = p.match(/(\d+)/);
+                                        if (singleMatch) {
+                                            weeksArr.push(parseInt(singleMatch[1], 10));
+                                        }
+                                    }
+                                });
+
+                                if (weeksArr.length === 0) return;
+
+                                var nameHash = 0;
+                                for(var i=0; i<name.length; i++) nameHash += name.charCodeAt(i);
+                                var colorTheme = colorList[nameHash % colorList.length];
+
+                                courses.push({
+                                    name: name,
+                                    location: location,
+                                    teacher: teacher,
+                                    dayOfWeek: dayOfWeek,
+                                    startNode: startNode,
+                                    endNode: endNode,
+                                    weeks: JSON.stringify(weeksArr),
+                                    colorTheme: colorTheme
+                                });
+                            });
+
+                            var uniqueCourses = [];
+                            var seen = new Set();
+                            courses.forEach(function(c) {
+                                var key = c.name + c.dayOfWeek + c.startNode + c.endNode + c.weeks;
+                                if(!seen.has(key)) {
+                                    seen.add(key);
+                                    uniqueCourses.push(c);
+                                }
+                            });
+
+                            window.Android.passData(JSON.stringify(uniqueCourses));
+                        } catch (e) {
+                            window.Android.passData("ERROR:提取异常:" + e.message);
+                        }
+                    })();
+                    """.trimIndent()
+                } else {
+                    """
                     javascript:(function() {
                         try {
                             var courses = [];
@@ -2215,15 +2372,132 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                             window.Android.passData("ERROR:提取异常:" + e.message);
                         }
                     })();
-                """.trimIndent()
+                    """.trimIndent()
+                }
                 webViewRef?.evaluateJavascript(jsCode, null)
             },
             modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp).navigationBarsPadding(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if(isDark) BgDark else BgLight)
         ) {
-            Text("提取当前正方教务课表", fontWeight = FontWeight.Bold)
+            Text(if (loadUrl.contains("lzjtu")) "提取强智教务课表" else "提取正方教务课表", fontWeight = FontWeight.Bold)
         }
+        }
+    }
+}
+
+fun parseQingGuoXls(inputStream: InputStream): String? {
+    try {
+        val workbook = Workbook.getWorkbook(inputStream)
+        val sheet = workbook.getSheet(0)
+        val courses = mutableListOf<Map<String, Any>>()
+        val colorList = listOf("blue", "pink", "purple", "slate", "indigo", "rose")
+
+        for (row in 0 until sheet.rows) {
+            val timeHeader = sheet.getCell(0, row).contents ?: ""
+            if (timeHeader.isBlank() && row > 0) continue
+
+            for (col in 1..7) {
+                if (col >= sheet.columns) break
+                val cellContent = sheet.getCell(col, row).contents ?: continue
+                if (cellContent.isBlank() || cellContent.length < 5) continue
+
+                val lines = cellContent.split("\n").map { it.trim() }.filter { it.isNotBlank() }
+                var i = 0
+                while (i < lines.size) {
+                    val name = lines[i]
+                    var teacher = ""
+                    var timeStr = ""
+                    var location = "未排地点"
+
+                    var timeIndex = -1
+                    for (j in i + 1 until lines.size) {
+                        if (lines[j].contains("周") && Regex("\\d").containsMatchIn(lines[j])) {
+                            timeIndex = j
+                            break
+                        }
+                    }
+
+                    if (timeIndex != -1) {
+                        timeStr = lines[timeIndex]
+                        if (timeIndex > i + 1) teacher = lines[timeIndex - 1]
+                        if (timeIndex + 1 < lines.size && !lines[timeIndex + 1].contains("周")) {
+                            location = lines[timeIndex + 1]
+                            i = timeIndex + 2
+                        } else {
+                            i = timeIndex + 1
+                        }
+
+                        var startNode = 1
+                        var endNode = 2
+                        val weeksArr = mutableListOf<Int>()
+
+                        val weekStr = timeStr.substringBefore("(周)").substringBefore("([")
+                        val parts = weekStr.split(",")
+                        for (p in parts) {
+                            val rangeMatch = Regex("(\\d+)-(\\d+)").find(p)
+                            if (rangeMatch != null) {
+                                val (s, e) = rangeMatch.destructured
+                                for (w in s.toInt()..e.toInt()) weeksArr.add(w)
+                            } else {
+                                val singleMatch = Regex("(\\d+)").find(p)
+                                if (singleMatch != null) {
+                                    weeksArr.add(singleMatch.groupValues[1].toInt())
+                                }
+                            }
+                        }
+
+                        val sectionMatch = Regex("\\[(\\d+)-(\\d+)").find(timeStr)
+                        if (sectionMatch != null) {
+                            val (s, e) = sectionMatch.destructured
+                            startNode = s.toInt()
+                            endNode = e.toInt()
+                        }
+
+                        if (weeksArr.isNotEmpty() && name.isNotBlank()) {
+                            var nameHash = 0
+                            for (char in name) nameHash += char.code
+                            val colorTheme = colorList[nameHash % colorList.size]
+
+                            courses.add(mapOf(
+                                "name" to name,
+                                "location" to location,
+                                "teacher" to teacher,
+                                "dayOfWeek" to col,
+                                "startNode" to startNode,
+                                "endNode" to endNode,
+                                "weeks" to weeksArr.toString(),
+                                "colorTheme" to colorTheme
+                            ))
+                        }
+                    } else {
+                        i++
+                    }
+                }
+            }
+        }
+        workbook.close()
+
+        val sb = java.lang.StringBuilder()
+        sb.append("[")
+        for ((index, c) in courses.withIndex()) {
+            sb.append("{")
+            sb.append("\"name\":\"${c["name"].toString().replace("\"", "\\\"")}\",")
+            sb.append("\"location\":\"${c["location"].toString().replace("\"", "\\\"")}\",")
+            sb.append("\"teacher\":\"${c["teacher"].toString().replace("\"", "\\\"")}\",")
+            sb.append("\"dayOfWeek\":${c["dayOfWeek"]},")
+            sb.append("\"startNode\":${c["startNode"]},")
+            sb.append("\"endNode\":${c["endNode"]},")
+            sb.append("\"weeks\":\"${c["weeks"]}\",")
+            sb.append("\"colorTheme\":\"${c["colorTheme"]}\"")
+            sb.append("}")
+            if (index < courses.size - 1) sb.append(",")
+        }
+        sb.append("]")
+        return sb.toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return null
     }
 }
 
@@ -2848,7 +3122,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v1.6.0.528", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v1.7.0.528", textColor = textColor, borderColor = borderColor)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",

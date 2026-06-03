@@ -1,0 +1,1221 @@
+@import url('../../iconfont/iconfont/iconfont.css');
+
+.person-bg-green{background-color: #67E0C8;}
+.person-bg-blue{background-color: #89B4FF;}
+.person-bg-pink{background-color: #FFB4B4;}
+.person-bg-yellow{background-color: #FFD095;}
+.person-bg-purple{background-color: #7469F8;}
+.person-bg-sky{background-color: #5FDEFF;}
+.person-bg-red{background-color: #FF4D4D;}
+.person-bg-rose{background-color: #E743FF;}
+.person-bg-cherry{background-color: #FF5493;}
+.person-bg-silver{background-color: #c0c0c0;}
+.person-bg-lightblue{background-color: #AFCBE0;}
+.person-bg-brown{background-color: #CFC0BD;}
+/********************************** 重叠样式 ****************************/
+.overlay-blue::after,
+.overlay-pink::after,
+.overlay-yellow::after,
+.overlay-green::after,
+.overlay-purple::after,
+.overlay-sky::after,
+.overlay-red::after,
+.overlay-rose::after,
+.overlay-silver::after,
+.overlay-lightblue::after,
+.overlay-brown::after,
+.overlay-cherry::after{
+    position: absolute;
+    height: 100%;
+    content: '';
+    border-radius: 89px;
+    z-index: 9;
+    right: 0;
+    cursor: pointer;
+}
+.overlay-blue::after{border-right: 3px solid #89B4FF;}
+.overlay-pink::after{border-right: 3px solid #FFB4B4;}
+.overlay-yellow::after{border-right: 3px solid #FFD095;}
+.overlay-green::after{border-right: 3px solid #FFD095;}
+.overlay-purple::after{border-right: 3px solid #7469F8;}
+.overlay-sky::after{border-right: 3px solid #5FDEFF;}
+.overlay-red::after{border-right: 3px solid #FF4D4D;}
+.overlay-rose::after{border-right: 3px solid #E743FF;}
+.overlay-cherry::after{border-right: 3px solid #FF5493;}
+.overlay-silver::after{
+    border-right: 3px solid #c0c0c0;
+}
+.overlay-lightblue::after{border-right: 3px solid #AFCBE0;}
+.overlay-brown::after{border-right: 3px solid #CFC0BD;}
+
+.personal-table .hint{left: -20px;}
+
+
+* {
+    margin: 0;
+    padding: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    height: 100%;
+    background-color: #f6f6f6;
+}
+
+body {
+    height: 100%;
+    width: 99%;
+}
+
+.person {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 快捷入口 */
+.person-top {
+    min-height: 4.63rem;
+    margin-bottom: 1rem;
+}
+
+.person-top ul {
+    display: flex;
+    min-height: 4.63rem;
+    justify-content: flex-start;
+    overflow: hidden;
+}
+
+.person-top ul li {
+    /* position: relative; */
+    min-width: 11.85rem;
+    background-size: 100% 100%;
+    list-style: none;
+    margin-right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.person-top ul li:nth-child(1),
+.person-top ul li:nth-child(2) {
+    display: none;
+    position: absolute;
+    top: 1.3rem;
+    left: 0.1rem;
+    min-width: 1.25rem;
+    height: 2rem;
+    background-color: rgb(0, 0, 0, 0.24);
+    box-shadow: 7px 0 13px 0 rgba(0, 0, 0, 0.22);
+    border-radius: 0 4px 4px 0;
+    z-index: 999;
+    background-image: none;
+    border: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.person-top ul li:nth-child(2) {
+    right: 0.7rem;
+    left: auto;
+    background-color: rgb(0, 0, 0, 0.24);
+    box-shadow: -3px 0 13px 0 rgba(0, 0, 0, 0.18);
+    border-radius: 4px 0 0 4px;
+}
+
+.person-top ul li:last-child {
+    background-image: none;
+    background: #e4e4e4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.person-top ul li span {
+    display: inline-flex;
+    align-items: center;
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 1rem;
+    color: #ffffff;
+    letter-spacing: 0;
+    cursor: pointer;
+}
+
+.person-top ul li span:first-child {
+    padding: 0.5rem;
+    border-radius: 8px;
+    margin-left: 0.5rem;
+}
+
+.icon {
+    color: red;
+    width: 1.5rem;
+    height: 1.5rem;
+    background-image: url("../../images/nav1.svg");
+    background-repeat: no-repeat;
+    background-size: 100%;
+}
+
+.person-top ul li:last-child span {
+    border: 1px solid #94a4ae;
+    height: 1.5rem;
+    display: inline-block;
+    position: relative;
+    left: 0;
+}
+
+.person-top ul li:last-child span::after {
+    content: "";
+    position: absolute;
+    border: 1px solid #94a4ae;
+    width: 1.5rem;
+    left: -0.8rem;
+    top: 0.7rem;
+}
+
+/* 内容布局 */
+.person-content {
+    display: flex;
+    flex: 1;
+}
+
+/* 课表 */
+.content-left {
+    background: #ffffff;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    width: 100%;
+    margin-right: 1rem;
+}
+
+.content-left .layui-tab {
+    margin: 0;
+}
+
+.content-left .layui-tab-title {
+    height: 2.94rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0.5rem;
+}
+
+.content-left .layui-tab-title ul {
+    display: inline-flex;
+    align-items: center;
+}
+
+.content-left .layui-tab-title li {
+    background: #ffffff;
+    border-radius: 4px 0 0 0;
+    height: 100%;
+    border-right: 1px solid #eeeeee;
+    font-family: SourceHanSansCN-Regular;
+    font-size: 1rem;
+    color: #272727;
+    letter-spacing: 0;
+    text-align: justify;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 2.9rem !important;
+    font-weight: bold;
+}
+
+.content-left .layui-tab-title .layui-this {
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 1rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    text-align: justify;
+    font-weight: bold;
+}
+
+.content-left .layui-tab-title .layui-this:after {
+    border: none;
+    border-bottom: 1px solid #fff;
+    top: 0;
+}
+
+.msg {
+    background: #f66060;
+    border-radius: 9.5px;
+    width: 1.69rem;
+    height: 1.13rem;
+    color: #fff;
+    font-family: Helvetica;
+    font-size: 0.75rem;
+    color: #ffffff;
+    letter-spacing: 0;
+    text-align: right;
+    line-height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.25rem;
+}
+
+.more {
+    background: rgb(59, 130, 255, 0.15);
+    border-radius: 13px;
+    width: 3.13rem;
+    height: 1.63rem;
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    text-align: right;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.search {
+    background: rgb(5, 130, 255, 0.15);
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    border-radius: 15px;
+    padding: 0 1rem;
+    margin-right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    height: 1.88rem;
+    position: relative;
+}
+
+.search img:last-child {
+    margin-left: 0.3rem;
+}
+
+.search img:first-child {
+    margin-right: 0.3rem;
+}
+
+.content-left .time-table {
+    width: 100%;
+    /* height: 54rem; */
+}
+
+.content-left .time-table table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e9eff4;
+}
+
+.content-left .time-table table th:first-child {
+    width: 5rem;
+    background: rgba(59, 130, 255, 0.2);
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 1rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    line-height: 16px;
+}
+
+.content-left .time-table table th,
+.content-left .time-table table tr:not(:last-child) td {
+    border-bottom: 1px solid #e9eff4;
+}
+
+.content-left .time-table table th:not(:last-child),
+.content-left .time-table table tr td:not(:last-child) {
+    border-right: 1px solid #e9eff4;
+}
+
+.content-left .time-table table th {
+    width: 10rem;
+    height: 4rem;
+    background: rgba(59, 130, 255, 0.06);
+    font-family: MicrosoftYaHei;
+    font-size: 1rem;
+    color: #94a4ae;
+    letter-spacing: 0;
+    line-height: 16px;
+}
+
+.content-left .time-table table th > span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.content-left .time-table table th > span span:first-child {
+    margin-bottom: 0.5rem;
+}
+
+.content-left .time-table table tr td {
+    height: 8.1rem;
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 0.875rem;
+    color: #879198;
+    letter-spacing: 0;
+    font-weight: bolder;
+    padding: 0.2rem;
+    position: relative;
+}
+
+.content-left .time-table table tr td:first-child {
+    width: 5rem;
+}
+
+.content-left .time-table table tr td span {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.onClick {
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 1rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+}
+
+.onClick > span:first-child {
+    font-weight: 900;
+}
+
+.content-left .time-table table tr td .box {
+    border-radius: 4px;
+    width: 100%;
+    height: 100%;
+    justify-content: flex-start;
+    align-items: start;
+    /*padding: 0.7rem 0.3rem 0.3rem 0.3rem;*/
+}
+
+.box p,
+.box > span {
+    font-family: MicrosoftYaHei;
+    font-size: 0.75rem;
+    color: #565656;
+    letter-spacing: 0;
+    font-weight: normal;
+    line-height: 15px;
+    margin-bottom: 0.3rem;
+}
+
+.box > span {
+    display: inline-block;
+    height: 2rem;
+    width: 100%;
+    text-overflow: -o-ellipsis-lastline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.box p:first-child {
+    font-family: MicrosoftYaHei;
+    font-size: 0.75rem;
+    color: #272727;
+    letter-spacing: 0;
+    margin-bottom: 0.5rem;
+    font-weight: bolder;
+}
+
+.item-box {
+    position: absolute;
+    display: none;
+    background: #ffffff;
+    box-shadow: -1px 7px 13px 0 rgba(0, 0, 0, 0.12);
+    width: 9rem;
+    z-index: 999;
+    flex-direction: column;
+    /*top: 0;*/
+    right: 18rem;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.item-box::after {
+    content: "";
+    position: absolute;
+    border-top: 1rem solid transparent;
+    border-bottom: 1rem solid transparent;
+    border-left: 1rem solid #fff;
+    right: -1rem;
+    top: 0.3rem;
+    transform:rotateX(180deg) ;
+}
+.item-box p {
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 16px;
+    color: #000;
+    letter-spacing: 0;
+    border-bottom: 1px solid #ededed;
+    margin-bottom: 0.5rem;
+}
+
+.item-box div {
+    padding-left: 0.2rem;
+    margin-bottom: 1rem;
+    height: 3.5rem;
+}
+
+.content-left .time-table table .item-box .tch-name {
+    margin-bottom: 1.2rem;
+    height: 2rem;
+}
+
+.content-left .time-table table .item-box .tch-name span:first-child {
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 14px;
+    color: #879198;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0;
+    font-weight: bolder !important;
+}
+
+.content-left .time-table table tr td .item-box div span {
+    font-family: MicrosoftYaHei;
+    font-size: 14px;
+    color: #879198;
+    letter-spacing: 0;
+    line-height: 14px;
+    font-weight: normal !important;
+}
+
+.content-left .time-table table tr td .item-box div span {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 0.6rem;
+    justify-content: flex-start;
+}
+
+.content-left .time-table table tr td .item-box div span img {
+    margin-right: 0.5rem;
+}
+
+/* 右内容布局 */
+.content-right {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 通知公告 */
+.box-top {
+    background: #ffffff;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    width: 40rem;
+    height: 15.5rem;
+    margin-bottom: 1rem;
+    overflow: auto;
+}
+
+.box-title {
+    height: 2.94rem;
+    border-bottom: 1px solid #eeeeee;
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    justify-content: space-between;
+}
+
+.box-title > span:first-child {
+    font-family: MicrosoftYaHei-Bold;
+    font-size: 1rem;
+    color: #272727;
+    letter-spacing: 0;
+    width: 10rem;
+    height: 1.31rem;
+    border-left: 3px solid #3b82ff;
+    display: flex;
+    padding-left: 0.5rem;
+    align-items: center;
+    font-weight: bold;
+    position: relative;
+}
+
+.box-content {
+    height: calc(100% - 3rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.box-content .noReadMsg {
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.box-content .noReadMsg li {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 3rem;
+    border-bottom: 1px dashed #e4e4f0;
+    width: 100%;
+}
+
+.box-content .noReadMsg li > span {
+    display: inline-flex;
+    align-items: center;
+}
+
+.box-content .noReadMsg li > span:first-child {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #5f727f;
+    letter-spacing: 0;
+    width: 21.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.box-content .noReadMsg li > span:last-child {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #979797;
+    letter-spacing: 0;
+    text-align: right;
+}
+
+/* 我的课程 */
+.box-center {
+    background: #ffffff;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    width: 40rem;
+    flex: 1;
+}
+
+.box-center .box-title {
+    border-bottom: none;
+}
+
+.box-center .box-title div {
+    display: flex;
+    align-items: center;
+}
+
+.box-center .search {
+    height: 1.63rem;
+    position: relative;
+}
+
+.box-center .box-content {
+    padding: 0 1rem;
+}
+
+.box-center .abtn {
+    font-family: MicrosoftYaHei;
+    font-size: 0.75rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    text-decoration: none;
+}
+
+.box-center .layui-table-view {
+    border: none;
+}
+
+.box-center .layui-table,
+.layui-table-view {
+    margin: 0 !important;
+}
+
+.box-center .layui-table-view .layui-table td div {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #5f727f;
+    letter-spacing: 0;
+}
+
+.layui-table-view .layui-table th {
+    padding: 0.4rem 0 !important;
+}
+
+.laytable-cell-1-0-1 {
+    width: 11rem !important;
+}
+
+.laytable-cell-1-0-2 {
+    width: 15rem !important;
+}
+
+.box-center .layui-table-view .layui-table th span {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #94a4ae;
+    letter-spacing: 0;
+}
+
+.box-center .layui-table[lay-even] tr:nth-child(even) td,
+.box-center .layui-table-view .layui-table th {
+    background: #f8f8f8;
+}
+
+.box-center .layui-table[lay-even] tr:nth-child(even) td:first-child,
+.box-center .layui-table[lay-even] tr:nth-child(even) td:last-child,
+.box-center .layui-table-view .layui-table th:first-child,
+.box-center .layui-table-view .layui-table th:last-child {
+    background: #f8f8f8;
+    border-radius: 5px;
+}
+
+.layui-table-cell {
+    height: 2rem !important;
+    line-height: 2rem !important;
+}
+
+/* 周历 */
+.box-bottom {
+    background: #ffffff;
+    box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    width: 40rem;
+    height: 22.5rem;
+    margin-bottom: 1rem;
+}
+
+.box-title ul {
+    display: flex;
+    align-items: center;
+}
+
+.box-title ul li {
+    margin-right: 0.5rem;
+}
+
+.box-title ul li:first-child {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #272727;
+    letter-spacing: 0;
+}
+
+.box-title ul li:not(:first-child) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: #f5f7fa;
+    border-radius: 4px;
+}
+
+.box-content .time-week {
+    height: 2.94rem;
+    border-bottom: 1px solid #eeeeee;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.box-content .time-week ul {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.box-content .time-week ul li {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #809aaa;
+    letter-spacing: 0;
+    line-height: 14px;
+    display: inline-flex;
+    width: 4rem;
+    justify-content: center;
+}
+
+.box-content .time-table {
+    height: calc(100% - 6rem);
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.box-content .time-table .table {
+    width: 100%;
+}
+
+.box-content .time-table .table table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse;
+}
+
+.box-content .time-table .table table tr td:first-child {
+    width: 12rem;
+    border-right: 1px solid #eeeeee;
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #879198;
+    letter-spacing: 0;
+    line-height: 14px;
+}
+
+.box-content .time-table .table table td {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #000;
+    letter-spacing: 0;
+    text-align: center;
+    line-height: 14px;
+    width: 4rem;
+    position: relative;
+
+}
+
+.box-content table td span {
+    display: inline-flex;
+    width: 100%;
+    height: 75%;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    line-height:1.9rem;
+}
+
+.span-text {
+    font-family: MicrosoftYaHei;
+    font-size: 0.875rem;
+    color: #5f727f;
+    letter-spacing: 0;
+    text-align: center;
+    line-height: 14px;
+}
+
+.box-content .time-color {
+    height: 4.94rem;
+    border-top: 1px solid #eeeeee;
+    width: 100%;
+}
+
+.box-content .time-color ul {
+    display: flex;
+    align-items: center;
+    height: 50%;
+    padding-left: 1rem;
+}
+
+.box-content .time-color ul li {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: MicrosoftYaHei;
+    font-size: 0.75rem;
+    color: #5f727f;
+    letter-spacing: 0;
+    line-height: 12px;
+    margin-right: 2rem;
+}
+
+.time-color ul li span {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 10px;
+    margin-right: 0.25rem;
+}
+
+/* 日历颜色样式 */
+/* 点 */
+.dot::after {
+    width: 0.3rem;
+    height: 0.3rem;
+    background-color: #3b82ff;
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    z-index: 999;
+    bottom: 0.1rem;
+    left: 1.9rem;
+}
+
+/* 圆 */
+.circle {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+    border-radius: 50%;
+    z-index: 999;
+}
+
+.circle1 {
+    width: 2.5rem !important;
+}
+
+.circle1::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    top: 0;
+    height: 1.75rem;
+    right: -1rem;
+}
+
+.circle1::before {
+    content: "";
+    position: absolute;
+    background-color: #ccf4ea;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0 0.875rem 0.875rem 0;
+    right: -0.3rem;
+    top: 0;
+    z-index: 9999;
+}
+
+.circle2::before {
+    content: "24";
+    position: absolute;
+    background-color: #e8e7ff;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    z-index: 999;
+}
+
+.circle2::after {
+    content: "";
+    position: absolute;
+    background-color: #ffd7d7;
+    width: 1.75rem;
+    height: 1.75rem;
+    top: 0;
+    border-radius: 50%;
+    right: -0.2rem;
+    z-index: 99;
+}
+
+/* 左边 */
+.circleL0::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1rem;
+    height: 1.75rem;
+    top: 0;
+    left: 0;
+}
+
+.circleL1::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    left: 0;
+}
+
+.circleL1::before {
+    content: "";
+    position: absolute;
+    background-color: #ccf4ea;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0.875rem 0 0 0.875rem;
+    left: 0.65rem;
+    top: 0;
+    z-index: 9999;
+}
+
+.circleL2::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    left: 0;
+}
+
+.circleL2::before {
+    content: "";
+    position: absolute;
+    background-color: #e8e7ff;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0.875rem 0 0 0.875rem;
+    left: 0.65rem;
+    top: 0;
+    z-index: 9999;
+}
+
+.circleL3::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    left: 0;
+}
+
+.circleL3::before {
+    content: "";
+    position: absolute;
+    background-color: #ffd7d7;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0.875rem 0 0 0.875rem;
+    left: 0.65rem;
+    top: 0;
+    z-index: 9999;
+}
+
+.circleL4::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    left: 0;
+    top: 0;
+}
+
+.circleL4::before {
+    content: "";
+    position: absolute;
+    background-color: #ffe2cc;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0.875rem 0 0 0.875rem;
+    left: 0.65rem;
+    top: 0;
+    z-index: 9999;
+}
+
+/* 右边 */
+.circleR0::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1rem;
+    height: 1.75rem;
+    top: 0;
+    right: 0;
+}
+
+.circleR1::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    right: 0;
+}
+
+.circleR1::before {
+    content: "";
+    position: absolute;
+    background-color: #ccf4ea;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0 0.875rem 0.875rem 0;
+    right: 0.65rem;
+    z-index: 9999;
+    top: 0;
+}
+
+.circleR2::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    right: 0;
+}
+
+.circleR2::before {
+    content: "";
+    position: absolute;
+    background-color: #e8e7ff;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0 0.875rem 0.875rem 0;
+    top: 0;
+    right: 0.65rem;
+    z-index: 9999;
+}
+
+.circleR3::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    right: 0;
+}
+
+.circleR3::before {
+    content: "";
+    position: absolute;
+    background-color: #ffd7d7;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0 0.875rem 0.875rem 0;
+    right: 0.65rem;
+    top: 0;
+    z-index: 9999;
+}
+
+.circleR4::after {
+    content: "";
+    position: absolute;
+    background-color: #fff;
+    width: 1.5rem;
+    height: 1.75rem;
+    top: 0;
+    right: 0;
+}
+
+.circleR4::before {
+    content: "";
+    position: absolute;
+    background-color: #ffe2cc;
+    width: 0.875rem;
+    height: 1.75rem;
+    border-radius: 0 0.875rem 0.875rem 0;
+    top: 0;
+    right: 0.65rem;
+    z-index: 9999;
+}
+
+@media only screen and (min-width: 800px) {
+    html {
+        font-size: 12px !important;
+    }
+
+    .box > span {
+        height: 1.25rem;
+        -webkit-line-clamp: 1;
+    }
+
+    .content-left .layui-tab-title .layui-this:after {
+        top: -0.5rem;
+    }
+}
+
+@media only screen and (min-width: 1440px) {
+    html {
+        font-size: 12px !important;
+    }
+
+    .content-left .layui-tab-title .layui-this:after {
+        top: 0rem;
+    }
+
+    .box > span {
+        height: 2rem;
+        -webkit-line-clamp: 2;
+    }
+}
+
+@media only screen and (min-width: 1920px) {
+    html {
+        font-size: 16px !important;
+    }
+}
+
+@media screen and(-ms-high-contrast: active),
+(-ms-high-contrast: none) and (min-width: 800px) {
+    .content-left .time-table table tr td:not(:first-child) > span {
+        width: 7rem;
+    }
+
+    .content-left .time-table table tr td:not(:first-child) {
+        min-width: 5rem;
+        max-width: 5rem;
+    }
+}
+
+@media screen and(-ms-high-contrast: active),
+(-ms-high-contrast: none) and (min-width: 1440px) {
+    .content-left .time-table table tr td:not(:first-child) > span {
+        width: 9.5rem;
+    }
+}
+
+.box-center .box-content table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.box-center .box-content table td,
+.box-center .box-content table th {
+    height: 2.7rem;
+    font-family: MicrosoftYaHei;
+    font-size: 0.75rem;
+    color: #5f727f;
+    letter-spacing: 0;
+}
+
+.box-center .box-content table td span,
+.box-center .box-content table th span {
+    justify-content: flex-start !important;
+    padding: 0 2rem;
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.box-center .box-content table tr:nth-child(even) td,
+.box-center .box-content table th {
+    background-color: #f8f8f8;
+}
+
+.box-center .box-content table tr a {
+    text-decoration: none;
+    font-family: MicrosoftYaHei;
+    font-size: 12px;
+    color: #3b82ff;
+    letter-spacing: 0;
+}
+
+.search span select {
+    width: 13rem;
+    /*清除select的边框样式*/
+    border: none;
+    /*清除select聚焦时候的边框颜色*/
+    outline: none;
+    /*隐藏select的下拉图标*/
+    appearance: none;
+    background-color: transparent;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    font-family: MicrosoftYaHei;
+    font-size: 1rem;
+    color: #3b82ff;
+    letter-spacing: 0;
+    position: absolute;
+    top: 14%;
+    left: 2%;
+    padding-left: 20%
+}
+
+.search span select option {
+    background-color: #fff;
+    color: #000;
+}

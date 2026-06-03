@@ -14,7 +14,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.6.0.528"
+        versionName = "1.7.0.601"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +58,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("net.sourceforge.jexcelapi:jxl:2.6.12")
     // Room 数据库
     val room_version = "2.6.1"
     implementation("androidx.room:room-runtime:$room_version")

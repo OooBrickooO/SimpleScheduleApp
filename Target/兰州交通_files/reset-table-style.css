@@ -1,0 +1,12 @@
+.table-content{padding: 12px 24px;position: relative;}
+.fixed-right-item{width: 200px;position: fixed;z-index: 999;top: 12px;right: 22px;box-shadow:0px 1px 4px 0px rgba(0,0,0,0.2);}
+.fixed-middle-item{/*overflow-x: scroll;*/min-height: calc(100vh - 105px);background-color: #fff;}
+.fixed-middle-item .layui-table{padding-right: 200px;margin-bottom: 12px !important;}
+.table-content .layui-table[lay-skin=row] td, .layui-table[lay-skin=row] th{min-width: 100px;}
+.table-content .layui-table, .layui-table-view{margin: 0;}
+.table-content .layui-form-pane .layui-form-checkbox{margin: 0 0 0 10px;}
+.table-content .layui-table-col-special>a{color: #3B82FF;cursor: pointer;}
+.layui-table>tbody>tr>td>a{color: #3B82FF;cursor: pointer;}
+.layui-table>tbody>tr>td{text-align: center;}
+.layui-table>tbody>tr>th{text-align: center;background: #F8F8F8;}
+.layui-table>thead>tr>th{text-align: center;background: #F8F8F8;}

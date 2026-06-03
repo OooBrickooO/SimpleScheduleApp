@@ -1,0 +1,83 @@
+div.edu-pagination {
+    text-align: center;
+    color: #757575;
+    font-size: 12px;
+}
+
+div.edu-pagination a {
+    text-decoration: none
+}
+
+div.edu-pagination span,div.edu-pagination a {
+    display: inline-block;
+    box-sizing: border-box
+}
+
+.edu-pagination .current {
+    color: #3B82FF;
+    width: 33px;
+	border: none;
+    height: 33px;
+    line-height: 33px;
+    border-top: 1px solid #E5E5E5;
+	border-bottom: 1px solid #E5E5E5;
+	text-align: center;
+	display: inline-block;
+	vertical-align: top;
+	outline: 0;
+}
+/* 分页button */
+.rt.edu-pagination.paginationDom .layui-icon{font-size: 12px;}
+.layui-icon.layui-icon-prev,.layui-icon.layui-icon-next{margin: 0 7px;}
+
+
+
+
+.pageNumber {
+    color: #666;
+    background: #fff;
+    width: 33px;
+    height: 33px;
+    line-height: 33px;
+    margin: 0 5px;
+    border-radius: 3px;
+}
+
+span.disabled{color: #C8C8C8;}
+.btnbox{color: #5F727F;}
+.nextbtn,.prebtn,span.disabled,.btnbox,.nextbtns,.prebtns {
+    background: #fff;
+    height: 33px;
+    line-height: 33px;
+    border-radius: 3px;
+}
+.btnbox,span.disabled{border: 1px solid #E5E5E5;padding: 0 5px;}
+.paginationInput {
+    width: 33px;
+    height: 33px;
+    text-align: center;
+    box-sizing: border-box;
+    border: 1px solid #e6e6e6;
+    margin: 0 12px;
+    border-radius: 3px;
+    color: #666
+}
+
+.confirmBtn {
+    width: 42px;
+    height: 33px;
+    line-height: 33px;
+    border: 1px solid #e6e6e6;
+    margin-left: 10px;
+    cursor: pointer;
+    border-radius: 3px;
+    background: #fff
+}
+
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button {
+    -webkit-appearance: none
+}
+
+input[type=number] {
+    -moz-appearance: textfield
+}

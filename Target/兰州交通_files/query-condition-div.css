@@ -1,0 +1,44 @@
+/**************** 紧凑型div查询样式模板 *********************/
+.search-form-content {
+	width: 100%;
+	padding: 12px 24px 0px 0px;
+	min-height: 32px;
+	float: left;
+
+}
+.search-line {
+	width:248px;
+	height: 32px;
+	/*line-height: 32px;*/
+	margin-left: 24px;
+	margin-bottom: 12px;
+	display: flex;
+	align-items: center;
+	float:left;
+}
+.search-line-label {
+	float:left;
+	width: 48px;
+	font-size: 12px;
+	height: 32px;
+	/*line-height: 32px;*/
+	text-align: right;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+.search-line-input {
+	width: 190px;
+	margin-left: 10px;
+	float:left;
+
+}
+.search-line-button {
+	width:248px;
+	height: 32px;
+	line-height: 32px;
+	margin-left: 22px;
+	margin-bottom: 16px;
+	float:right;
+	text-align: right;
+}

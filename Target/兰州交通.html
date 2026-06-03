@@ -1,0 +1,2475 @@
+<!DOCTYPE html>
+<!-- saved from url=(0061)https://jwgl.lzjtu.edu.cn/jsxsd/framework/xsMain_lzjtdx.htmlx -->
+<html lang="en" data-immersive-translate-page-theme="light"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>教学一体化服务平台</title>
+<link rel="stylesheet" href="./兰州交通_files/index.css"><script type="text/javascript" src="./兰州交通_files/artDialog.min.js.下载"></script><style type="text/css">.ui_title_icon,.ui_content,.ui_dialog_icon,.ui_btns span{display:inline-block;*zoom:1;*display:inline}.ui_dialog{visibility:hidden;text-align:left;position:absolute;top:0;left:-99999em;_overflow:hidden}.ui_dialog table{border:0;margin:0;border-collapse:collapse}.ui_dialog td{padding:0}.ui_title_icon{vertical-align:middle}.ui_title_text{overflow:hidden;cursor:default;-moz-user-select:none;user-select:none}.ui_close{display:block;position:absolute;outline:none}.ui_content_wrap{text-align:center}.ui_content{margin:10px;text-align:left}.ui_dialog_icon{vertical-align:middle}.ui_content.ui_iframe{margin:0;*padding:0;display:block;height:100%}.ui_iframe iframe{visibility:hidden;width:100%;height:100%;border:none;overflow:auto}.ui_bottom{position:relative}.ui_resize{position:absolute;right:0;bottom:0;z-index:1;cursor:nw-resize;_font-size:0}.ui_btns{text-align:right;white-space:nowrap}.ui_btns span{margin:5px 10px}.ui_btns button{cursor:pointer}.ui_overlay{visibility:hidden;position:absolute;top:0;left:0;width:100%;height:100%;filter:alpha(opacity=0);opacity:0;_overflow:hidden}.ui_overlay div{height:100%}* html .ui_ie6_select_mask{width:99999em;height:99999em;position:absolute;top:0;left:0;z-index:-1}.ui_move .ui_title_text{cursor:move}html>body .ui_dialog_wrap.ui_fixed .ui_dialog{position:fixed}* html .ui_dialog_wrap.ui_fixed .ui_dialog{fixed:true}* html.ui_ie6_fixed{background:url(*) fixed}* html.ui_ie6_fixed body{height:100%}* html .ui_dialog_wrap.ui_fixed{width:100%;height:100%;position:absolute;left:expression(documentElement.scrollLeft+documentElement.clientWidth-this.offsetWidth);top:expression(documentElement.scrollTop+documentElement.clientHeight-this.offsetHeight)}html.ui_page_lock>body{overflow:hidden}* html.ui_page_lock{overflow:hidden}* html.ui_page_lock select,* html.ui_page_lock .ui_ie6_select_mask{visibility:hidden}html.ui_page_lock>body .ui_dialog_wrap.ui_lock{width:100%;height:100%;position:fixed;top:0;left:0}* html body{margin:0}@media all and (-webkit-min-device-pixel-ratio:10000),not all and (-webkit-min-device-pixel-ratio:0){.ui_content_wrap,.r0d0,.r0d2,.r2d2,.r2d0{display:block}}</style><link rel="stylesheet" type="text/css" href="./兰州交通_files/chrome.css"><style>
+	.black_overlay{
+		display: none;
+		position: absolute;
+		top: 0%;
+		left: 0%;
+		width: 100%;
+		height: 100%;
+		background-color: black;
+		z-index:1001;
+		-moz-opacity: 0.8;
+		opacity:.80;
+		filter: alpha(opacity=88);
+	}
+	.white_content {
+		display: none;
+		position: absolute;
+		top: 25%;
+		left: 25%;
+		width: 55%;
+		height: 55%;
+		padding: 20px;
+		border: 10px solid white;
+		background-color: white;
+		z-index:1002;
+		overflow: auto;
+	}
+	.edu-navBar .breadcrumbs{
+		width: calc(100% - 450px);
+	}
+	.button ,.edu-btn{
+		width: auto;
+		display: inline-block;
+		vertical-align: middle;
+		padding: 0 20px;
+		height: 32px;
+		line-height: 32px;
+		text-align: center;
+		background: #fff;
+		border: 1px solid #3B82FF;
+		color: #3B82FF;
+		cursor: pointer;
+		font-size: 12px;
+		border-radius:2px;
+	}
+	.popup-link {
+		color: blue;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+</style><link id="layuicss-laydate" rel="stylesheet" href="./兰州交通_files/laydate.css" media="all"><link id="layuicss-layer" rel="stylesheet" href="./兰州交通_files/layer.css" media="all"><link id="layuicss-skincodecss" rel="stylesheet" href="./兰州交通_files/code.css" media="all"><style>
+		html * {
+		  -webkit-user-select: text !important;
+		  -khtml-user-select: text !important;
+		  -moz-user-select: text !important;
+		  -ms-user-select: text !important;
+		  user-select: text !important;
+		}</style><style>
+		html * {
+		  -webkit-user-select: text !important;
+		  -khtml-user-select: text !important;
+		  -moz-user-select: text !important;
+		  -ms-user-select: text !important;
+		  user-select: text !important;
+		}</style></head>
+
+
+
+
+
+<body>
+<div id="light" class="white_content">
+	<div align="center">
+		<p align="center" style="font-size: 22px;color: black"><b>重修收费内容提示</b></p>
+		<br><br><br><br>
+		<p align="center" style="font-size: 15px;color: black; word-wrap: break-word; width: 100%;" id="tipContainer"></p>
+		<br><br><br><br><br><br>
+		<p id="s" style="font-size: 16px;color: red;"></p>
+	</div>
+</div>
+<div id="fade" class="black_overlay"></div>
+
+<div class="index">
+	<div class="index-header">
+		<div class="index-header-left">
+			<h2>
+				<img src="./兰州交通_files/logo.png" alt="">
+			</h2>
+			<p>本科教务管理系统</p>
+		</div>
+		<div class="index-header-right">
+			<div class="searchMenu">
+				<iconpark-icon fill="currentColor" name="sousuo" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="M6.36 0a6.359 6.359 0 0 1 4.95 10.349l2.49 2.488a.68.68 0 0 1-.887 1.03l-.076-.066-2.491-2.49a6.337 6.337 0 0 1-3.985 1.402A6.359 6.359 0 0 1 0 6.357 6.359 6.359 0 0 1 6.36 0Zm0 1.362a4.996 4.996 0 0 0-4.997 4.995 4.996 4.996 0 0 0 8.235 3.805l.137-.12a.68.68 0 0 1 .302-.304 4.968 4.968 0 0 0 1.322-3.381A4.996 4.996 0 0 0 6.36 1.362Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#1869CA"></path></g></svg></template></iconpark-icon>
+				<input id="search" name="search" type="text" placeholder="请输入菜单名" onkeyup="display_Menu(this);" onafterpaste="display_Menu(this);" autocomplete="off">
+				<ul class="searchMenu-list" id="searchul">
+				</ul>
+			</div>
+			<div class="eduTime">
+				<iconpark-icon fill="currentColor" name="darili" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="nonzero" fill="currentColor" data-follow-fill="#FFF"><path d="M14.583 1.778H1.417A1.42 1.42 0 0 0 0 3.2v11.378A1.42 1.42 0 0 0 1.417 16h13.166A1.42 1.42 0 0 0 16 14.578V3.2a1.42 1.42 0 0 0-1.417-1.422Zm0 1.376c.025 0 .046.02.046.046v11.378c0 .025-.02.046-.046.046H1.417a.046.046 0 0 1-.046-.046V3.2c0-.025.02-.046.046-.046h13.166Z"></path><path d="M4.222 0c.368 0 .667.298.667.667v2.928a.667.667 0 1 1-1.333 0V.667c0-.369.298-.667.666-.667ZM11.778 0c.368 0 .666.298.666.667v2.928a.667.667 0 1 1-1.333 0V.667c0-.369.299-.667.667-.667ZM8.356 6.444a.667.667 0 0 1 0 1.334H4.444a.667.667 0 0 1 0-1.334h3.912ZM11.556 9.373a.667.667 0 0 1 0 1.333H4.444a.667.667 0 0 1 0-1.333h7.112Z"></path></g></g></svg></template></iconpark-icon>
+				<span>2025-2026-2 第14周</span>
+				<div class="eduTime-dialog">
+					<!------- 周历信息显示------>
+					<iframe id="zouliIframe" src="./兰州交通_files/saved_resource.html" style="width: 100%;height: 100%;" frameborder="0"></iframe>
+				</div>
+			</div>
+			    <span class="exit" onclick="javascript:if(confirm(&#39;您确定退出系统？&#39;)){LogoutGLD();Logout(&#39;/jsxsd&#39;);}">
+                    <iconpark-icon fill="currentColor" name="guanbi" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 20 20"><!--?lit$5705270223$--><g><g fill-rule="nonzero" fill="currentColor" data-follow-fill="#FFF"><path d="M13.311 3.336a.8.8 0 0 1 1.096-.281 8.798 8.798 0 0 1 2.198 1.84 9.046 9.046 0 0 1 2.195 5.93c0 4.953-3.936 8.975-8.8 8.975-4.864 0-8.8-4.022-8.8-8.975 0-2.213.789-4.303 2.195-5.93a8.917 8.917 0 0 1 2.198-1.84.8.8 0 1 1 .814 1.377A7.199 7.199 0 0 0 4.605 5.94 7.446 7.446 0 0 0 2.8 10.825c0 4.077 3.227 7.375 7.2 7.375 3.973 0 7.2-3.298 7.2-7.375 0-1.826-.65-3.546-1.805-4.885a7.317 7.317 0 0 0-1.802-1.508.8.8 0 0 1-.282-1.096Z"></path><path d="M10 1.2a.8.8 0 0 1 .8.8v8.718a.8.8 0 1 1-1.6 0V2a.8.8 0 0 1 .8-.8Z"></path></g></g></svg></template></iconpark-icon>
+                </span>
+			<div class="userInfo">
+                    <span class="userInfo-icon">
+                        <iconpark-icon fill="currentColor" name="touxiang" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 20 20"><!--?lit$5705270223$--><g><path d="M6.503 6.27C6.61 4.515 8.036 3.113 9.79 3.004a3.51 3.51 0 0 1 3.703 3.505 3.515 3.515 0 0 1-3.506 3.504c-2.017 0-3.618-1.708-3.485-3.745ZM17 16.41a.593.593 0 0 1-.172.418.58.58 0 0 1-.418.171H3.59a.582.582 0 0 1-.418-.171A.58.58 0 0 1 3 16.41v-1.754c0-2.32 4.668-3.504 6.991-3.504 2.325 0 6.992 1.161 6.992 3.504L17 16.411Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#039"></path></g></svg></template></iconpark-icon>
+                    </span>
+				<span>王燊祎</span>
+			</div>
+		</div>
+	</div>
+	<div class="index-tab">
+            <span class="tab-left">
+                <iconpark-icon fill="currentColor" name="yeqianzuo" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 12 11"><!--?lit$5705270223$--><g><path d="M5.64.654.747 5.749l4.891 5.095.722-.693-4.227-4.403 4.227-4.402-.722-.692Zm4.8 0L5.547 5.749l4.891 5.095.722-.693-4.227-4.403 4.227-4.402-.722-.692Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#777"></path></g></svg></template></iconpark-icon>
+            </span>
+		<span class="personCenter" data-src="/jsxsd/framework/xsdPerson.jsp">
+                
+                <span>个人中心</span>
+            </span>
+		<div class="tab-content">
+			<ul class="tab-content-move">
+
+			<li class="star" data-src="/jsxsd/xskb/xskb_list.do"><iconpark-icon name="gerenzhongxin" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="M7 0a7 7 0 1 1 0 14A7 7 0 0 1 7 0Zm0 2L5.53 4.977l-3.285.478 2.377 2.318-.56 3.272L7 9.5l2.939 1.545-.561-3.272 2.377-2.318-3.286-.478L7 2Z" fill="#2B67E1" fill-rule="evenodd" data-follow-fill="#2B67E1"></path></g></svg></template></iconpark-icon><span>学期课表</span><iconpark-icon fill="currentColor" class="close" name="guanbidangqian" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="m11.767 1.5.733.733L7.733 7l4.767 4.767-.733.733L7 7.733 2.233 12.5l-.733-.733L6.266 7 1.5 2.233l.733-.733L7 6.267 11.767 1.5Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon></li><li class="" data-src="/jsxsd/view/kbxx/kbcx/llsykb_frm.jsp"><span>各类课表查询</span><iconpark-icon fill="currentColor" class="close" name="guanbidangqian" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="m11.767 1.5.733.733L7.733 7l4.767 4.767-.733.733L7 7.733 2.233 12.5l-.733-.733L6.266 7 1.5 2.233l.733-.733L7 6.267 11.767 1.5Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon></li><li class="" data-src="/jsxsd/jskb/qxzkbQuery_10732.do"><span>全校总课表</span><iconpark-icon fill="currentColor" class="close" name="guanbidangqian" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="m11.767 1.5.733.733L7.733 7l4.767 4.767-.733.733L7 7.733 2.233 12.5l-.733-.733L6.266 7 1.5 2.233l.733-.733L7 6.267 11.767 1.5Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon></li></ul>
+		</div>
+		<span class="tab-right">
+                <iconpark-icon fill="currentColor" name="yeqianyou" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 12 11"><!--?lit$5705270223$--><g><path d="m6.36.654 4.892 5.095-4.891 5.095-.722-.693 4.227-4.403-4.227-4.402.722-.692Zm-4.8 0 4.892 5.095-4.891 5.095-.722-.693 4.227-4.403L.839 1.346l.722-.692Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#777"></path></g></svg></template></iconpark-icon>
+            </span>
+		<ul class="contextmenu">
+			<li class="closeLeft">
+				<iconpark-icon fill="currentColor" name="guanbizuo" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="M10.66 11.34 10 12 5 7l5-5 .66.66L6.322 7l4.338 4.34ZM3.5 2v10h-1V2h1Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon>
+				<span>关闭左侧</span>
+			</li>
+			<li class="closeRight">
+				<iconpark-icon fill="currentColor" name="guanbiyou" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="M3.34 11.34 4 12l5-5-5-5-.66.66L7.678 7 3.34 11.34ZM10.5 2v10h1V2h-1Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#FFF"></path></g></svg></template></iconpark-icon>
+				<span>关闭右侧</span>
+			</li>
+			<hr>
+			<li class="closeCurrent">
+				<iconpark-icon fill="currentColor" class="close" name="guanbidangqian" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="m11.767 1.5.733.733L7.733 7l4.767 4.767-.733.733L7 7.733 2.233 12.5l-.733-.733L6.266 7 1.5 2.233l.733-.733L7 6.267 11.767 1.5Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon>
+				<span>关闭当前</span>
+			</li>
+			<li class="closeOther">
+				<iconpark-icon fill="currentColor" name="guanbiqita" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 14 14"><!--?lit$5705270223$--><g><path d="M7 0a7 7 0 1 1 0 14A7 7 0 0 1 7 0Zm0 1a6 6 0 1 0 0 12A6 6 0 0 0 7 1Zm2.475 2.818.707.707L7.707 7l2.475 2.475-.707.707L7 7.707l-2.475 2.475-.707-.707L6.293 7 3.818 4.525l.707-.707L7 6.293l2.475-2.475Z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#666"></path></g></svg></template></iconpark-icon>
+				<span>关闭其他</span>
+			</li>
+			<li class="closeAll" data-src="/jsxsd/framework/xsdPerson.jsp">
+				<iconpark-icon fill="currentColor" name="guanbi" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 20 20"><!--?lit$5705270223$--><g><g fill-rule="nonzero" fill="currentColor" data-follow-fill="#FFF"><path d="M13.311 3.336a.8.8 0 0 1 1.096-.281 8.798 8.798 0 0 1 2.198 1.84 9.046 9.046 0 0 1 2.195 5.93c0 4.953-3.936 8.975-8.8 8.975-4.864 0-8.8-4.022-8.8-8.975 0-2.213.789-4.303 2.195-5.93a8.917 8.917 0 0 1 2.198-1.84.8.8 0 1 1 .814 1.377A7.199 7.199 0 0 0 4.605 5.94 7.446 7.446 0 0 0 2.8 10.825c0 4.077 3.227 7.375 7.2 7.375 3.973 0 7.2-3.298 7.2-7.375 0-1.826-.65-3.546-1.805-4.885a7.317 7.317 0 0 0-1.802-1.508.8.8 0 0 1-.282-1.096Z"></path><path d="M10 1.2a.8.8 0 0 1 .8.8v8.718a.8.8 0 1 1-1.6 0V2a.8.8 0 0 1 .8-.8Z"></path></g></g></svg></template>
+				</iconpark-icon>
+				<span>关闭所有</span>
+			</li>
+		</ul>
+	</div>
+	<div class="index-main">
+		<div class="index-main-nav">
+                <span class="cygn-log">
+                    <span>教务系统欢迎您！</span>
+					<!-- <hr> -->
+                </span>
+			<div class="index-nav">
+
+				<!----------- 一级菜单数据渲染 -------->
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav5" data-src="nav5" src="./兰州交通_files/nav5.png" alt="">
+						<span data-code="NEW_XSD_XXGG">消息公告</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_WDZM_GGLY" data-parent="NEW_XSD_XXGG">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_GGLY_YSGG" data-parent="NEW_XSD_WDZM_GGLY" data-src="/jsxsd/ggly/ysgg_query">
+									<div>公告通知</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_GGLY_XXTZ" data-parent="NEW_XSD_WDZM_GGLY" data-src="/jsxsd/ggly/xxtz_query">
+									<div>消息通知</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav6" data-src="nav6" src="./兰州交通_files/nav6.png" alt="">
+						<span data-code="NEW_XSD_GRXX">个人信息</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_WDZM_GRXX" data-parent="NEW_XSD_GRXX">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_GRXX_XGGRXX" data-parent="NEW_XSD_WDZM_GRXX" data-src="/jsxsd/grsz/grsz_xggrxx.do">
+									<div>修改个人信息</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_GRXX_GRXXCK" data-parent="NEW_XSD_WDZM_GRXX" data-src="/jsxsd/grsz/grxxck.do">
+									<div>个人信息</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav7" data-src="nav7" src="./兰州交通_files/nav7.png" alt="">
+						<span data-code="NEW_XSD_ZLXZ">资料下载</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_WDZM_WDGL" data-parent="NEW_XSD_ZLXZ">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_JXZL_JXZLCK" data-parent="NEW_XSD_WDZM_WDGL" data-src="/jsxsd/jxzl/jxzl_query">
+									<div>校历查询</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_WDGL_ZDWJ" data-parent="NEW_XSD_WDZM_WDGL" data-src="/jsxsd/wdgl/zdwj_list.do">
+									<div>制度文件</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_WDGL_SYZN" data-parent="NEW_XSD_WDZM_WDGL" data-src="/jsxsd/wdgl/syzn_list.do">
+									<div>使用指南</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_WDZM_WDGL_WDNRGL" data-parent="NEW_XSD_WDZM_WDGL" data-src="/jsxsd/wdgl/wdnr_list">
+									<div>表格下载</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav8" data-src="nav8" src="./兰州交通_files/nav8.png" alt="">
+						<span data-code="NEW_XSD_XJGL">学籍管理</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_XJCJ_XJGL" data-parent="NEW_XSD_XJGL">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_TQBYGL_SQ" data-parent="NEW_XSD_XJCJ_XJGL" data-src="/jsxsd/tsbygl/tqby_sq">
+									<div>提前毕业申请</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_XJGL_XJXXGL" data-parent="NEW_XSD_XJCJ_XJGL" data-src="/jsxsd/xsxj/xjxxgl.do">
+									<div>学籍信息核对</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_XJGL_XJYDXX" data-parent="NEW_XSD_XJCJ_XJGL" data-src="/jsxsd/xsxj/xsydxx.do">
+									<div>学籍异动信息</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_XJGL_FXFL" data-parent="NEW_XSD_XJCJ_XJGL" data-src="/jsxsd/xsxj/toQueryfxfl.do">
+									<div>方向分流</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav9" data-src="nav9" src="./兰州交通_files/nav9.png" alt="">
+						<span data-code="NEW_XSD_PYFA">培养方案</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_PYGL_PYFA" data-parent="NEW_XSD_PYFA">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_PYFAMX" data-parent="NEW_XSD_PYGL_PYFA" data-src="/jsxsd/pyfa/topyfamx">
+									<div>培养方案及完成情况</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_PYFA_ZXJH" data-parent="NEW_XSD_PYGL_PYFA" data-src="/jsxsd/pyfa/pyfa_query">
+									<div>学期执行计划</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_FXPYFAMX" data-parent="NEW_XSD_PYGL_PYFA" data-src="/jsxsd/pyfa/tofxpyfamx">
+									<div>辅修培养方案明细</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_PYFA_FXZXJH" data-parent="NEW_XSD_PYGL_PYFA" data-src="/jsxsd/pyfa/fxpyfa_query">
+									<div>辅修执行计划</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav10" data-src="nav10" src="./兰州交通_files/nav10.png" alt="">
+						<span data-code="NEW_XSD_JCGL">教材管理</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_PYGL_JCGL" data-parent="NEW_XSD_JCGL">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_NJCGL_JCZMXX" data-parent="NEW_XSD_PYGL_JCGL" data-src="/jsxsd/nxsjc/jczmxx">
+									<div>教材账目信息</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_NJCGL_XSJCQR" data-parent="NEW_XSD_PYGL_JCGL" data-src="/jsxsd/nxsjc/jccx">
+									<div>学生教材确认</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one choose">
+					<div>
+						<img data-isrc="inav11" data-src="nav11" src="./兰州交通_files/inav11.png" alt="">
+						<span data-code="NEW_XSD_WDKB">我的课表</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="display: block;">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_PYGL_WDKB" data-parent="NEW_XSD_WDKB">
+							<div>------------</div>
+							<ul style="">
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three choose" data-code="NEW_XSD_PYGL_WDKB_XQLLKB" data-parent="NEW_XSD_PYGL_WDKB" data-src="/jsxsd/xskb/xskb_list.do">
+									<div>学期课表</div>
+								<iconpark-icon name="wujiaoxing" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 15 14"><!--?lit$5705270223$--><g><path d="M7.01 11.982 3.328 13.94a.512.512 0 0 1-.696-.219.527.527 0 0 1-.052-.33l.703-4.148a.525.525 0 0 0-.148-.462L.155 5.844a.526.526 0 0 1-.009-.737.513.513 0 0 1 .295-.152L4.56 4.35a.516.516 0 0 0 .388-.286L6.787.291a.513.513 0 0 1 .925 0l1.841 3.773c.075.154.22.26.388.286l4.118.605a.52.52 0 0 1 .285.889L11.365 8.78a.525.525 0 0 0-.148.462l.703 4.147a.52.52 0 0 1-.42.602.51.51 0 0 1-.328-.052L7.49 11.982a.51.51 0 0 0-.48 0Z" fill="#467BE7" fill-rule="evenodd" data-follow-fill="#467BE7"></path></g></svg></template></iconpark-icon></li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_WDKB_GLKBCX" data-parent="NEW_XSD_PYGL_WDKB" data-src="/jsxsd/view/kbxx/kbcx/llsykb_frm.jsp">
+									<div>各类课表查询</div>
+								</li>
+							
+								<li class="nav-three expand" data-code="NEW_XSD_PYGL_WDKB_QXZKB" data-parent="NEW_XSD_PYGL_WDKB" data-src="/jsxsd/jskb/qxzkbQuery_10732.do">
+									<div>全校总课表</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav12" data-src="nav12" src="./兰州交通_files/nav12.png" alt="">
+						<span data-code="NEW_XSD_WDKS">我的考试</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_KSBM_WDKS" data-parent="NEW_XSD_WDKS">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_KSBM_WDKS_KSAPCX" data-parent="NEW_XSD_KSBM_WDKS" data-src="/jsxsd/xsks/xsksap_query">
+									<div>考试安排查询</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav13" data-src="nav13" src="./兰州交通_files/nav13.png" alt="">
+						<span data-code="NEW_XSD_XKGL">选课管理</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_PYGL_XKGL" data-parent="NEW_XSD_XKGL">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_XKGL_NXSXKZX" data-parent="NEW_XSD_PYGL_XKGL" data-src="/jsxsd/xsxk/xklc_list">
+									<div>学生选课</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_XKGL_JSJYSQ" data-parent="NEW_XSD_PYGL_XKGL" data-src="/jsxsd/kbxx/jsjy_query">
+									<div>教室查询</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_KSBM_CJGL_CXBMXK" data-parent="NEW_XSD_PYGL_XKGL" data-src="/jsxsd/kscj/cxbmxk_query">
+									<div>重修报名选课</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_XJGL_YDXKCL" data-parent="NEW_XSD_PYGL_XKGL" data-src="/jsxsd/view/xsxj/ydxk_main_10732.jsp">
+									<div>异动选课处理</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_XKGL_XSXKJGCX" data-parent="NEW_XSD_PYGL_XKGL" data-src="/jsxsd/xkgl/xsxkjgcx">
+									<div>选课结果查询</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav14" data-src="nav14" src="./兰州交通_files/nav14.png" alt="">
+						<span data-code="NEW_XSD_WDCJ">我的成绩</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_XJCJ_WDCJ" data-parent="NEW_XSD_WDCJ">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_WDCJ_KCCJCX" data-parent="NEW_XSD_XJCJ_WDCJ" data-src="/jsxsd/kscj/cjcx_frm">
+									<div>成绩查询</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_WDCJ_DJKSCJ" data-parent="NEW_XSD_XJCJ_WDCJ" data-src="/jsxsd/kscj/djkscj_list">
+									<div>等级考试成绩</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_XJCJ_WDCJ_CJRD" data-parent="NEW_XSD_XJCJ_WDCJ" data-src="/jsxsd/kscj/cjrd_list">
+									<div>成绩认定</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav15" data-src="nav15" src="./兰州交通_files/nav15.png" alt="">
+						<span data-code="NEW_XSD_WDSQ">我的申请</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_KSBM_WDSQ" data-parent="NEW_XSD_WDSQ">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_KSBM_WDSQ_HKSQ" data-parent="NEW_XSD_KSBM_WDSQ" data-src="/jsxsd/kscj/hksq_query">
+									<div>缓考申请</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_KSBM_CJGL_SKCJSQ" data-parent="NEW_XSD_KSBM_WDSQ" data-src="/jsxsd/kscj/skcjsq_list">
+									<div>社考成绩申请</div>
+								</li>
+							
+								<li class="nav-three" data-code="NEW_XSD_KSBM_WDSQ_TYKMXSQ" data-parent="NEW_XSD_KSBM_WDSQ" data-src="/jsxsd/kscj/mxsqgszyy_query_10732">
+									<div>免修申请</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav16" data-src="nav16" src="./兰州交通_files/nav16.png" alt="">
+						<span data-code="NEW_XSD_FXBM">辅修报名</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_PYGL_FXGL" data-parent="NEW_XSD_FXBM">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_PYGL_FXGL_FXBM" data-parent="NEW_XSD_PYGL_FXGL" data-src="/jsxsd/fxgl/fxbmxx_query">
+									<div>辅修报名</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav17" data-src="nav17" src="./兰州交通_files/nav17.png" alt="">
+						<span data-code="NEW_XSD_SJHJ">实践环节</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+					</ul>
+				</div>
+				
+				<div class="nav-one">
+					<div>
+						<img data-isrc="inav18" data-src="nav18" src="./兰州交通_files/nav18.png" alt="">
+						<span data-code="NEW_XSD_JXPJ">教学评价</span>
+						<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+					</div>
+					<ul class="menu-two" style="">
+					<!----------- 二级菜单数据渲染 -------->
+					
+						<li class="nav-two" data-code="NEW_XSD_JXPJ_JXPJ" data-parent="NEW_XSD_JXPJ">
+							<div>------------</div>
+							<ul>
+							<!----------- 三级菜单数据渲染 -------->
+							
+								<li class="nav-three" data-code="NEW_XSD_JXPJ_JXPJ_XSPJ" data-parent="NEW_XSD_JXPJ_JXPJ" data-src="/jsxsd/xspj/xspj_find.do">
+									<div>学生评价</div>
+								</li>
+							
+							</ul>
+						</li>
+					
+					</ul>
+				</div>
+				
+				
+					<div class="nav-one">
+						<div>
+							<img data-isrc="inav13" data-src="nav13" src="./兰州交通_files/nav13.png" alt="">
+							<span onclick="tozlptxzd()">毕业设计</span>
+							<iconpark-icon fill="currentColor" name="xiala" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 9 5"><!--?lit$5705270223$--><g><path d="M8.27 0 9 .699 4.5 5 0 .699.73 0 4.5 3.603z" fill-rule="nonzero" fill="currentColor" data-follow-fill="#888"></path></g></svg></template></iconpark-icon>
+						</div>
+					</div>
+				
+			</div>
+		</div>
+		<div class="index-mian-content">
+			<div class="cygn-content" style="display: none;">
+				<ul class="cygn-content-move xsPerson">
+
+					<!-----------  学生设置常用功能快捷栏权限菜单数据加载  ------->
+					
+
+				</ul>
+				<div class="cygn-add">
+					<iconpark-icon name="zengjia" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 24 24"><!--?lit$5705270223$--><g><g fill-rule="nonzero" fill="#94A4AE" data-follow-fill="#94A4AE"><path d="M12.015 0c.545 0 .986.457.985 1.02l-.028 21.963c0 .562-.443 1.018-.987 1.017-.545 0-.986-.457-.985-1.02l.028-21.963c0-.562.443-1.018.987-1.017Z"></path><path d="M22.981 11A1.01 1.01 0 0 1 24 12c0 .552-.456 1-1.019 1H1.02A1.01 1.01 0 0 1 0 12c0-.552.456-1 1.019-1H22.98Z"></path></g></g></svg></template></iconpark-icon>
+				</div>
+				<div class="cygn-add-dialog" style="">
+					<div class="dialog-header">
+						<h4>已选功能</h4>
+						<ul>
+
+							<!-----  学生已选常用功能权限菜单展示  --->
+							
+
+						</ul>
+					</div>
+					<div class="dialog-header dialog-content">
+						<h4>其他功能</h4>
+						<ul>
+
+							<!-----  学生可选常用功能权限菜单展示  --->
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx0" value="NEW_XSD_JXPJ_JXPJ_XSPJ">
+										学生评价
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx1" value="NEW_XSD_KSBM_CJGL_CXBMXK">
+										重修报名选课
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx2" value="NEW_XSD_KSBM_CJGL_SKCJSQ">
+										社考成绩申请
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx3" value="NEW_XSD_KSBM_WDKS_KSAPCX">
+										考试安排查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx4" value="NEW_XSD_KSBM_WDSQ_HKSQ">
+										缓考申请
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx5" value="NEW_XSD_KSBM_WDSQ_TYKMXSQ">
+										免修申请
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx6" value="NEW_XSD_PYGL_FXGL_FXBM">
+										辅修报名
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx7" value="NEW_XSD_PYGL_FXPYFAMX">
+										辅修培养方案明细
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx8" value="NEW_XSD_PYGL_NJCGL_JCZMXX">
+										教材账目信息
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx9" value="NEW_XSD_PYGL_NJCGL_XSJCQR">
+										学生教材确认
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx10" value="NEW_XSD_PYGL_PYFAMX">
+										培养方案及完成情况
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx11" value="NEW_XSD_PYGL_PYFA_FXZXJH">
+										辅修执行计划
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx12" value="NEW_XSD_PYGL_PYFA_ZXJH">
+										学期执行计划
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx13" value="NEW_XSD_PYGL_WDKB_GLKBCX">
+										各类课表查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx14" value="NEW_XSD_PYGL_WDKB_QXZKB">
+										全校总课表
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx15" value="NEW_XSD_PYGL_WDKB_XQLLKB">
+										学期课表
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx16" value="NEW_XSD_PYGL_XKGL_JSJYSQ">
+										教室查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx17" value="NEW_XSD_PYGL_XKGL_NXSXKZX">
+										学生选课
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx18" value="NEW_XSD_PYGL_XKGL_XSXKJGCX">
+										选课结果查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx19" value="NEW_XSD_WDZM_GGLY_XXTZ">
+										消息通知
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx20" value="NEW_XSD_WDZM_GGLY_YSGG">
+										公告通知
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx21" value="NEW_XSD_WDZM_GRXX_GRXXCK">
+										个人信息
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx22" value="NEW_XSD_WDZM_GRXX_XGGRXX">
+										修改个人信息
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx23" value="NEW_XSD_WDZM_JXZL_JXZLCK">
+										校历查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx24" value="NEW_XSD_WDZM_WDGL_SYZN">
+										使用指南
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx25" value="NEW_XSD_WDZM_WDGL_WDNRGL">
+										表格下载
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx26" value="NEW_XSD_WDZM_WDGL_ZDWJ">
+										制度文件
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx27" value="NEW_XSD_XJCJ_WDCJ_CJRD">
+										成绩认定
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx28" value="NEW_XSD_XJCJ_WDCJ_DJKSCJ">
+										等级考试成绩
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx29" value="NEW_XSD_XJCJ_WDCJ_KCCJCX">
+										成绩查询
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx30" value="NEW_XSD_XJCJ_XJGL_FXFL">
+										方向分流
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx31" value="NEW_XSD_XJCJ_XJGL_XJXXGL">
+										学籍信息核对
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx32" value="NEW_XSD_XJCJ_XJGL_XJYDXX">
+										学籍异动信息
+								</li>
+							
+								<li>
+									<iconpark-icon name="weixuanzhong" icon-id="" size="1em"><template shadowrootmode="open"><!----><svg preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="" viewBox="0 0 16 16"><!--?lit$5705270223$--><g><g fill-rule="evenodd" fill="none"><rect rx="8" height="16" width="16" fill="#FFF"></rect><path fill-rule="nonzero" fill="#C0C4CC" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"></path></g></g></svg></template></iconpark-icon>
+									<input onclick="change()" type="checkbox" name="kxcdqx" id="kxcdqx33" value="NEW_XSD_XJCJ_XJGL_YDXKCL">
+										异动选课处理
+								</li>
+							
+
+						</ul>
+					</div>
+					<!-----  该参数(fucecode_sid)是区分判断 是替换操作还是增加操作 -------->
+					<input type="hidden" id="fucecode_sid" name="fucecode_sid">
+					<div class="dialog-bottom">
+						<span onclick="Yxqxcd_save();">确认增加</span>
+					</div>
+				</div>
+			</div>
+			<div class="index-content">
+				<iframe id="mainIframe" src="./兰州交通_files/xskb_list.html" frameborder="0"></iframe>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!------  退出登录使用  ------>
+<form action="https://jwgl.lzjtu.edu.cn/Logon.do?method=logonFromJsxsd" method="post" id="loginForm1" name="loginForm1">
+	<input type="hidden" id="view" name="view">
+	<input type="hidden" id="useraccount" name="useraccount">
+	<input type="hidden" id="ticket" name="ticket">
+</form>
+
+
+
+<script src="./兰州交通_files/jquery2.1.4.min.js.下载"></script><div><template shadowrootmode="closed"><container-element class="minimize" style="left: 10px; top: 10px; font: 14px Menlo, Monaco, Consolas, &quot;Courier New&quot;, monospace;"><style>/** 默认字体 */
+/** 输入框默认边距 */
+ul,
+ol {
+	line-height: 26px;
+	padding-left: 22px;
+	margin: 0px;
+}
+a {
+	color: #1890ff;
+}
+hr {
+	border-style: solid;
+	border-color: #63636346;
+	border-width: 0px;
+	border-bottom: 1px solid #63636346;
+	margin-block-start: 1em;
+	margin-block-end: 1em;
+}
+.base-style-active-form-control {
+	border: 1px solid #ffffff00;
+}
+.base-style-active-form-control:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.base-style-active-form-control:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.base-style-active-form-control:hover {
+	background-color: #ebeef4;
+}
+.base-style-input {
+	outline: none;
+	border: 1px solid #ffffff00;
+	padding: 2px 8px;
+	margin: 0px;
+	background-color: #eef2f7;
+	border-radius: 2px;
+	color: black;
+}
+.base-style-input::placeholder {
+	color: #bababa;
+}
+.base-style-switch {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	width: fit-content;
+	min-width: 36px;
+	height: 20px;
+	border-radius: 100px;
+	display: flex;
+	align-items: center;
+	padding: 2px 4px;
+	transition: all 0.2s ease-in-out;
+	width: auto;
+	background: gainsboro;
+}
+.base-style-switch:checked {
+	background: #1890ff;
+}
+.base-style-switch:disabled {
+	background-color: #f7f7f78b;
+}
+.base-style-switch:checked::before {
+	transform: translate(100%, 0px);
+}
+.base-style-switch::before {
+	background-color: #fff;
+	border-radius: 9px;
+	box-shadow: 0 2px 4px #00230b33;
+	width: 14px;
+	height: 14px;
+	content: '';
+}
+.base-style-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: white;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+}
+.base-style-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button + .base-style-button {
+	margin-left: 12px;
+}
+.base-style-button:hover {
+	background-color: #7abbff24;
+}
+.base-style-button.danger:hover {
+	background-color: #ffdede86;
+}
+.base-style-button:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+.base-style-button.danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+.base-style-button:disabled:active {
+	box-shadow: none;
+}
+.base-style-button-secondary {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	color: gray;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+}
+.base-style-button-secondary:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button-secondary + .base-style-button-secondary {
+	margin-left: 12px;
+}
+.base-style-button-secondary:hover {
+	background-color: #7abbff24;
+}
+.base-style-button-secondary.danger:hover {
+	background-color: #ffdede86;
+}
+.base-style-button-secondary:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+.base-style-button-secondary.danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+.base-style-button-secondary:disabled:active {
+	box-shadow: none;
+}
+container-element.hidden {
+	display: none;
+}
+container-element.minimize {
+	min-width: unset;
+}
+container-element {
+	position: fixed;
+	top: 10%;
+	left: 10%;
+	z-index: 99999;
+	text-align: left;
+	min-width: 300px;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #636363;
+	box-shadow: 0 0 24px -12px #3f3f3f;
+	border-radius: 8px;
+	letter-spacing: 0.5px;
+	border: 1px solid #c1c1c1;
+}
+header-element {
+	display: flex;
+	align-items: center;
+	background-color: white;
+	border-radius: 8px 8px 0px 0px;
+	user-select: none;
+	padding: 4px;
+	padding-bottom: 0px;
+}
+header-element .extra-menu-bar {
+	width: 100%;
+	padding: 4px;
+	padding-bottom: 0px;
+	margin-top: 4px;
+	border-top: 1px solid #e8e8e8;
+	/** 默认隐藏，一直到需要激活的时候再更改 */
+	display: none;
+}
+header-element .extra-menu-bar .script-panel-link {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	color: gray;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+	padding-bottom: 2px;
+	margin-bottom: 0px;
+}
+header-element .extra-menu-bar .script-panel-link:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+header-element .extra-menu-bar .script-panel-link + header-element .extra-menu-bar .script-panel-link {
+	margin-left: 12px;
+}
+header-element .extra-menu-bar .script-panel-link:hover {
+	background-color: #7abbff24;
+}
+header-element .extra-menu-bar .script-panel-link.danger:hover {
+	background-color: #ffdede86;
+}
+header-element .extra-menu-bar .script-panel-link:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+header-element .extra-menu-bar .script-panel-link.danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+header-element .extra-menu-bar .script-panel-link:disabled:active {
+	box-shadow: none;
+}
+header-element .extra-menu-bar .script-panel-link.active {
+	background-color: #1890ff1a;
+	border-color: #1890ff;
+	color: #1890ff;
+}
+header-element .extra-menu-bar .script-panel-link + .script-panel-link {
+	margin-left: 4px;
+}
+header-element .profile {
+	flex: 1;
+	cursor: move;
+}
+header-element .switch:hover,
+header-element .dropdown:hover {
+	background-color: #f3f3f3;
+}
+header-element .close:hover {
+	background-color: #ff000038;
+}
+header-element .switch,
+header-element .close {
+	cursor: pointer;
+}
+header-element .dropdown {
+	line-height: 24px;
+	text-decoration: underline;
+}
+header-element .switch,
+header-element .close,
+header-element .profile {
+	display: inline-flex;
+	align-items: center;
+	padding: 0px 8px;
+}
+.logo {
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+}
+.project-selector {
+	display: flex;
+	align-items: center;
+}
+.project-selector select {
+	background: #ffffff00;
+	border-radius: 4px;
+	border: 1px solid #63636346;
+	padding: 4px;
+}
+.project-selector.expand-all {
+	display: none;
+}
+.body {
+	overflow: auto;
+	width: auto;
+	height: 100%;
+}
+script-panel-element {
+	display: block;
+	background-color: white;
+	border-radius: 0px 0px 8px 8px;
+	padding: 0px 8px 12px 8px;
+	overflow: auto;
+}
+script-panel-element .script-panel-body {
+	padding: 0px 8px;
+}
+script-panel-element + script-panel-element {
+	margin-top: 12px;
+}
+.card + .card {
+	margin-top: 12px;
+}
+.card {
+	background-color: white;
+	border-radius: 2px;
+	padding: 0px 8px;
+}
+.notes {
+	background: #0099ff0e;
+	border-left: 4px solid #0099ff65;
+	width: -webkit-fill-available;
+	margin: 0px 8px;
+	line-height: 26px;
+	letter-spacing: 1px;
+}
+.secondary {
+	font-size: 12px;
+	color: #8b8b8b;
+}
+.tooltip-container {
+	z-index: 99999999999999;
+	margin: 12px 0px 0px 12px;
+	padding: 4px;
+	color: black;
+	background: #f0f0f0;
+	box-shadow: 0px 0px 4px #949494;
+	position: fixed;
+	white-space: normal;
+	max-width: 200px;
+	height: auto;
+	border-radius: 2px;
+	line-height: 18px;
+}
+.configs-container.lock {
+	filter: blur(1px);
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
+.configs-container .lock-wrapper {
+	cursor: not-allowed !important;
+	border-radius: 4px;
+	position: absolute;
+	left: 0px;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+.configs-container .lock-message {
+	background-color: #ffffff7d;
+	border-radius: 4px;
+	box-shadow: 0px 0px 12px #6a6a6a98;
+	padding: 2px;
+}
+.configs {
+	display: table;
+	background: #e1e1e107;
+	width: -webkit-fill-available;
+}
+.configs .configs-body {
+	display: table-row-group;
+}
+.configs .configs-body config-element + config-element label {
+	padding-top: 4px;
+}
+.configs .configs-body config-element + config-element .config-wrapper {
+	padding-top: 4px;
+}
+.configs .configs-body config-element {
+	width: 100%;
+	display: table-row;
+	line-height: 26px;
+}
+.configs .configs-body config-element label {
+	white-space: nowrap;
+	color: #4e5969;
+	display: table-cell;
+	padding-right: 12px;
+	text-align: left;
+	vertical-align: top;
+	margin-right: 12px;
+}
+.configs .configs-body config-element .config-wrapper {
+	display: table-cell;
+	vertical-align: middle;
+	/** check box 的样式 */
+}
+.configs .configs-body config-element .config-wrapper select {
+	outline: none;
+	border: none;
+	border: 1px solid #e4e4e4;
+	border-radius: 4px;
+	padding: 2px 8px;
+	border: 1px solid #ffffff00;
+}
+.configs .configs-body config-element .config-wrapper select:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs .configs-body config-element .config-wrapper select:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper select:hover {
+	background-color: #ebeef4;
+}
+.configs .configs-body config-element .config-wrapper textarea {
+	padding: 2px 8px;
+	outline: none;
+	border: none;
+	border: 1px solid #ffffff00;
+}
+.configs .configs-body config-element .config-wrapper textarea:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs .configs-body config-element .config-wrapper textarea:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper textarea:hover {
+	background-color: #ebeef4;
+}
+.configs .configs-body config-element .config-wrapper input:not([type='button']) {
+	outline: none;
+	padding: 2px 8px;
+	margin: 0px;
+	background-color: #eef2f7;
+	border-radius: 2px;
+	color: black;
+	border: 1px solid #ffffff00;
+}
+.configs .configs-body config-element .config-wrapper input:not([type='button'])::placeholder {
+	color: #bababa;
+}
+.configs .configs-body config-element .config-wrapper input:not([type='button']):focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs
+	.configs-body
+	config-element
+	.config-wrapper
+	input:not([type='button']):focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper input:not([type='button']):hover {
+	background-color: #ebeef4;
+}
+.configs .configs-body config-element .config-wrapper input[type='range'] {
+	padding: 0px;
+}
+.configs .configs-body config-element .config-wrapper input[type='button'] {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: white;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.configs
+	.configs-body
+	config-element
+	.config-wrapper
+	input[type='button']
+	+ .configs
+	.configs-body
+	config-element
+	.config-wrapper
+	input[type='button'] {
+	margin-left: 12px;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:hover {
+	background-color: #7abbff24;
+}
+.configs .configs-body config-element .config-wrapper input[type='button'].danger:hover {
+	background-color: #ffdede86;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+.configs .configs-body config-element .config-wrapper input[type='button'].danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:disabled:active {
+	box-shadow: none;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox'] {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	width: fit-content;
+	min-width: 36px;
+	height: 20px;
+	border-radius: 100px;
+	display: flex;
+	align-items: center;
+	padding: 2px 4px;
+	transition: all 0.2s ease-in-out;
+	width: auto;
+	background: gainsboro;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:checked {
+	background: #1890ff;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:disabled {
+	background-color: #f7f7f78b;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:checked::before {
+	transform: translate(100%, 0px);
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox']::before {
+	background-color: #fff;
+	border-radius: 9px;
+	box-shadow: 0 2px 4px #00230b33;
+	width: 14px;
+	height: 14px;
+	content: '';
+}
+.configs .configs-body config-element .config-wrapper input:not([type='checkbox'], [type='radio']),
+.configs .configs-body config-element .config-wrapper textarea,
+.configs .configs-body config-element .config-wrapper select {
+	width: -webkit-fill-available;
+	font-size: inherit;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox'],
+.configs .configs-body config-element .config-wrapper input[type='radio'],
+.configs .configs-body config-element .config-wrapper input[type='range'] {
+	accent-color: #0e8ee2;
+}
+.configs .configs-body config-element .config-wrapper > *:not(.tooltip) {
+	background-color: #eef2f7;
+	border-radius: 2px;
+	color: black;
+	float: right;
+}
+.configs .configs-body config-element .config-wrapper > *:disabled {
+	cursor: not-allowed;
+	background-color: #f7f7f78b;
+}
+.message-container {
+	margin-bottom: 4px;
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	width: 100%;
+	transform: translate(-50%, 0px);
+	min-width: 300px;
+}
+.message-container message-element {
+	display: flex;
+	border-radius: 4px;
+	padding: 4px 12px;
+	margin-bottom: 4px;
+}
+.message-container message-element .message-content-container {
+	margin-right: 8px;
+	flex: auto;
+}
+.message-container message-element .message-text {
+	letter-spacing: 1px;
+	font-weight: bold;
+}
+.message-container message-element .message-closer {
+	width: 18px;
+	min-width: 18px;
+	cursor: pointer;
+	background-color: #ffffffb3;
+	color: #a1a1a1;
+	border-radius: 100%;
+	text-align: center;
+	height: 18px;
+	vertical-align: middle;
+	font-size: 12px;
+}
+.message-container message-element.error {
+	background-color: #ffe6e6;
+	color: #c70208;
+	border: 1px solid #ff6b6ded;
+}
+.message-container message-element.info {
+	background-color: #c9e7ff;
+	color: #004d95;
+	border: 1px solid #1890ff69;
+}
+.message-container message-element.success {
+	background-color: #e8ffe0;
+	color: #3e8d0d;
+	border: 1px solid #6fd91d;
+}
+.message-container message-element.warn {
+	background-color: #ffefc8;
+	color: #9b7400;
+	border: 1px solid #ffc107;
+}
+modal-element {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	background-color: white;
+	border-radius: 4px;
+	box-shadow: 0px 0px 24px -12px black;
+	border: 1px solid #929292;
+	height: fit-content;
+	transform: translate(-50%, -50%);
+	padding: 12px 18px 18px 18px;
+	font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+	z-index: 99999999999;
+	line-height: 24px;
+}
+modal-element .modal-profile {
+	zoom: 0.9;
+	color: #969696;
+	user-select: none;
+	margin-bottom: 4px;
+}
+modal-element .modal-title {
+	font-size: 18px;
+	font-weight: bold;
+	user-select: none;
+}
+modal-element .modal-body {
+	margin: 12px 0px;
+	overflow: auto;
+}
+modal-element .modal-footer {
+	display: flex;
+	white-space: nowrap;
+	justify-content: end;
+	align-items: end;
+}
+modal-element .modal-footer > * + * {
+	margin-left: 12px;
+}
+modal-element .modal-input {
+	outline: none;
+	padding: 2px 8px;
+	margin: 0px;
+	background-color: #eef2f7;
+	border-radius: 2px;
+	color: black;
+	border: 1px solid #ffffff00;
+	width: -webkit-fill-available;
+}
+modal-element .modal-input::placeholder {
+	color: #bababa;
+}
+modal-element .modal-input:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+modal-element .modal-input:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+modal-element .modal-input:hover {
+	background-color: #ebeef4;
+}
+modal-element .modal-cancel-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	color: gray;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+}
+modal-element .modal-cancel-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+modal-element .modal-cancel-button + modal-element .modal-cancel-button {
+	margin-left: 12px;
+}
+modal-element .modal-cancel-button:hover {
+	background-color: #7abbff24;
+}
+modal-element .modal-cancel-button.danger:hover {
+	background-color: #ffdede86;
+}
+modal-element .modal-cancel-button:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+modal-element .modal-cancel-button.danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+modal-element .modal-cancel-button:disabled:active {
+	box-shadow: none;
+}
+modal-element .modal-confirm-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: white;
+	border: 1px solid #2c92ff;
+	color: #409eff;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+}
+modal-element .modal-confirm-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+modal-element .modal-confirm-button + modal-element .modal-confirm-button {
+	margin-left: 12px;
+}
+modal-element .modal-confirm-button:hover {
+	background-color: #7abbff24;
+}
+modal-element .modal-confirm-button.danger:hover {
+	background-color: #ffdede86;
+}
+modal-element .modal-confirm-button:disabled {
+	background-color: white;
+	border: 1px solid #c0c0c0;
+	color: #aeaeae;
+	cursor: not-allowed;
+}
+modal-element .modal-confirm-button.danger {
+	color: #f36669;
+	border-color: #dd5a5d;
+}
+modal-element .modal-confirm-button:disabled:active {
+	box-shadow: none;
+}
+modal-element.alert .modal-input,
+modal-element.alert .modal-cancel-button {
+	display: none;
+}
+modal-element.alert .modal-confirm-button {
+	margin: 0;
+}
+modal-element.prompt .modal-input,
+modal-element.prompt .modal-cancel-button,
+modal-element.prompt .modal-confirm-button {
+	display: block;
+}
+modal-element.confirm .modal-input {
+	display: none;
+}
+.modal-wrapper {
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	z-index: 9999999;
+	background-color: rgba(0, 0, 0, 0.265);
+	color: #636363;
+	font: 14px Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+.pointer {
+	cursor: pointer;
+}
+.separator {
+	display: flex;
+	align-items: center;
+	text-align: center;
+	padding: 4px 0px 8px 0px;
+}
+.separator::before,
+.separator::after {
+	content: '';
+	flex: 1;
+	border-bottom: 1px solid #63636346;
+}
+.separator:not(:empty)::before {
+	margin-right: 0.25em;
+}
+.separator:not(:empty)::after {
+	margin-left: 0.25em;
+}
+container-element.minimize .body,
+container-element.minimize header-element .dropdown,
+container-element.minimize .footer {
+	display: none;
+}
+container-element.minimize header-element {
+	padding: 8px;
+	border-radius: 8px;
+	box-shadow: 0px 0px 24px -12px black;
+}
+.user-guide > li {
+	padding: 4px 0px;
+}
+.search-infos-num {
+	width: 26px;
+	margin: 2px;
+	height: 20px;
+	border-radius: 4px;
+	display: inline-block;
+	background-color: white;
+	text-align: center;
+	cursor: pointer;
+	border: 1px solid #b6b6b6;
+}
+.search-infos-num.requested {
+	border: 1px solid #63b4ff;
+	color: #63b4ff;
+}
+.search-infos-num.active {
+	background-color: #127de1 !important;
+	color: white;
+}
+.search-infos-num.error {
+	border: 1px solid #ff8789ed;
+	background-color: #ff6b6ded;
+	color: white;
+}
+.search-infos-num.finish {
+	background-color: #63b4ff;
+	border: 1px solid #63b4ff;
+	color: white;
+}
+search-infos-element {
+	display: block;
+	overflow: auto;
+}
+search-infos-element .search-result {
+	margin-bottom: 12px;
+	padding-left: 12px;
+}
+search-infos-element .search-result .question {
+	font-weight: bold;
+	max-height: 200px;
+	overflow: auto;
+}
+search-infos-element .search-result .answer {
+	color: #7c7c7c;
+}
+search-infos-element .search-result .answer code {
+	border-bottom: 1px solid #dcdcdc;
+	padding: 2px 0px;
+	border-radius: 2px;
+	margin: 4px;
+	line-height: 22px;
+}
+search-infos-element .search-result .answer code + code {
+	margin-left: 4px;
+}
+search-infos-element .search-result .search-result-answer-tag {
+	padding: 2px 6px;
+	border-radius: 2px;
+	font-size: 12px;
+	cursor: pointer;
+	margin-right: 6px;
+}
+search-infos-element .search-result .search-result-answer-tag + .search-result-answer-tag {
+	margin-left: 4px;
+}
+search-infos-element .search-result .search-result-answer-tag.blue {
+	background-color: #e6f7ff;
+	border: 1px solid #91d5ff;
+	color: #1890ff;
+}
+search-infos-element .search-result .search-result-answer-tag.green {
+	background-color: #f6ffed;
+	border: 1px solid #b7eb8f;
+	color: #52c41a;
+}
+search-infos-element .search-result .search-result-answer-tag.gray {
+	background-color: #fafafa;
+	border: 1px solid #d9d9d9;
+	color: #595959;
+}
+search-infos-element .search-result .search-result-answer-tag.red {
+	background-color: #fff1f0;
+	border: 1px solid #ffa39e;
+	color: #ff4d4f;
+}
+search-infos-element .search-result .search-result-answer-tag.yellow {
+	background-color: #fffbe6;
+	border: 1px solid #ffe58f;
+	color: #faad14;
+}
+search-infos-element .search-result-question-type {
+	background-color: #e6f7ff;
+	border: 1px solid #91d5ff;
+	color: #1890ff;
+	margin-right: 8px;
+	padding: 0px 4px;
+	border-radius: 4px;
+}
+search-infos-element .error {
+	color: #ff6b6ded;
+	display: inline-block;
+	padding-left: 12px;
+}
+.copy,
+.question-title-extra-btn {
+	margin-left: 4px;
+	padding: 2px 4px;
+	border-radius: 2px;
+	box-shadow: 0 0 4px #b1b1b1;
+	cursor: pointer !important;
+	font-weight: normal;
+	font-size: 12px;
+}
+.work-result-question-container {
+	position: absolute;
+	width: 400px;
+	left: -100%;
+	top: 0px;
+	background: white;
+	border: 1px solid #cbcbcb;
+	border-radius: 4px;
+	box-shadow: 0px 0px 12px #d1cfcf;
+	padding: 12px;
+}
+.work-result-question-container .close-search-result {
+	font-size: 12px;
+	margin-left: 8px;
+	text-decoration: underline;
+	color: gray;
+	cursor: pointer;
+}
+.work-result-list {
+	max-height: 400px;
+	overflow: auto;
+	margin: 12px 0px;
+	padding: 6px;
+	border: 1px solid #e1e1e1;
+	border-radius: 4px;
+}
+.search-info-title {
+	border: 1px solid #e1e1e1;
+	border-radius: 4px;
+	padding: 8px 12px;
+	margin-bottom: 12px;
+	line-height: 20px;
+	max-height: 400px;
+	overflow: auto;
+}
+.search-info-details {
+	margin-left: 4px;
+}
+.console {
+	max-height: 300px;
+	max-width: 400px;
+	overflow: auto;
+	background-color: #292929;
+	padding: 12px 6px;
+	color: #ececec;
+	font-size: 12px;
+}
+.console .item {
+	padding: 3px 0px;
+	border-radius: 2px;
+}
+.console .item .time {
+	color: #757575;
+}
+.console .item .info {
+	background-color: #2196f3a3;
+}
+.console .item .warn {
+	background-color: #ffc107db;
+}
+.console .item .error {
+	background-color: #f36c71cc;
+}
+.console .item .debug,
+.console .item .log {
+	background-color: #9e9e9ec4;
+}
+.console *::selection {
+	background-color: #ffffff6b;
+}
+.markdown {
+	max-width: 400px;
+	max-height: 50vh;
+	overflow: auto;
+}
+.markdown code {
+	padding: 2px 4px;
+	background-color: #f0f0f0;
+	border-radius: 6px;
+	font-size: 12px;
+}
+.markdown blockquote {
+	padding: 4px 4px 4px 12px;
+	margin: 0px;
+	color: #b5b5b5;
+	border-left: #ababab 2px solid;
+}
+.markdown blockquote p {
+	margin: 0px;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6,
+.markdown p {
+	margin: 8px 0px;
+}
+.dropdown {
+	position: relative;
+	display: inline-block;
+}
+.dropdown.active .dropdown-trigger-element {
+	color: #1890ff;
+}
+.dropdown-trigger-element {
+	cursor: pointer;
+}
+.dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #ffffff;
+	overflow: auto;
+	box-shadow: 0px 8px 16px 0px #00000033;
+	z-index: 1;
+	border-radius: 4px;
+	padding: 8px 12px;
+	min-width: 120px;
+}
+.dropdown-content.show {
+	display: block;
+}
+.dropdown-content {
+	cursor: pointer;
+	z-index: 999;
+}
+.dropdown-content .dropdown-option {
+	padding-left: 4px;
+	white-space: nowrap;
+}
+.dropdown-content .dropdown-option:hover {
+	background-color: #f3f3f3;
+}
+.dropdown-content .dropdown-option.active {
+	background-color: #1890ff1a;
+	color: #1890ff;
+}
+.space {
+	display: inline-flex;
+}
+.config-details {
+	animation: fade-in 0.5s;
+}
+.config-details label {
+	padding-left: 12px;
+}
+.alert-info-wrapper {
+	margin-bottom: 8px;
+}
+.alert-info-wrapper .result-info {
+	padding: 12px;
+	text-align: center;
+	border-radius: 6px;
+}
+.alert-info-wrapper .unresolved {
+	color: #a1a1a1;
+	background-color: #f7f7f7;
+}
+.alert-info-wrapper .no-answer {
+	color: #a1a1a1;
+	background-color: #f7f7f7;
+}
+.alert-info-wrapper .error {
+	color: #ff4d4f;
+	background-color: #fff1f0;
+}
+message-element {
+	animation: show 0.5s;
+}
+script-panel-element > div,
+script-panel-link,
+container-element,
+modal-element {
+	animation: fade-in 0.3s;
+}
+@keyframes show {
+	0% {
+		transform: translateY(20px);
+		opacity: 0;
+	}
+	100% {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+@keyframes fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@keyframes fade-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+.checkbox-label {
+	display: inline-block !important;
+	position: relative;
+	cursor: pointer;
+	font-size: 16px;
+	color: #2c3e50;
+}
+/* 隐藏原始复选框 */
+.checkbox-input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+/* 自定义按钮样式 */
+.checkbox-label::after {
+	content: '';
+	display: inline-block;
+	border-radius: 50%;
+	transition: all 0.1s ease;
+	position: relative;
+	margin-left: 4px;
+	vertical-align: middle;
+}
+/* 向下箭头（未选中状态） */
+.checkbox-label::before {
+	content: '🔽';
+	position: absolute;
+	width: 0;
+	height: 0;
+	right: 8px;
+	transition: all 0.1s ease;
+	z-index: 2;
+}
+/* 向上箭头（选中状态） */
+.checked .checkbox-label::before {
+	content: '🔼';
+}
+</style><div class="message-container"></div><header-element data-title="菜单栏-可拖动区域"><div style="width: 100%;"><div style="display: flex; width: 100%;"><div class="profile" data-title="菜单栏（可拖动区域）">OCS-4.13.14</div><dropdown-element class="active dropdown"><div class="dropdown-trigger-element" style="padding: 0px 8px;">通用</div><div class="dropdown-content"><div class="dropdown-option active">🏠 使用教程</div><div class="dropdown-option">⚙️ 全局设置</div><div class="dropdown-option">🔎 搜索结果</div><div class="dropdown-option">🔎 在线搜题</div><div class="dropdown-option">🖼️ 窗口设置</div><div class="dropdown-option">📱 拓展应用</div></div></dropdown-element><dropdown-element class="dropdown"><div class="dropdown-trigger-element" style="padding: 0px 8px;">后台</div><div class="dropdown-content"><div class="dropdown-option">📄 日志输出</div><div class="dropdown-option">🔄️ 软件配置同步</div><div class="dropdown-option">📥 更新模块</div><div class="dropdown-option">🛠️ 开发者调试</div><div class="dropdown-option">📄 请求记录</div></div></dropdown-element><div class="switch " data-title="点击展开窗口"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"></path><path d="M18 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H6V6h12v12z"></path></svg></div></div><div style="display: flex; width: 100%;"><div class="extra-menu-bar" style="display: flex;"><button data-name="通用-🏠_使用教程" class="script-panel-link" data-title="快捷跳转：通用 -&gt; 🏠 使用教程">🏠</button><button data-name="通用-🔎_搜索结果" class="script-panel-link" data-title="快捷跳转：通用 -&gt; 🔎 搜索结果">🔎</button><button data-name="通用-⚙️_全局设置" class="script-panel-link" data-title="快捷跳转：通用 -&gt; ⚙️ 全局设置">⚙️</button><button data-name="后台-📥_更新模块" class="script-panel-link" data-title="快捷跳转：后台 -&gt; 📥 更新模块">📥</button><button data-name="后台-📄_日志输出" class="script-panel-link" data-title="快捷跳转：后台 -&gt; 📄 日志输出">📄</button></div></div></div></header-element><div class="body" style="max-height: 1100px; max-width: 2510px;"><script-panel-element><div class="separator">🏠 使用教程</div><div class="notes card"><ul><li><div>打开任意网课平台，进入视频、作业页面等待脚本运行，</div></li><li><div>任何疑问请查看上方交流群，进群后带截图进行反馈。</div></li><li><div>温馨提示: </div></li><li><div>⚠️ 禁止与其他脚本一起使用，否则会不兼容导致无法运行！</div></li><li><div>⚠️ 禁止最小化浏览器、切屏，否则可能导致脚本无法运行！</div></li></ul></div><div class="configs-container card"><div class="configs card"><div class="configs-body"></div></div></div><div class="script-panel-body"><div class="user-guide" style="width: 480px;"><div style="border: 1px solid rgb(238, 238, 238); border-radius: 4px; padding: 4px 8px 8px;"><div style="margin-bottom: 4px; font-weight: bold;">✨兼容的网课平台：<span class="secondary" style="font-weight: normal;">（未适配的平台将无法运行，请等待适配）</span></div><div><button class="base-style-button-secondary" style="margin: 4px;">超星学习通</button><button class="base-style-button-secondary" style="margin: 4px;">知到智慧树</button><button class="base-style-button-secondary" style="margin: 4px;">职教云</button><button class="base-style-button-secondary" style="margin: 4px;">智慧职教</button><button class="base-style-button-secondary" style="margin: 4px;">中国大学MOOC</button></div></div><div style="border: 1px solid rgb(238, 238, 238); border-radius: 4px; padding: 4px 8px 8px; margin-top: 12px;"><div style="margin-bottom: 8px; font-weight: bold;">🌐快捷访问：</div><button class="base-style-button-secondary">🏡官网教程</button><button class="base-style-button-secondary">🗨️交流群</button><button class="base-style-button-secondary">📄更新日志</button><button class="base-style-button-secondary">📄如何关闭脚本？</button></div></div></div></script-panel-element></div><div class="footer"></div><div class="tooltip-container" style="display: none; top: 64px; left: 199px;">快捷跳转：后台 -&gt; 📄 日志输出</div></container-element></template></div>
+<script src="./兰州交通_files/index.js.下载"></script>
+<script src="./兰州交通_files/icons.19045.jsxsMain.es5.js.下载"></script>
+<script type="text/javascript" src="./兰州交通_files/layui.all.js.下载"></script>
+<script type="text/javascript">
+
+	if (false){
+		document.getElementById('light').style.display='block';
+		document.getElementById('fade').style.display='block';
+		var time=10000;
+		document.getElementById("s").innerText = "距离页面关闭还有"+(time/1000)+"秒";
+		setTimeout(function() {
+			var x = setInterval(function(){
+				time= time - 1000;
+				document.getElementById("s").innerText = "距离页面关闭还有"+(time/1000)+"秒";
+				if(time==0){
+					clearInterval(x);
+					document.getElementById("s").innerHTML="<input type='button' class='edu-btn primary'  style='font-size: 16px' value='已阅读'  onclick='gb()' />"
+				}
+			}, 1000);
+		},1000);
+	}
+	function gb() {
+		document.getElementById('light').style.display='none';
+		document.getElementById('fade').style.display='none'
+	}
+
+	$(document).ready(function() {
+		// 获取提示文字内容
+		var tipContent =$('#tipContainer').html();
+
+		// 正则表达式匹配 URL
+		var urlRegex = /(https?:\/\/[^\s]+)/g;
+
+		// 替换 URL 为可点击的弹出链接
+		var replacedContent = tipContent.replace(urlRegex, function(url) {
+			return '<a href="' + url + '" class="popup-link" onclick="openPopup(\'' + url + '\'); return false;">' + url + '</a>';
+		});
+
+		// 更新内容
+		$('#tipContainer').html(replacedContent);
+	});
+
+	// 弹出窗口函数
+	function openPopup(url) {
+		window.open(url, 'popupWindow', 'width=1000,height=800,left=100,top=100,scrollbars=yes');
+	}
+
+	//根据权限名称获取对应的权限列表
+	function display_Menu(obj) {
+
+		//获取 ul属性
+		var searchul =document.getElementById("searchul");
+
+		// 获取输入框里面的内容
+		var val = obj.value;
+		$.ajax({
+			url: "/jsxsd/ggly/findMenuByQxCode.do",
+			type: "GET",
+			sync: true,
+			data: {"findname": val},
+			success: function (result) {
+				var data = JSON.parse(result);
+				if ("1" == data.code) {
+					//清空
+					searchul.innerHTML = "";
+					var lis = data.lists;
+					$.each(lis, function (idx, elem) {
+						var fucecode = elem.fucecode;
+						var fuceresource = elem.fuceresource;
+						var fucename = elem.fucename;
+						var lis = document.createElement("li");
+						lis.title = fucename;
+						lis.setAttribute("onclick", "showMenuBycode(\"" + fucecode + "\",\"" + fuceresource + "\",\"" + fucename + "\")");
+						lis.innerHTML = fucename;
+						searchul.appendChild(lis);
+					});
+				}
+			}
+		});
+	}
+
+	function tozlptxzd(){
+		var strUrl="/jsxsd/qzapp/getTyTokennew";
+		$.ajax( {
+			url:strUrl,
+			type:"post",
+			cache:false,
+			dataType:"text",
+			success:function(dataStr) {
+				var token=dataStr.split("#")[0];
+				var refresh_token=dataStr.split("#")[1];
+				var url = "https://jwglbysj.lzjtu.edu.cn/?token="+token +"&refresh_token="+refresh_token;
+				window.open(url)
+			},
+			error:function() {
+				alert("计算异常！");
+			}
+		});
+	}
+
+	function showMenuBycode(fucecode, fuceresource, fucename) {
+		$("#search").val(fucename);
+		var url ="/jsxsd"+fuceresource;
+		//调用跳转菜单栏
+		tongzhi(url);
+	}
+
+	$('.index-header-right .eduTime').on('click', e => {
+		$('#zouliIframe').attr('src', '/jsxsd/framework/xsjsdPerson_zlxx.jsp');
+	$('.eduTime-dialog').show();
+	$(document).on('mouseup', clearContextmenu);
+	});
+
+	// 右键菜单隐藏事件
+	function clearContextmenu() {
+		$('.contextmenu').hide();
+		$('.eduTime-dialog').hide();
+		document.onmouseup = null;
+		$('#mainIframe').contents().onmousedown = null;
+	}
+
+	// 容器宽度
+	let left = $('.cygn-content')[0].getBoundingClientRect().left;
+	// 弹窗宽度
+	let width = $('.cygn-add-dialog').width();
+	function Tihuan(sid) {
+
+		$("#fucecode_sid").val(sid);
+		let e = window.event
+		e.stopPropagation()
+
+		$('.dialog-header:first-child').hide();
+		$('.dialog-header:nth-child(2)').addClass('dialog-content');
+
+		// 替换位置
+		let position = $(e.currentTarget).parent()[0].getBoundingClientRect();
+		if (width > $(document).width() - position.right) {
+			$('.cygn-add-dialog').css('left', 'auto');
+			$('.cygn-add-dialog').css('right', $(document).width() - position.right - 12 + 'px');
+			$('.cygn-add-dialog').removeClass('left');
+		} else {
+			$('.cygn-add-dialog').css('left', position.left - left + 'px');
+			$('.cygn-add-dialog').css('right', 'auto');
+			$('.cygn-add-dialog').addClass('left');
+		}
+		$('.cygn-add-dialog').show();
+		// 绑定点击其他地方右键菜单隐藏事件
+		// 绑定点击其他地方右键菜单隐藏事件
+		$(document).on('mouseup', clearCygnAddDialog);
+		$('#mainIframe').contents().on('mouseup', clearCygnAddDialog);
+		e.stopPropagation();
+	}
+
+	// 右键菜单隐藏事件
+	function clearCygnAddDialog(e) {
+		let obj = $(e.target).hasClass('cygn-add-dialog') || $(e.target).parents('.cygn-add-dialog').hasClass('cygn-add-dialog');
+		console.log(obj);
+		if (!obj) {
+			$('.cygn-add-dialog').hide();
+			document.onmouseup = null;
+			$('#mainIframe').contents().onmousedown = null;
+		}
+	}
+
+	function LogoutGLD(){
+		var userid = '20253206134';
+		document.getElementById("loginForm1").action = "https://jwgl.lzjtu.edu.cn/Logon.do?method=logoutFromJsxsd";
+		document.getElementById("useraccount").value = userid;
+		document.getElementById("loginForm1").submit();
+	}
+
+	function Logout(url){
+		window.location.href = getRandomUrl(url + "/xk/LoginToXk?method=exit");
+	}
+
+	// 地址随机，解决缓存问题
+	function getRandomUrl(htmlurl){
+		var count =htmlurl.indexOf("?");
+		var  date=new Date();
+		var t=Date.parse(date);
+		if(count<0){
+			htmlurl=htmlurl+"?tktime="+t;
+		}else{
+			htmlurl=htmlurl+"&tktime="+t;
+		}
+		return htmlurl;
+	}
+
+	//通知信息栏、常用功能快捷菜单栏 、消息通知菜单栏 调用三级菜单信息显示
+	function tongzhi(url) {
+
+		let obj = $('.nav-one .nav-two > ul .nav-three[data-src="' + url + '"]');
+		// // 判断三级菜单是否打开
+		// if (obj.hasClass('choose')) {
+		//   // 如果已经打开则return
+		//   $('#mainIframe').attr('src', obj.data('src'));
+		//   return;
+		// }
+
+		// 清除所有三级选中状态
+		$('.nav-three').removeClass('choose');
+		$('.nav-three').find('iconpark-icon').remove();
+		// 给当前选中加上星标
+		if (obj.find('iconpark-icon').length == 0) {
+			obj.append('<iconpark-icon name="wujiaoxing"></iconpark-icon>');
+		}
+		// 添加选中状态
+		obj.addClass('choose');
+
+		if (obj.parents('.nav-one > ul').css('display') == 'none') {
+			// 清除所有一级选中状态
+			$('.nav-one').removeClass('choose');
+			$('.nav-one > ul').slideUp();
+			// 所有一级菜单图标切换为未选择状态
+			for (var item of Array.from($('.nav-one img'))) {
+				$(item).attr('src', '/jsxsd/css/images/lzjtdx/' + $(item).data('src') + '.png');
+			}
+			// 给当前一级添加选中状态
+			obj.parents('.nav-one').addClass('choose');
+			obj.parents('.nav-one > ul').slideDown();
+			// 切换图标
+			let img = obj.parents('.nav-one').find('img');
+			img.attr('src', '/jsxsd/css/images/lzjtdx/' + img.data('isrc') + '.png');
+		}
+
+		$('.index-tab .tab-content ul li').removeClass('star');
+		$('.index-tab .tab-content ul li').find('iconpark-icon[name="gerenzhongxin"]').remove();
+		$('.index-tab .tab-content ul li[data-src="' + url + '"]').addClass('star');
+		$('.index-tab .tab-content ul li[data-src="' + url + '"]').prepend(
+				'<iconpark-icon name="gerenzhongxin"></iconpark-icon>'
+		);
+		$('#mainIframe').attr('src', obj.data('src'));
+		$('.cygn-content').hide();
+
+		// 个人中心移除样式
+		if ($('.index-tab .personCenter').hasClass('star')) {
+			$('.index-tab .personCenter').removeClass('star');
+			$('.index-tab .personCenter').find('iconpark-icon[name="gerenzhongxin"]').remove();
+		}
+
+		if ($('.tab-content-move li[data-src="' + obj.data('src') + '"]').length == 0) {
+			// 清除所有tab的选中状态
+			$('.index-tab .tab-content ul li').removeClass('star');
+			// tab-content-move添加该菜单
+			$('.tab-content-move').append(
+					'<li class="star" data-src="' +
+					obj.data('src') +
+					'">' +
+					'<iconpark-icon name="gerenzhongxin"></iconpark-icon>' +
+					'<span>' +
+					obj.find('div').text() +
+					'</span>' +
+					'<iconpark-icon fill="currentColor" class="close" name="guanbidangqian"></iconpark-icon>' +
+					'</li>'
+			);
+		}
+	}
+
+	//常用菜单删除
+	function Yxqxcd_delete(sid) {
+		let e = window.event
+		e.stopPropagation()
+		if (confirm("确定要删除当前常用功能吗？")){
+			url = "/jsxsd/ggly/Yxqxcdcz.do";
+			//定义ajax对象
+			$.ajax( {
+				url:url,
+				type:'post',
+				cache:false,
+				dataType:'text',
+				data:{'sid':sid,'type':'sc'},
+				success:function(data) {
+					if(data=="1"){
+						//alert("删除成功！");
+						window.location.reload();
+					}
+				},
+				error:function() {
+					alert("操作异常！");
+				}
+			});
+		}
+	}
+
+	//常用菜单右移
+	function Yxqxcd_right(sid,pxh) {
+		let e = window.event
+		e.stopPropagation()
+
+		url = "/jsxsd/ggly/Yxqxcdcz.do";
+		//定义ajax对象
+		$.ajax( {
+			url:url,
+			type:'post',
+			cache:false,
+			dataType:'text',
+			data:{'sid':sid,'pxh':pxh,'type':'yy'},
+			success:function(data) {
+				if(data=="1"){
+					//alert("删除成功！");
+					window.location.reload();
+				}
+			},
+			error:function() {
+				alert("操作异常！");
+			}
+		});
+	}
+
+	//常用菜单右移
+	function Yxqxcd_left(sid,pxh) {
+		let e = window.event
+		e.stopPropagation()
+
+		url = "/jsxsd/ggly/Yxqxcdcz.do";
+		//定义ajax对象
+		$.ajax( {
+			url:url,
+			type:'post',
+			cache:false,
+			dataType:'text',
+			data:{'sid':sid,'pxh':pxh,'type':'zy'},
+			success:function(data) {
+				if(data=="1"){
+					//alert("删除成功！");
+					window.location.reload();
+				}
+			},
+			error:function() {
+				alert("操作异常！");
+			}
+		});
+	}
+
+	//常用菜单增加
+	//常用菜单增加、替换
+	function Yxqxcd_save() {
+		var fucecode_sid= $("#fucecode_sid").val();
+		if(fucecode_sid == ""){
+			//增加操作
+			//获取当前已选菜单
+			var yxcdqx=document.getElementsByName("yxcdqx");
+			var kxcdqx=document.getElementsByName("kxcdqx");
+			var fucecode ="";
+			var cdsum=0;
+			for(i=0;i<yxcdqx.length;i++) {
+				if (yxcdqx[i].checked) {
+					fucecode = fucecode + yxcdqx[i].value;
+					fucecode = fucecode + ","
+					cdsum++;
+				}
+			}
+			for(e=0;e<kxcdqx.length;e++) {
+				if (kxcdqx[e].checked) {
+					fucecode = fucecode + kxcdqx[e].value;
+					fucecode = fucecode + ","
+					cdsum++;
+				}
+			}
+
+			//判断最大只能添加7个常用菜单
+			if(cdsum > 7){
+				alert("系统默认最多只能添加7个常用菜单，请重新选择！");
+				return false;
+			}
+
+			url = "/jsxsd/ggly/Yxqxcdcz.do";
+			//定义ajax对象
+			$.ajax( {
+				url:url,
+				type:'post',
+				cache:false,
+				dataType:'text',
+				data:{'fucecode':fucecode,'type':'zj'},
+				success:function(data) {
+					if(data=="1"){
+						//alert("删除成功！");
+						window.location.reload();
+					}
+				},
+				error:function() {
+					alert("操作异常！");
+				}
+			});
+
+		}else{
+			//替换操作
+			//获取当前选中的菜单
+			var kxcdqx=document.getElementsByName("kxcdqx");
+			var fucecode ="";
+			var cdsum=0;
+			for(e=0;e<kxcdqx.length;e++) {
+				if (kxcdqx[e].checked) {
+					fucecode = fucecode + kxcdqx[e].value;
+					cdsum++;
+				}
+			}
+
+			if(cdsum == 0){
+				alert("请先选择需要替换的常用菜单！");
+				return false;
+			}
+
+			//判断最大只能添加1个常用菜单
+			if(cdsum > 1){
+				alert("系统默认最多只能替换1个常用菜单，请重新选择！");
+				return false;
+			}
+
+			url = "/jsxsd/ggly/Yxqxcdcz.do";
+			//定义ajax对象
+			$.ajax( {
+				url:url,
+				type:'post',
+				cache:false,
+				dataType:'text',
+				data:{'fucecode':fucecode,'sid':fucecode_sid,'type':'th'},
+				success:function(data) {
+					if(data=="1"){
+						//alert("删除成功！");
+						window.location.reload();
+					}
+				},
+				error:function() {
+					alert("操作异常！");
+				}
+			});
+		}
+	}
+
+	gotoTzgg("");
+	function gotoTzgg(ggid) {
+		if(ggid==""){
+			return;
+		}
+		artDialog({
+			id: 'sygg',
+			title: "通知公告",
+			fixed: true,
+			url: "/jsxsd/framework/main_index_tzgg.htmlx?id="+ggid,
+			lock: true,
+			width: 600,
+			height: 400,
+			top: 300
+		}, null, null, function(){
+			loadingTzgg();
+		});
+	}
+	function closesygg(){
+		var element=document.getElementById("sygg");
+		element.parentNode.removeChild(element);
+	}
+
+</script>
+<div class="ui_dialog_wrap" id="artDialogTemp" style="z-index: 1000002;"><div class="ui_dialog" style="z-index: 1000001; visibility: visible; left: -1e+07px; top: 377.022px;"><table class=""><tbody><tr><td class="ui_border r0d0"></td><td class="ui_border r0d1"></td><td class="ui_border r0d2"></td></tr><tr><td class="ui_border r1d0"></td><td class="r1d1"><table class="ui_dialog_main"><tbody><tr><td class="ui_title_wrap"><div class="ui_title"><div class="ui_title_text"><span class="ui_title_icon"></span>提示</div><a class="ui_close" href="javascript:void(0)">×</a></div></td></tr><tr><td class="ui_content_wrap" style="width: auto; height: auto;"><div class="ui_content ui_iframe" id="artDialogTempContent"><iframe src="./兰州交通_files/saved_resource(1).html"></iframe></div></td></tr><tr><td class="ui_bottom_wrap"><div class="ui_bottom"><div class="ui_btns"><span class="ui_yes"><button>确定</button></span><span class="ui_no"><button>取消</button></span></div><div class="ui_resize"></div></div></td></tr></tbody></table></td><td class="ui_border r1d2"></td></tr><tr><td class="ui_border r2d0"></td><td class="ui_border r2d1"></td><td class="ui_border r2d2"></td></tr></tbody></table></div></div></body><div id="immersive-translate-popup" style="all: initial"><template shadowrootmode="open"><div id="mount" style="display: block;"><div class="imt-fb-container right imt-notranslate " data-theme="light" style="z-index: 2147483637; pointer-events: none; right: 0px; top: 335px; display: flex;"><div class="btn-animate" style="transform: translateX(-5px); opacity: 0.7;"><div class="imt-fb-btn imt-fb-more-button imt-fb-side"><div class=" btn-animate" style="position: relative; pointer-events: all; display: inline-block;"><div><svg class="imt-fb-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9.65332 13.3477C10.4097 13.4245 11 14.0632 11 14.8398V18.8398L10.9922 18.9932C10.9205 19.6992 10.3593 20.2604 9.65332 20.332L9.5 20.3398H5.5C4.72334 20.3398 4.08461 19.7496 4.00781 18.9932L4 18.8398V14.8398C4 14.0114 4.67157 13.3398 5.5 13.3398H9.5L9.65332 13.3477ZM18.6533 13.3477C19.4097 13.4245 20 14.0632 20 14.8398V18.8398L19.9922 18.9932C19.9205 19.6992 19.3593 20.2604 18.6533 20.332L18.5 20.3398H14.5C13.7233 20.3398 13.0846 19.7496 13.0078 18.9932L13 18.8398V14.8398C13 14.0114 13.6716 13.3398 14.5 13.3398H18.5L18.6533 13.3477ZM5.5 14.3398C5.22386 14.3398 5 14.5637 5 14.8398V18.8398C5 19.116 5.22386 19.3398 5.5 19.3398H9.5C9.77614 19.3398 10 19.116 10 18.8398V14.8398C10 14.5637 9.77614 14.3398 9.5 14.3398H5.5ZM14.5 14.3398C14.2239 14.3398 14 14.5637 14 14.8398V18.8398C14 19.116 14.2239 19.3398 14.5 19.3398H18.5C18.7761 19.3398 19 19.116 19 18.8398V14.8398C19 14.5637 18.7761 14.3398 18.5 14.3398H14.5ZM9.65332 4.34766C10.4097 4.42445 11 5.06318 11 5.83984V9.83984L10.9922 9.99316C10.9205 10.6992 10.3593 11.2604 9.65332 11.332L9.5 11.3398H5.5C4.72334 11.3398 4.08461 10.7496 4.00781 9.99316L4 9.83984V5.83984C4 5.01142 4.67157 4.33984 5.5 4.33984H9.5L9.65332 4.34766ZM16.1484 3.18848C16.2521 2.83834 16.7479 2.83834 16.8516 3.18848L17.3281 4.79785C17.5079 5.40507 17.9648 5.89104 18.5596 6.1084L20.0576 6.65625C20.3786 6.77361 20.3785 7.22732 20.0576 7.34473L18.5596 7.89258C17.9648 8.10991 17.5079 8.59598 17.3281 9.20312L16.8516 10.8125C16.7479 11.1626 16.2521 11.1626 16.1484 10.8125L15.6719 9.20312C15.4921 8.59598 15.0352 8.10991 14.4404 7.89258L12.9424 7.34473C12.6215 7.22732 12.6214 6.77361 12.9424 6.65625L14.4404 6.1084C15.0352 5.89104 15.4921 5.40507 15.6719 4.79785L16.1484 3.18848ZM5.5 5.33984C5.22386 5.33984 5 5.5637 5 5.83984V9.83984C5 10.116 5.22386 10.3398 5.5 10.3398H9.5C9.77614 10.3398 10 10.116 10 9.83984V5.83984C10 5.5637 9.77614 5.33984 9.5 5.33984H5.5Z" fill="#ED6D8F"></path></svg><svg class="imt-fb-pin-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="7" fill="#B1B1B166"></circle><g transform="translate(2, 2)"><mask id="mask0_39788_745" maskUnits="userSpaceOnUse" x="0" y="0" width="10" height="10" style="mask-type: alpha;"><rect width="10" height="10" fill="#D9D9D9"></rect></mask><g mask="url(#mask0_39788_745)"><path d="M6.23958 3.76042C6.28819 3.80903 6.35243 3.88194 6.43229 3.97917C6.51215 4.07639 6.59722 4.18056 6.6875 4.29167C6.6875 4.44444 6.63646 4.57292 6.53438 4.67708C6.43222 4.78125 6.30618 4.83333 6.15625 4.83333C6.00056 4.83333 5.86962 4.78125 5.76344 4.67708C5.65726 4.57292 5.60417 4.44444 5.60417 4.29167C5.59722 4.28472 5.59201 4.28646 5.58854 4.29688C5.58507 4.30729 5.58333 4.31076 5.58333 4.30729C5.58333 4.30382 5.59028 4.30382 5.60417 4.30729C5.61806 4.31076 5.62153 4.30903 5.61458 4.30208C5.47569 4.30208 5.3559 4.25104 5.25521 4.14896C5.15451 4.04681 5.10417 3.92771 5.10417 3.79167C5.10417 3.65278 5.15451 3.53299 5.25521 3.43229C5.3559 3.3316 5.47569 3.28125 5.61458 3.28125C5.74653 3.35764 5.86111 3.43403 5.95833 3.51042C6.05556 3.58681 6.14931 3.67014 6.23958 3.76042ZM5 2.75C4.94667 2.75 4.89465 2.75017 4.84396 2.75052C4.79326 2.75087 4.74083 2.75035 4.68667 2.74896C4.54139 2.7566 4.39931 2.72049 4.26042 2.64062C4.12153 2.56076 4.03472 2.44618 4 2.29688C3.96528 2.14757 3.98611 2.01389 4.0625 1.89583C4.13889 1.77778 4.25267 1.71094 4.40385 1.69531C4.50962 1.6901 4.61059 1.68576 4.70677 1.68229C4.80295 1.67882 4.90069 1.67708 5 1.67708C5.97917 1.67708 6.88368 1.93056 7.71354 2.4375C8.5434 2.94444 9.17059 3.64625 9.5951 4.54292C9.62892 4.61847 9.65451 4.69451 9.67188 4.77104C9.68924 4.84757 9.69792 4.92389 9.69792 5C9.69792 5.07611 9.69097 5.15417 9.67708 5.23417C9.66319 5.31417 9.64236 5.39236 9.61458 5.46875C9.49826 5.68972 9.36504 5.89948 9.2149 6.09802C9.06469 6.29656 8.90278 6.49306 8.72917 6.6875C8.63194 6.79861 8.51042 6.85069 8.36458 6.84375C8.21875 6.83681 8.09375 6.78069 7.98958 6.67542C7.88542 6.57007 7.83681 6.44507 7.84375 6.30042C7.85069 6.15569 7.90278 6.02431 8 5.90625C8.13194 5.76736 8.25125 5.62153 8.35792 5.46875C8.46465 5.31597 8.5641 5.15972 8.65625 5C8.30208 4.30556 7.79861 3.75694 7.14583 3.35417C6.49306 2.95139 5.77778 2.75 5 2.75ZM5 8.32292C4.04861 8.32292 3.1684 8.07465 2.35938 7.57812C1.55035 7.0816 0.919896 6.40906 0.468021 5.56052C0.419896 5.46462 0.387153 5.37142 0.369792 5.28094C0.352431 5.19052 0.34375 5.09677 0.34375 4.99969C0.34375 4.90267 0.352431 4.80556 0.369792 4.70833C0.387153 4.61111 0.420139 4.51736 0.46875 4.42708C0.614583 4.13542 0.787361 3.86813 0.987083 3.62521C1.18688 3.38229 1.40646 3.15306 1.64583 2.9375L0.96875 2.27083C0.871528 2.18056 0.821181 2.07812 0.817708 1.96354C0.814236 1.84896 0.861111 1.74306 0.958333 1.64583C1.05556 1.54861 1.16319 1.5 1.28125 1.5C1.39931 1.5 1.50694 1.54861 1.60417 1.64583L8.19792 8.23958C8.29514 8.33681 8.34201 8.44271 8.33854 8.55729C8.33507 8.67188 8.28819 8.77431 8.19792 8.86458C8.10069 8.96181 7.99479 9.01042 7.88021 9.01042C7.76562 9.01042 7.65972 8.96181 7.5625 8.86458L6.70833 8.01042C6.43472 8.12153 6.15382 8.20139 5.86562 8.25C5.57743 8.29861 5.28889 8.32292 5 8.32292ZM2.41667 3.6875C2.20139 3.88194 2.00347 4.08507 1.82292 4.29688C1.64236 4.50868 1.48611 4.74306 1.35417 5C1.69444 5.70139 2.19271 6.25174 2.84896 6.65104C3.50521 7.05035 4.22222 7.25 5 7.25C5.14729 7.25 5.29347 7.24132 5.43854 7.22396C5.58368 7.2066 5.72569 7.18056 5.86458 7.14583L5.39583 6.67708C5.33333 6.70486 5.26736 6.72396 5.19792 6.73438C5.12847 6.74479 5.0625 6.75 5 6.75C4.51389 6.75 4.10069 6.57986 3.76042 6.23958C3.42014 5.89931 3.25 5.48611 3.25 5C3.25 4.9375 3.25694 4.87153 3.27083 4.80208C3.28472 4.73264 3.29514 4.66667 3.30208 4.60417L2.41667 3.6875Z" fill="white"></path></g></g></svg></div></div></div></div><div hidden="" class="imt-no-events " id="manga-button" style="position: relative; opacity: 0.7;"><div class="imt-manga-button btn-animate" style="transform: translateX(2px);"><div style="position: relative;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none" style="vertical-align: middle;"><path d="M14.8853 4.92364C14.8853 4.92364 16.3905 10.4362 22.6668 4C22.6668 4 20.3381 10.8907 25.3364 10.0843C25.3364 10.0843 22.0563 15.6994 29 18.0599C29 18.0599 22.9934 19.306 21.1617 28C21.1617 28 17.7679 24.54 14.8853 27.3549C14.8853 27.3549 13.3233 23.5724 7.33097 26.27C7.33097 26.27 10.1141 20.6549 4.83179 21.0507C4.83179 21.0507 7.16057 18.8955 3 15.9047C3 15.9047 7.50137 16.1833 6.33697 11.7117C6.33697 11.7117 10.0005 12.3421 8.66576 6.82957C8.65156 6.81491 12.4855 9.80574 14.8853 4.92364Z" fill="#ED6D8F"></path><path d="M20.8599 13.7022C20.885 13.1361 20.9543 12.5713 20.9959 12.0052C21.0337 11.568 20.8107 11.2794 20.3876 11.18C20.0759 11.1013 19.7508 11.0867 19.433 11.137C19.1951 11.1945 18.9542 11.2396 18.7113 11.2721C18.2403 11.3028 17.9973 11.5275 17.9796 11.988C17.977 12.0833 17.9596 12.1777 17.928 12.268C17.3034 13.9102 16.6774 15.5499 16.0503 17.1873C16.0301 17.2401 16.0062 17.2904 15.9671 17.3776C15.7291 16.8975 15.4281 16.4898 15.2745 15.9986C14.8073 14.5152 14.3186 13.033 13.8312 11.5594C13.6826 11.1112 13.3489 10.9344 12.8754 11.0216C12.7889 11.0365 12.7008 11.0398 12.6134 11.0314C12.2241 10.9938 11.8311 11.0404 11.4623 11.1677C11.0946 11.2991 10.9498 11.557 11.0152 11.9254C11.0428 12.0371 11.0643 12.1503 11.0795 12.2643C11.1223 13.1902 11.1777 14.1087 11.2054 15.0321C11.257 16.7992 11.2117 18.5651 11.0858 20.3284C11.0644 20.6354 11.0304 20.9424 11.0228 21.2494C11.0115 21.6092 11.1613 21.7811 11.5266 21.8143C11.9976 21.8573 12.4711 21.8708 12.9421 21.9088C13.0309 21.9201 13.121 21.9003 13.1962 21.8528C13.2714 21.8053 13.3268 21.7334 13.3527 21.6497C13.3996 21.5394 13.4252 21.4216 13.4282 21.3022C13.4295 20.8258 13.4207 20.3493 13.4081 19.8741C13.393 19.3264 13.3917 18.7763 13.3438 18.231C13.2857 17.5839 13.266 16.934 13.2847 16.2847C13.2847 16.2466 13.291 16.2073 13.2985 16.1312C13.3338 16.2024 13.3514 16.2356 13.3665 16.2712C13.9017 17.5228 14.3617 18.8037 14.7443 20.1074C14.7928 20.2421 14.7928 20.3889 14.7443 20.5237C14.6322 20.8196 14.7141 21.037 14.9659 21.1377C15.4445 21.3268 15.9331 21.4926 16.4155 21.6731C16.4865 21.7033 16.566 21.7091 16.6408 21.6895C16.7157 21.6698 16.7815 21.6259 16.8273 21.565C16.9085 21.4643 16.9743 21.3526 17.0225 21.2335C17.0537 21.1374 17.0798 21.0399 17.1006 20.9412C17.3185 20.2425 17.5653 19.5499 17.7517 18.8438C17.9785 17.9723 18.2624 17.1158 18.6018 16.2798C18.6201 16.2439 18.6411 16.2094 18.6647 16.1766C18.6761 16.2319 18.6761 16.254 18.6761 16.2761C18.6345 17.59 18.5955 18.8978 18.5501 20.2056C18.5363 20.5949 18.491 20.9829 18.4809 21.3722C18.4721 21.705 18.6207 21.8708 18.9557 21.9002C19.4355 21.9432 19.9191 21.9592 20.4002 21.9973C20.4888 22.0079 20.5784 21.9875 20.653 21.9399C20.7277 21.8922 20.7827 21.8203 20.8082 21.7369C20.8531 21.6305 20.8766 21.5167 20.8775 21.4017C20.88 20.7668 20.8674 20.132 20.8674 19.4971C20.8662 19.2846 20.8687 19.0722 20.8523 18.8622C20.8158 18.3968 20.7264 17.9314 20.7339 17.4685C20.7515 16.2122 20.8044 14.9572 20.8599 13.7022Z" fill="white"></path></svg></div></div></div><div style="display: flex; align-items: center; flex-direction: row; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display: block; opacity: 0;"><g clip-path="url(#clip0_38845_9816)"><path d="M7 14C5.14348 14 3.36301 13.2625 2.05025 11.9497C0.737498 10.637 0 8.85652 0 7C0 5.14348 0.737498 3.36301 2.05025 2.05025C3.36301 0.737498 5.14348 0 7 0C8.85652 0 10.637 0.737498 11.9497 2.05025C13.2625 3.36301 14 5.14348 14 7C14 8.85652 13.2625 10.637 11.9497 11.9497C10.637 13.2625 8.85652 14 7 14Z" fill="#B1B1B1" fill-opacity="0.4"></path><path d="M6.11754 7.00052L4.18254 5.06452C4.06786 4.94725 4.00406 4.78948 4.00498 4.62546C4.00589 4.46144 4.07145 4.3044 4.18744 4.18841C4.30342 4.07243 4.46046 4.00687 4.62448 4.00595C4.7885 4.00503 4.94627 4.06884 5.06354 4.18352L6.99954 6.11852L8.93554 4.18352C8.99315 4.1246 9.06188 4.07771 9.13774 4.04554C9.2136 4.01337 9.29508 3.99656 9.37748 3.9961C9.45988 3.99564 9.54155 4.01153 9.61777 4.04285C9.69398 4.07417 9.76323 4.1203 9.82149 4.17857C9.87976 4.23683 9.92589 4.30608 9.95721 4.38229C9.98853 4.45851 10.0044 4.54018 10.004 4.62258C10.0035 4.70497 9.98669 4.78646 9.95452 4.86232C9.92235 4.93818 9.87545 5.00691 9.81654 5.06452L7.88154 7.00052L9.81654 8.93652C9.93122 9.05379 9.99502 9.21155 9.99411 9.37557C9.99319 9.5396 9.92763 9.69664 9.81164 9.81262C9.69566 9.9286 9.53862 9.99417 9.3746 9.99508C9.21058 9.996 9.05281 9.9322 8.93554 9.81752L6.99954 7.88252L5.06354 9.81752C5.00593 9.87643 4.93721 9.92333 4.86135 9.9555C4.78549 9.98767 4.704 10.0045 4.6216 10.0049C4.5392 10.0054 4.45753 9.9895 4.38131 9.95818C4.3051 9.92686 4.23585 9.88073 4.17759 9.82247C4.11932 9.7642 4.0732 9.69496 4.04188 9.61874C4.01056 9.54253 3.99467 9.46086 3.99513 9.37846C3.99559 9.29606 4.01239 9.21457 4.04456 9.13871C4.07673 9.06285 4.12363 8.99413 4.18254 8.93652L6.11754 7.00052Z" fill="white"></path></g><defs><clippath id="clip0_38845_9816"><rect width="14" height="14" fill="white"></rect></clippath></defs></svg><div style="position: relative;"><div class="imt-fb-btn right btn-animate  " dir="ltr" style="opacity: 0.7;"><div class=" " style="position: relative; pointer-events: all; display: inline-block;"><div><div class="imt-fb-btn-content"><svg class="imt-fb-logo-img imt-fb-logo-img-big-bg" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 14C0 6.26801 6.26801 0 14 0C21.732 0 28 6.26801 28 14C28 21.732 21.732 28 14 28C6.26801 28 0 21.732 0 14Z" fill="#ED6D8F"></path><path d="M7.30921 15.6381C7.53044 15.6381 7.70979 15.8175 7.70979 16.0387V19.0088C7.70979 19.934 8.45993 20.684 9.38526 20.684H11.7557C11.9769 20.684 12.1562 20.8634 12.1562 21.0846V22.152C12.1562 22.3732 11.9769 22.5526 11.7557 22.5526H9.38526C7.42782 22.5526 5.84099 20.966 5.84099 19.0088V16.0387C5.84099 15.8175 6.02034 15.6381 6.24157 15.6381H7.30921ZM18.9876 12.6944C19.1515 12.6944 19.2989 12.7943 19.3597 12.9466L22.9711 22.0036C23.076 22.2667 22.8822 22.5526 22.599 22.5526H21.4672C21.3016 22.5526 21.153 22.4506 21.0934 22.2961L20.2724 20.1673C20.2128 20.0128 20.0643 19.9108 19.8986 19.9108H16.7508C16.5852 19.9108 16.4366 20.0128 16.377 20.1673L15.556 22.2961C15.4964 22.4506 15.3478 22.5526 15.1822 22.5526H14.0504C13.7672 22.5526 13.5734 22.2667 13.6783 22.0036L17.2897 12.9466C17.3505 12.7943 17.4979 12.6944 17.6618 12.6944H18.9876ZM18.5116 15.6017C18.4456 15.4308 18.2038 15.4308 18.1378 15.6017L17.3016 17.7699C17.251 17.9011 17.3478 18.0423 17.4885 18.0423H19.1609C19.3016 18.0423 19.3984 17.9012 19.3478 17.7699L18.5116 15.6017ZM9.69589 5.30028C9.79943 4.8999 10.368 4.89991 10.4715 5.30028L11.1086 7.76368C11.3244 8.59845 11.9396 9.27221 12.7513 9.56299L14.9019 10.3334C15.2559 10.4602 15.2559 10.9608 14.9019 11.0876L12.7513 11.8581C11.9396 12.1489 11.3244 12.8226 11.1086 13.6574L10.4715 16.1208C10.368 16.5212 9.79943 16.5212 9.69589 16.1208L9.05884 13.6574C8.84297 12.8226 8.22786 12.1489 7.41615 11.8581L5.26548 11.0876C4.91151 10.9608 4.91151 10.4602 5.26548 10.3334L7.41615 9.56299C8.22786 9.27221 8.84297 8.59844 9.05884 7.76368L9.69589 5.30028ZM18.0064 6.20485C19.9639 6.20485 21.5507 7.79145 21.5507 9.74861V11.281C21.5507 11.5022 21.3713 11.6816 21.1501 11.6816H20.0825C19.8612 11.6816 19.6819 11.5022 19.6819 11.281V9.74861C19.6819 8.82341 18.9318 8.07338 18.0064 8.07338H14.4343C14.2131 8.07338 14.0337 7.89403 14.0337 7.6728V6.60543C14.0337 6.3842 14.2131 6.20486 14.4343 6.20485H18.0064Z" fill="white"></path></svg></div></div></div></div><div title="关闭悬浮球" class="imt-fb-close-button" style="opacity: 0; pointer-events: none;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none"><g clip-path="url(#clip0_38845_9816)"><path d="M7 14C5.14348 14 3.36301 13.2625 2.05025 11.9497C0.737498 10.637 0 8.85652 0 7C0 5.14348 0.737498 3.36301 2.05025 2.05025C3.36301 0.737498 5.14348 0 7 0C8.85652 0 10.637 0.737498 11.9497 2.05025C13.2625 3.36301 14 5.14348 14 7C14 8.85652 13.2625 10.637 11.9497 11.9497C10.637 13.2625 8.85652 14 7 14Z" fill="#B1B1B1" fill-opacity="0.4"></path><path d="M6.11754 7.00052L4.18254 5.06452C4.06786 4.94725 4.00406 4.78948 4.00498 4.62546C4.00589 4.46144 4.07145 4.3044 4.18744 4.18841C4.30342 4.07243 4.46046 4.00687 4.62448 4.00595C4.7885 4.00503 4.94627 4.06884 5.06354 4.18352L6.99954 6.11852L8.93554 4.18352C8.99315 4.1246 9.06188 4.07771 9.13774 4.04554C9.2136 4.01337 9.29508 3.99656 9.37748 3.9961C9.45988 3.99564 9.54155 4.01153 9.61777 4.04285C9.69398 4.07417 9.76323 4.1203 9.82149 4.17857C9.87976 4.23683 9.92589 4.30608 9.95721 4.38229C9.98853 4.45851 10.0044 4.54018 10.004 4.62258C10.0035 4.70497 9.98669 4.78646 9.95452 4.86232C9.92235 4.93818 9.87545 5.00691 9.81654 5.06452L7.88154 7.00052L9.81654 8.93652C9.93122 9.05379 9.99502 9.21155 9.99411 9.37557C9.99319 9.5396 9.92763 9.69664 9.81164 9.81262C9.69566 9.9286 9.53862 9.99417 9.3746 9.99508C9.21058 9.996 9.05281 9.9322 8.93554 9.81752L6.99954 7.88252L5.06354 9.81752C5.00593 9.87643 4.93721 9.92333 4.86135 9.9555C4.78549 9.98767 4.704 10.0045 4.6216 10.0049C4.5392 10.0054 4.45753 9.9895 4.38131 9.95818C4.3051 9.92686 4.23585 9.88073 4.17759 9.82247C4.11932 9.7642 4.0732 9.69496 4.04188 9.61874C4.01056 9.54253 3.99467 9.46086 3.99513 9.37846C3.99559 9.29606 4.01239 9.21457 4.04456 9.13871C4.07673 9.06285 4.12363 8.99413 4.18254 8.93652L6.11754 7.00052Z" fill="white"></path></g><defs><clippath id="clip0_38845_9816"><rect width="14" height="14" fill="white"></rect></clippath></defs></svg></div></div><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display: none; opacity: 0;"><g clip-path="url(#clip0_38845_9816)"><path d="M7 14C5.14348 14 3.36301 13.2625 2.05025 11.9497C0.737498 10.637 0 8.85652 0 7C0 5.14348 0.737498 3.36301 2.05025 2.05025C3.36301 0.737498 5.14348 0 7 0C8.85652 0 10.637 0.737498 11.9497 2.05025C13.2625 3.36301 14 5.14348 14 7C14 8.85652 13.2625 10.637 11.9497 11.9497C10.637 13.2625 8.85652 14 7 14Z" fill="#B1B1B1" fill-opacity="0.4"></path><path d="M6.11754 7.00052L4.18254 5.06452C4.06786 4.94725 4.00406 4.78948 4.00498 4.62546C4.00589 4.46144 4.07145 4.3044 4.18744 4.18841C4.30342 4.07243 4.46046 4.00687 4.62448 4.00595C4.7885 4.00503 4.94627 4.06884 5.06354 4.18352L6.99954 6.11852L8.93554 4.18352C8.99315 4.1246 9.06188 4.07771 9.13774 4.04554C9.2136 4.01337 9.29508 3.99656 9.37748 3.9961C9.45988 3.99564 9.54155 4.01153 9.61777 4.04285C9.69398 4.07417 9.76323 4.1203 9.82149 4.17857C9.87976 4.23683 9.92589 4.30608 9.95721 4.38229C9.98853 4.45851 10.0044 4.54018 10.004 4.62258C10.0035 4.70497 9.98669 4.78646 9.95452 4.86232C9.92235 4.93818 9.87545 5.00691 9.81654 5.06452L7.88154 7.00052L9.81654 8.93652C9.93122 9.05379 9.99502 9.21155 9.99411 9.37557C9.99319 9.5396 9.92763 9.69664 9.81164 9.81262C9.69566 9.9286 9.53862 9.99417 9.3746 9.99508C9.21058 9.996 9.05281 9.9322 8.93554 9.81752L6.99954 7.88252L5.06354 9.81752C5.00593 9.87643 4.93721 9.92333 4.86135 9.9555C4.78549 9.98767 4.704 10.0045 4.6216 10.0049C4.5392 10.0054 4.45753 9.9895 4.38131 9.95818C4.3051 9.92686 4.23585 9.88073 4.17759 9.82247C4.11932 9.7642 4.0732 9.69496 4.04188 9.61874C4.01056 9.54253 3.99467 9.46086 3.99513 9.37846C3.99559 9.29606 4.01239 9.21457 4.04456 9.13871C4.07673 9.06285 4.12363 8.99413 4.18254 8.93652L6.11754 7.00052Z" fill="white"></path></g><defs><clippath id="clip0_38845_9816"><rect width="14" height="14" fill="white"></rect></clippath></defs></svg></div><div class="btn-animate" style="margin-top: 10px; transform: translateX(60px);"><div class=" btn-animate" style="position: relative; pointer-events: all; display: inline-block;"><div><div class="imt-fb-round-button"><svg class="imt-fb-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style="width: 24px; height: 24px;"><path d="M17 8.66797H11.375" stroke="#ED6D8F" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12.625 15.332L7 15.332" stroke="#ED6D8F" stroke-linecap="round" stroke-linejoin="round"></path><path d="M15.125 17C16.1605 17 17 16.1605 17 15.125C17 14.0895 16.1605 13.25 15.125 13.25C14.0895 13.25 13.25 14.0895 13.25 15.125C13.25 16.1605 14.0895 17 15.125 17Z" stroke="#ED6D8F" stroke-linecap="round" stroke-linejoin="round"></path><path d="M8.875 10.75C9.91053 10.75 10.75 9.91053 10.75 8.875C10.75 7.83947 9.91053 7 8.875 7C7.83947 7 7 7.83947 7 8.875C7 9.91053 7.83947 10.75 8.875 10.75Z" stroke="#ED6D8F" stroke-linecap="round" stroke-linejoin="round"></path><rect x="3" y="4" width="18" height="16" rx="1.66667" stroke="#ED6D8F"></rect></svg></div></div></div></div><div class="btn-animate" style="margin-top: 10px; transform: translateX(60px);"><div class=" btn-animate" style="position: relative; pointer-events: all; display: inline-block;"><div><div class="imt-fb-round-button"><svg class="imt-fb-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><mask id="mask0_43829_2633" maskUnits="userSpaceOnUse" x="0" y="0" width="20" height="20" style="mask-type: alpha;"><rect width="20" height="20" fill="#D9D9D9"></rect></mask><g mask="url(#mask0_43829_2633)"><path d="M9.99546 12.2609C10.1639 12.2609 10.305 12.2055 10.4188 12.0946C10.5327 11.9838 10.5896 11.8441 10.5896 11.6755C10.5896 11.507 10.5342 11.3659 10.4234 11.2521C10.3124 11.1384 10.1727 11.0815 10.0042 11.0815C9.83574 11.0815 9.69463 11.1369 9.58088 11.2478C9.46699 11.3586 9.41005 11.4982 9.41005 11.6667C9.41005 11.8353 9.46546 11.9765 9.5763 12.0903C9.68727 12.204 9.82699 12.2609 9.99546 12.2609ZM9.99546 10.1936C10.148 10.1936 10.2771 10.1418 10.3828 10.0382C10.4886 9.93443 10.5415 9.80568 10.5415 9.65193V5.20318C10.5415 5.04943 10.49 4.92075 10.3871 4.81713C10.2844 4.71338 10.1567 4.66151 10.0042 4.66151C9.85171 4.66151 9.72261 4.71338 9.61692 4.81713C9.51109 4.92075 9.45817 5.04943 9.45817 5.20318V9.65193C9.45817 9.80568 9.50963 9.93443 9.61255 10.0382C9.71532 10.1418 9.84296 10.1936 9.99546 10.1936ZM5.03192 14.5846L3.55359 16.063C3.34262 16.2739 3.10032 16.3221 2.82671 16.2076C2.55324 16.093 2.4165 15.8864 2.4165 15.5878V3.75776C2.4165 3.38262 2.54602 3.06554 2.80505 2.80651C3.06407 2.54748 3.38116 2.41797 3.7563 2.41797H16.2434C16.6185 2.41797 16.9356 2.54748 17.1946 2.80651C17.4537 3.06554 17.5832 3.38262 17.5832 3.75776V13.2448C17.5832 13.62 17.4537 13.9371 17.1946 14.1961C16.9356 14.4551 16.6185 14.5846 16.2434 14.5846H5.03192ZM4.58317 13.5013H16.2434C16.3075 13.5013 16.3663 13.4746 16.4196 13.4211C16.4731 13.3678 16.4998 13.309 16.4998 13.2448V3.75776C16.4998 3.69359 16.4731 3.63484 16.4196 3.58151C16.3663 3.52804 16.3075 3.5013 16.2434 3.5013H3.7563C3.69213 3.5013 3.63338 3.52804 3.58005 3.58151C3.52657 3.63484 3.49984 3.69359 3.49984 3.75776V14.5928L4.58317 13.5013Z" fill="#ED6D8F"></path></g></svg></div></div></div></div><div hidden="" id="immersive-translate-popup-overlay" class="immersive-translate-popup-overlay"><div class="immersive-translate-popup-wrapper" style="position: fixed; top: 335px; right: 65px;"></div></div></div></div></template></div></html>
