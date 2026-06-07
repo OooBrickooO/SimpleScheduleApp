@@ -1,4 +1,7 @@
-﻿package com.example.simpleschedule // 请修改为你真实的包名
+package com.example.simpleschedule.widget
+
+import com.example.simpleschedule.data.local.room.AppDatabase
+import com.example.simpleschedule.receiver.ReminderEngine
 
 import android.annotation.SuppressLint
 import java.io.InputStream

@@ -20,7 +20,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SimpleSchedule">
 
-        <receiver android:name=".CourseAlarmReceiver" android:exported="true">
+        <receiver android:name=".receiver.CourseAlarmReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
@@ -31,7 +31,7 @@
         </receiver>
 
         <receiver
-            android:name=".CourseWidgetReceiver"
+            android:name=".widget.CourseWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

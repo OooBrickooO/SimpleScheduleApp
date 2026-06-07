@@ -1,4 +1,4 @@
-﻿package com.example.simpleschedule // 请修改为你真实的包名
+package com.example.simpleschedule.data.local.datastore
 
 import android.annotation.SuppressLint
 import java.io.InputStream

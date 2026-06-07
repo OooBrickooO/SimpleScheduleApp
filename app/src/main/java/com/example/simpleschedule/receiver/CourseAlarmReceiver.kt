@@ -1,4 +1,10 @@
-﻿package com.example.simpleschedule // 请修改为你真实的包名
+package com.example.simpleschedule.receiver
+
+import com.example.simpleschedule.R
+import com.example.simpleschedule.data.local.datastore.SettingsKeys
+import com.example.simpleschedule.data.local.datastore.dataStore
+import com.example.simpleschedule.data.local.room.*
+import com.example.simpleschedule.widget.WidgetUpdateWorker
 
 import android.annotation.SuppressLint
 import java.io.InputStream

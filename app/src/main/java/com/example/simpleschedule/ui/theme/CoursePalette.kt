@@ -1,4 +1,4 @@
-﻿package com.example.simpleschedule // 请修改为你真实的包名
+package com.example.simpleschedule.ui.theme
 
 import android.annotation.SuppressLint
 import java.io.InputStream
