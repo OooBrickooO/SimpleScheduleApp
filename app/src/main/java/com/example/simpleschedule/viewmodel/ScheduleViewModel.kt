@@ -501,17 +501,17 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun addCustomCourse(name: String, location: String, teacher: String, day: Int, start: Int, end: Int, color: String) {
+    fun addCustomCourse(name: String, location: String, teacher: String, day: Int, start: Int, end: Int, color: String, credits: String? = null) {
         viewModelScope.launch {
-            appDao.insertCourse(Course(UUID.randomUUID().toString(), _currentScheduleId.value, name, location, teacher, day, start, end, "[8,9,10,11,12]", color))
+            appDao.insertCourse(Course(UUID.randomUUID().toString(), _currentScheduleId.value, name, location, teacher, day, start, end, "[8,9,10,11,12]", color, credits))
             notifyWidgetUpdate()
             scheduleNextAlarm()
         }
     }
 
-    fun updateCustomCourse(id: String, name: String, location: String, teacher: String, day: Int, start: Int, end: Int, color: String, weeks: String) {
+    fun updateCustomCourse(id: String, name: String, location: String, teacher: String, day: Int, start: Int, end: Int, color: String, weeks: String, credits: String? = null) {
         viewModelScope.launch {
-            appDao.updateCourse(Course(id, _currentScheduleId.value, name, location, teacher, day, start, end, weeks, color))
+            appDao.updateCourse(Course(id, _currentScheduleId.value, name, location, teacher, day, start, end, weeks, color, credits))
             notifyWidgetUpdate()
             scheduleNextAlarm()
         }

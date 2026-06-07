@@ -355,11 +355,11 @@ class MainActivity : ComponentActivity() {
                         isDark = isDark,
                         initialCourse = courseToEdit,
                         onDismiss = { showAddDialog = false; courseToEdit = null },
-                        onConfirm = { id, name, loc, t, d, s, e, c, w ->
+                        onConfirm = { id, name, loc, t, d, s, e, c, w, credits ->
                             if (id == null) {
-                                viewModel.addCustomCourse(name, loc, t, d, s, e, c)
+                                viewModel.addCustomCourse(name, loc, t, d, s, e, c, credits)
                             } else {
-                                viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w)
+                                viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w, credits)
                             }
                             showAddDialog = false
                             courseToEdit = null

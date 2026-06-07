@@ -168,7 +168,8 @@ data class Course(
     val startNode: Int,
     val endNode: Int,
     val weeks: String,
-    val colorTheme: String
+    val colorTheme: String,
+    val credits: String? = null
 )
 
 @Entity(tableName = "course_overrides")
@@ -246,7 +247,7 @@ interface AppDao {
     suspend fun deleteTimetableGroup(tid: String)
 }
 
-@Database(entities = [ScheduleGroup::class, TimetableGroup::class, TimeNode::class, Course::class, CourseOverride::class], version = 5, exportSchema = false)
+@Database(entities = [ScheduleGroup::class, TimetableGroup::class, TimeNode::class, Course::class, CourseOverride::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao
     companion object {

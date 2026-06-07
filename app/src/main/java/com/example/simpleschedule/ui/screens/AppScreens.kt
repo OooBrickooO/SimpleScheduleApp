@@ -1895,6 +1895,18 @@ fun CourseDetailSheet(displayCourse: DisplayCourse, clickedWeek: Int, isDark: Bo
                     Text(course.teacher, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
                 }
             }
+            if (!course.credits.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().border(0.5.dp, borderColor).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.Info, contentDescription = "Credits", tint = textColor.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("CREDITS: ", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
+                    Text(course.credits, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
+                }
+            }
             Spacer(modifier = Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(onClick = onEdit, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(0.dp), colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if (isDark) BgDark else BgLight)) {
@@ -1946,58 +1958,336 @@ fun CreateScheduleDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (Str
 }
 
 @Composable
-fun CourseEditDialog(isDark: Boolean, initialCourse: Course?, onDismiss: () -> Unit, onConfirm: (String?, String, String, String, Int, Int, Int, String, String) -> Unit) {
+fun CourseEditDialog(
+    isDark: Boolean,
+    initialCourse: Course?,
+    onDismiss: () -> Unit,
+    onConfirm: (String?, String, String, String, Int, Int, Int, String, String, String?) -> Unit
+) {
     val bgColor = if (isDark) Color(0xFF18181B) else Color.White
     val textColor = if (isDark) Color.White else Color.Black
+    val borderColor = if (isDark) BorderDark else BorderLight
 
     var name by remember { mutableStateOf(initialCourse?.name ?: "") }
     var loc by remember { mutableStateOf(initialCourse?.location ?: "") }
     var teacher by remember { mutableStateOf(initialCourse?.teacher ?: "") }
-    var day by remember { mutableStateOf(initialCourse?.dayOfWeek?.toString() ?: "1") }
-    var start by remember { mutableStateOf(initialCourse?.startNode?.toString() ?: "1") }
-    var end by remember { mutableStateOf(initialCourse?.endNode?.toString() ?: "2") }
+    var credits by remember { mutableStateOf(initialCourse?.credits ?: "") }
+    var dayOfWeek by remember { mutableStateOf(initialCourse?.dayOfWeek ?: 1) }
+    var startNode by remember { mutableStateOf(initialCourse?.startNode ?: 1) }
+    var endNode by remember { mutableStateOf(initialCourse?.endNode ?: 2) }
     val colorTheme by remember { mutableStateOf(initialCourse?.colorTheme ?: listOf("blue", "pink", "purple", "slate", "indigo", "rose").random()) }
-    val weeks by remember { mutableStateOf(initialCourse?.weeks ?: "[8,9,10,11,12]") }
+
+    val initialParsedWeeks = remember(initialCourse) {
+        initialCourse?.weeks?.removeSurrounding("[", "]")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.sorted() ?: (1..16).toList()
+    }
+
+    var useShortcutMode by remember {
+        mutableStateOf(
+            initialCourse == null || run {
+                val min = initialParsedWeeks.firstOrNull() ?: 1
+                val max = initialParsedWeeks.lastOrNull() ?: 16
+                val isAll = (min..max).toList() == initialParsedWeeks
+                val isOdd = (min..max).filter { it % 2 != 0 } == initialParsedWeeks
+                val isEven = (min..max).filter { it % 2 == 0 } == initialParsedWeeks
+                isAll || isOdd || isEven
+            }
+        )
+    }
+
+    var startWeekStr by remember { mutableStateOf((initialParsedWeeks.firstOrNull() ?: 1).toString()) }
+    var endWeekStr by remember { mutableStateOf((initialParsedWeeks.lastOrNull() ?: 16).toString()) }
+    var weekType by remember {
+        mutableStateOf(
+            run {
+                val min = initialParsedWeeks.firstOrNull() ?: 1
+                val max = initialParsedWeeks.lastOrNull() ?: 16
+                val isOdd = (min..max).filter { it % 2 != 0 } == initialParsedWeeks
+                val isEven = (min..max).filter { it % 2 == 0 } == initialParsedWeeks
+                if (isOdd) 1 else if (isEven) 2 else 0
+            }
+        )
+    }
+    var customWeeksStr by remember { mutableStateOf(initialParsedWeeks.joinToString(", ")) }
+
+    val activeWeeksList = remember(useShortcutMode, startWeekStr, endWeekStr, weekType, customWeeksStr) {
+        if (useShortcutMode) {
+            val startW = startWeekStr.toIntOrNull() ?: 1
+            val endW = endWeekStr.toIntOrNull() ?: 16
+            val range = startW..endW
+            when (weekType) {
+                1 -> range.filter { it % 2 != 0 }
+                2 -> range.filter { it % 2 == 0 }
+                else -> range.toList()
+            }
+        } else {
+            customWeeksStr.split(Regex("[,，\\s]+"))
+                .mapNotNull { it.trim().toIntOrNull() }
+                .filter { it in 1..50 }
+                .distinct()
+                .sorted()
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(8.dp), color = bgColor, modifier = Modifier.padding(16.dp)) {
+        Surface(shape = RoundedCornerShape(12.dp), color = bgColor, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(if (initialCourse == null) "添加课程" else "编辑课程", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it }, label = { Text("课程名称", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = loc, onValueChange = { loc = it }, label = { Text("上课地点", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = teacher, onValueChange = { teacher = it }, label = { Text("授课教师", color = textColor.copy(alpha = 0.6f)) }, singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     OutlinedTextField(
-                        value = day, onValueChange = { day = it }, label = { Text("星期(1-7)", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = name, onValueChange = { name = it }, label = { Text("课程名称", color = textColor.copy(alpha = 0.6f)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
                     )
                     OutlinedTextField(
-                        value = start, onValueChange = { start = it }, label = { Text("起始节", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = loc, onValueChange = { loc = it }, label = { Text("上课地点", color = textColor.copy(alpha = 0.6f)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
                     )
                     OutlinedTextField(
-                        value = end, onValueChange = { end = it }, label = { Text("结束节", color = textColor.copy(alpha = 0.6f)) }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = teacher, onValueChange = { teacher = it }, label = { Text("授课教师", color = textColor.copy(alpha = 0.6f)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
                     )
+                    OutlinedTextField(
+                        value = credits, onValueChange = { credits = it }, label = { Text("学分 (选择性输入)", color = textColor.copy(alpha = 0.6f)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                    )
+
+                    // Day of Week
+                    Column {
+                        Text("星期", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val days = listOf("一", "二", "三", "四", "五", "六", "日")
+                            days.forEachIndexed { index, dName ->
+                                val isSelected = dayOfWeek == (index + 1)
+                                val activeThemeColor = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE)
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { dayOfWeek = index + 1 },
+                                    color = if (isSelected) activeThemeColor else (if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5)),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = dName,
+                                            color = if (isSelected) Color.White else textColor.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Start/End Node
+                    Column {
+                        Text("节次", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            var startExpanded by remember { mutableStateOf(false) }
+                            Box(modifier = Modifier.weight(1f)) {
+                                OutlinedButton(
+                                    onClick = { startExpanded = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = textColor)
+                                ) {
+                                    Text("起始: 第 $startNode 节")
+                                }
+                                DropdownMenu(
+                                    expanded = startExpanded,
+                                    onDismissRequest = { startExpanded = false }
+                                ) {
+                                    (1..17).forEach { n ->
+                                        DropdownMenuItem(
+                                            text = { Text("第 $n 节", color = textColor) },
+                                            onClick = {
+                                                startNode = n
+                                                if (endNode < startNode) endNode = startNode
+                                                startExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            var endExpanded by remember { mutableStateOf(false) }
+                            Box(modifier = Modifier.weight(1f)) {
+                                OutlinedButton(
+                                    onClick = { endExpanded = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = textColor)
+                                ) {
+                                    Text("结束: 第 $endNode 节")
+                                }
+                                DropdownMenu(
+                                    expanded = endExpanded,
+                                    onDismissRequest = { endExpanded = false }
+                                ) {
+                                    (1..17).forEach { n ->
+                                        DropdownMenuItem(
+                                            text = { Text("第 $n 节", color = textColor) },
+                                            onClick = {
+                                                if (n >= startNode) {
+                                                    endNode = n
+                                                }
+                                                endExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Weeks selection
+                    Column {
+                        Text("上课周数", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val activeTabColor = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE)
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { useShortcutMode = true },
+                                color = if (useShortcutMode) activeTabColor.copy(alpha = 0.15f) else Color.Transparent,
+                                border = BorderStroke(1.dp, if (useShortcutMode) activeTabColor else textColor.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    Text("快捷输入 (始末周)", color = if (useShortcutMode) activeTabColor else textColor.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { useShortcutMode = false },
+                                color = if (!useShortcutMode) activeTabColor.copy(alpha = 0.15f) else Color.Transparent,
+                                border = BorderStroke(1.dp, if (!useShortcutMode) activeTabColor else textColor.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                    Text("自定义输入 (列出周数)", color = if (!useShortcutMode) activeTabColor else textColor.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (useShortcutMode) {
+                            val activeTabColor = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE)
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = startWeekStr,
+                                        onValueChange = { startWeekStr = it },
+                                        label = { Text("起始周", fontSize = 11.sp, color = textColor.copy(alpha = 0.6f)) },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                                    )
+                                    OutlinedTextField(
+                                        value = endWeekStr,
+                                        onValueChange = { endWeekStr = it },
+                                        label = { Text("结束周", fontSize = 11.sp, color = textColor.copy(alpha = 0.6f)) },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    val types = listOf("每周", "单周", "双周")
+                                    types.forEachIndexed { index, tName ->
+                                        val isTypeSelected = weekType == index
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clickable { weekType = index },
+                                            color = if (isTypeSelected) activeTabColor else (if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5)),
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = tName,
+                                                    color = if (isTypeSelected) Color.White else textColor.copy(alpha = 0.8f),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            OutlinedTextField(
+                                value = customWeeksStr,
+                                onValueChange = { customWeeksStr = it },
+                                label = { Text("上课周数 (如 1, 2, 3, 5)", color = textColor.copy(alpha = 0.6f)) },
+                                placeholder = { Text("例如: 1, 2, 3, 5", color = textColor.copy(alpha = 0.4f)) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "已选周数预览: ${if (activeWeeksList.isEmpty()) "无" else activeWeeksList.joinToString(", ") { "${it}周" }}",
+                            fontSize = 11.sp,
+                            color = textColor.copy(alpha = 0.6f)
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("取消", color = textColor.copy(alpha = 0.5f)) }
+                    val finalWeeksStr = remember(activeWeeksList) {
+                        activeWeeksList.joinToString(prefix = "[", postfix = "]") { it.toString() }
+                    }
                     Button(
-                        onClick = { onConfirm(initialCourse?.id, name, loc, teacher, day.toIntOrNull()?:1, start.toIntOrNull()?:1, end.toIntOrNull()?:2, colorTheme, weeks) },
+                        onClick = {
+                            if (name.isNotBlank()) {
+                                onConfirm(
+                                    initialCourse?.id,
+                                    name,
+                                    loc,
+                                    teacher,
+                                    dayOfWeek,
+                                    startNode,
+                                    endNode,
+                                    colorTheme,
+                                    finalWeeksStr,
+                                    credits.trim().ifEmpty { null }
+                                )
+                            }
+                        },
                         colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = bgColor), shape = RoundedCornerShape(4.dp)
                     ) { Text("保存") }
                 }
