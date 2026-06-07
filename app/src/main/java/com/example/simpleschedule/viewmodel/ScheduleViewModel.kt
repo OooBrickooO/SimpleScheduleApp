@@ -530,8 +530,20 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             try {
                 val array = JSONArray(jsonString)
                 val targetScheduleId = _currentScheduleId.value
+                var maxWeekInImport = totalWeeks.value
                 for (i in 0 until array.length()) {
                     val obj = array.getJSONObject(i)
+                    val weeksStr = obj.optString("weeks", "[]")
+                    try {
+                        val weeksArr = JSONArray(weeksStr)
+                        for (j in 0 until weeksArr.length()) {
+                            val w = weeksArr.getInt(j)
+                            if (w > maxWeekInImport) {
+                                maxWeekInImport = w
+                            }
+                        }
+                    } catch (e: Exception) {}
+
                     appDao.insertCourse(
                         Course(
                             id = UUID.randomUUID().toString(),
@@ -542,10 +554,13 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                             dayOfWeek = obj.optInt("dayOfWeek", 1),
                             startNode = obj.optInt("startNode", 1),
                             endNode = obj.optInt("endNode", 2),
-                            weeks = obj.optString("weeks", "[8,9,10,11,12]"),
+                            weeks = weeksStr,
                             colorTheme = obj.optString("colorTheme", "blue")
                         )
                     )
+                }
+                if (maxWeekInImport > totalWeeks.value) {
+                    updateSetting(SettingsKeys.TOTAL_WEEKS, maxWeekInImport)
                 }
                 notifyWidgetUpdate()
                 scheduleNextAlarm()

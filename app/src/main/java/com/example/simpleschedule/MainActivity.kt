@@ -292,6 +292,9 @@ class MainActivity : ComponentActivity() {
                         "webview_import" -> {
                             WebViewImportScreen(
                                 isDark = isDark,
+                                activeTimeNodes = activeTimeNodes,
+                                startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
+                                hasCourses = displayCourses.isNotEmpty(),
                                 onBack = { currentRoute = "main" },
                                 onImport = { json ->
                                     viewModel.importFromJson(json) { success ->

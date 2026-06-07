@@ -50,6 +50,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -205,8 +207,9 @@ fun TimetableScreen(
     var selectedCourseWithWeek by remember { mutableStateOf<Pair<DisplayCourse, Int>?>(null) }
     var showAddMenu by remember { mutableStateOf(false) }
     var showMoreSheet by remember { mutableStateOf(false) }
-    var showDeleteScheduleDialog by remember { mutableStateOf(false) }
-    var showImportBlockDialog by remember { mutableStateOf(false) }
+    var scheduleIdToDelete by remember { mutableStateOf<String?>(null) }
+    var scheduleNameToDelete by remember { mutableStateOf<String?>(null) }
+
 
     val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
     val currentScheduleName = currentSchedule?.name ?: "课表"
@@ -239,13 +242,13 @@ fun TimetableScreen(
                     DropdownMenu(expanded = showAddMenu, onDismissRequest = { showAddMenu = false }, modifier = Modifier.background(if (isDark) Color(0xFF18181B) else Color.White).border(0.5.dp, borderColor)) {
                         DropdownMenuItem(text = { Text("手动添加课程", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onAddClick() })
                         Divider(color = borderColor, thickness = 0.5.dp)
-                        DropdownMenuItem(text = { Text("从教务导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = {
+                        DropdownMenuItem(text = { Text("从教务导入课表", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = {
                             showAddMenu = false
-                            if (courses.isNotEmpty()) {
-                                showImportBlockDialog = true
-                            } else {
-                                onWebViewImportClick()
-                            }
+                            onWebViewImportClick()
+                        })
+                        DropdownMenuItem(text = { Text("从教务导入考试", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Assignment, contentDescription = null, tint = textColor) }, onClick = {
+                            showAddMenu = false
+                            onWebViewImportClick()
                         })
                         DropdownMenuItem(text = { Text("分享口令导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onShareCodeClick() })
                     }
@@ -318,19 +321,7 @@ fun TimetableScreen(
         }
     }
 
-    if (showImportBlockDialog) {
-        AlertDialog(
-            onDismissRequest = { showImportBlockDialog = false },
-            title = { Text("无法导入", fontWeight = FontWeight.Bold) },
-            text = { Text("当前课表中已经有数据啦！\n为了避免数据混乱叠加在一起，请先去【新建一个空白的课表】，然后再进行教务导入哦喵！") },
-            confirmButton = {
-                TextButton(onClick = { showImportBlockDialog = false }) { Text("知道啦", color = textColor, fontWeight = FontWeight.Bold) }
-            },
-            containerColor = if (isDark) Color(0xFF18181B) else Color.White,
-            titleContentColor = textColor,
-            textContentColor = textColor.copy(alpha = 0.8f)
-        )
-    }
+
 
     if (selectedCourseWithWeek != null) {
         val (course, clickedWeek) = selectedCourseWithWeek!!
@@ -344,18 +335,19 @@ fun TimetableScreen(
         )
     }
 
-    if (showDeleteScheduleDialog) {
+    if (scheduleIdToDelete != null) {
         DeleteScheduleDialog(
             isDark = isDark,
-            scheduleName = currentScheduleName,
-            onDismiss = { showDeleteScheduleDialog = false },
+            scheduleName = scheduleNameToDelete ?: "课表",
+            onDismiss = { scheduleIdToDelete = null; scheduleNameToDelete = null },
             onConfirm = {
+                val targetId = scheduleIdToDelete!!
                 if (scheduleGroups.size <= 1) {
                     Toast.makeText(context, "必须至少保留一个课表喵！", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.deleteSchedule(currentScheduleId)
+                    viewModel.deleteSchedule(targetId)
                 }
-                showDeleteScheduleDialog = false
+                scheduleIdToDelete = null; scheduleNameToDelete = null
             }
         )
     }
@@ -376,7 +368,7 @@ fun TimetableScreen(
             onScheduleSettingsClick = onScheduleSettingsClick,
             onGlobalSettingsClick = onGlobalSettingsClick,
             onReminderSettingsClick = onReminderSettingsClick,
-            onDeleteScheduleClick = { showDeleteScheduleDialog = true }
+            onDeleteScheduleClick = { id, name -> scheduleIdToDelete = id; scheduleNameToDelete = name }
         )
     }
 }
@@ -1114,13 +1106,23 @@ fun ShareCodeDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (String) 
 }
 
 @Composable
-fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) -> Unit) {
+fun WebViewImportScreen(
+    isDark: Boolean,
+    activeTimeNodes: List<TimeNode>,
+    startDate: String,
+    hasCourses: Boolean,
+    onBack: () -> Unit,
+    onImport: (String) -> Unit
+) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val context = LocalContext.current
     var url by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var loadUrl by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var showBlockDialog by remember { mutableStateOf(false) }
+
+
 
     val xlsPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
@@ -1197,7 +1199,13 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Button(
-                    onClick = { xlsPickerLauncher.launch("application/vnd.ms-excel") },
+                    onClick = {
+                        if (hasCourses) {
+                            showBlockDialog = true
+                        } else {
+                            xlsPickerLauncher.launch("application/vnd.ms-excel")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if (isDark) BgDark else BgLight)
@@ -1228,215 +1236,118 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                                 onImport(data)
                             }
                         }
+
+                        @JavascriptInterface
+                        fun passExamData(html: String) {
+                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                val (jsonData, errorMsg) = parseZhengfangExamHtml(
+                                    html.byteInputStream(),
+                                    activeTimeNodes,
+                                    startDate
+                                )
+                                if (errorMsg != null) {
+                                    Toast.makeText(ctx, errorMsg, Toast.LENGTH_LONG).show()
+                                } else if (jsonData != null && jsonData != "[]") {
+                                    onImport(jsonData)
+                                } else {
+                                    Toast.makeText(ctx, "未提取到任何有效的考试安排", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
                     }, "Android")
                     webViewRef = this
                 }
             }, update = { it.loadUrl(loadUrl) }, modifier = Modifier.fillMaxSize())
         }
-        Button(
-            onClick = {
-                val jsCode = if (loadUrl.contains("lzjtu")) {
-                    """
-                    javascript:(function() {
-                        try {
-                            var courses = [];
-                            var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
-                            var nodes = document.querySelectorAll('.kbcontent, .kbcontent1');
-
-                            if (nodes.length === 0) {
-                                window.Android.passData("ERROR:未找到课程节点，请确保已进入课表页面！");
-                                return;
-                            }
-
-                            nodes.forEach(function(node) {
-                                var idStr = node.id;
-                                if (!idStr) return;
-                                var parts = idStr.split('-');
-                                if (parts.length < 3) return;
-
-                                var nameNode = node.querySelector('a');
-                                if (!nameNode) return;
-                                var name = nameNode.innerText.trim();
-                                if (!name) return;
-
-                                var teacherNode = node.querySelector('font[title="教师"]');
-                                var teacher = teacherNode ? teacherNode.innerText.trim() : '';
-
-                                var locationNode = node.querySelector('font[title="教室"]');
-                                var location = locationNode ? locationNode.innerText.trim() : '未排地点';
-
-                                var timeNode = node.querySelector('font[title="周次(节次)"]');
-                                if (!timeNode) return;
-                                var timeText = timeNode.innerText.trim();
-
-                                var weekStr = timeText.split('(周)')[0];
-                                var sectionStr = timeText.match(/\[(\d+)-(\d+)节\]/);
-                                var startNode = 1, endNode = 2;
-                                if (sectionStr) {
-                                    startNode = parseInt(sectionStr[1], 10);
-                                    endNode = parseInt(sectionStr[2], 10);
-                                } else {
-                                    var tr = node.closest('tr');
-                                    if(tr) {
-                                        var th = tr.querySelector('th');
-                                        if(th && th.innerText.match(/\((\d+),(\d+)小节\)/)) {
-                                            var m = th.innerText.match(/\((\d+),(\d+)小节\)/);
-                                            startNode = parseInt(m[1], 10);
-                                            endNode = parseInt(m[2], 10);
-                                        }
-                                    }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp).navigationBarsPadding(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = {
+                    if (hasCourses) {
+                        showBlockDialog = true
+                    } else {
+                        val jsCode = if (loadUrl.contains("lzjtu")) {
+                        """
+                        javascript:(function() {
+                            try {
+                                var courses = [];
+                                var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
+                                var nodes = document.querySelectorAll('.kbcontent, .kbcontent1');
+    
+                                if (nodes.length === 0) {
+                                    window.Android.passData("ERROR:未找到课程节点，请确保已进入课表页面！");
+                                    return;
                                 }
-                                
-                                var dayOfWeek = parseInt(parts[1], 10);
-
-                                var weeksArr = [];
-                                var weekParts = weekStr.split(',');
-                                weekParts.forEach(function(p) {
-                                    var rangeMatch = p.match(/(\d+)-(\d+)/);
-                                    if (rangeMatch) {
-                                        for(var i = parseInt(rangeMatch[1], 10); i <= parseInt(rangeMatch[2], 10); i++) {
-                                            weeksArr.push(i);
-                                        }
-                                    } else {
-                                        var singleMatch = p.match(/(\d+)/);
-                                        if (singleMatch) {
-                                            weeksArr.push(parseInt(singleMatch[1], 10));
-                                        }
-                                    }
-                                });
-
-                                if (weeksArr.length === 0) return;
-
-                                var nameHash = 0;
-                                for(var i=0; i<name.length; i++) nameHash += name.charCodeAt(i);
-                                var colorTheme = colorList[nameHash % colorList.length];
-
-                                courses.push({
-                                    name: name,
-                                    location: location,
-                                    teacher: teacher,
-                                    dayOfWeek: dayOfWeek,
-                                    startNode: startNode,
-                                    endNode: endNode,
-                                    weeks: JSON.stringify(weeksArr),
-                                    colorTheme: colorTheme
-                                });
-                            });
-
-                            var uniqueCourses = [];
-                            var seen = new Set();
-                            courses.forEach(function(c) {
-                                var key = c.name + c.dayOfWeek + c.startNode + c.endNode + c.weeks;
-                                if(!seen.has(key)) {
-                                    seen.add(key);
-                                    uniqueCourses.push(c);
-                                }
-                            });
-
-                            window.Android.passData(JSON.stringify(uniqueCourses));
-                        } catch (e) {
-                            window.Android.passData("ERROR:提取异常:" + e.message);
-                        }
-                    })();
-                    """.trimIndent()
-                } else {
-                    """
-                    javascript:(function() {
-                        try {
-                            var courses = [];
-                            var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
-                            var nodes = document.querySelectorAll('.kbcontent, .timetable_con');
-                            
-                            if (nodes.length === 0) {
-                                window.Android.passData("ERROR:未找到课程节点，请确保已进入「个人课表查询」页面且已显示课表！");
-                                return;
-                            }
-
-                            nodes.forEach(function(node) {
-                                var td = node.closest('td');
-                                if (!td || !td.id) return;
-                                var dayOfWeek = parseInt(td.id.split('-')[0]);
-                                
-                                var htmlBlocks = node.innerHTML.split(/<hr[^>]*>/i);
-                                
-                                htmlBlocks.forEach(function(html) {
-                                    var tempDiv = document.createElement('div');
-                                    tempDiv.innerHTML = html;
-                                    
-                                    var textContent = tempDiv.innerText.trim();
-                                    if (!textContent) return;
-                                    
-                                    var titleNode = tempDiv.querySelector('.title font, font[title="课程"], font.color-font');
-                                    var name = titleNode ? titleNode.innerText.replace(/[★○●◇]/g, '').trim() : '';
-                                    if (!name) {
-                                         var lines = textContent.split('\n').filter(l => l.trim() !== '');
-                                         if(lines.length > 0) name = lines[0].replace(/[★○●◇]/g, '').trim();
-                                    }
-                                    
-                                    var timeText = '', location = '未排地点', teacher = '';
-                                    
-                                    var ps = tempDiv.querySelectorAll('p, font, span');
-                                    if (ps.length > 0) {
-                                        ps.forEach(function(p) {
-                                            var text = p.innerText.trim();
-                                            if (text.includes('节/周') || text.includes('节)') || text.match(/\d+-\d+节/)) timeText = text;
-                                            if (text.includes('校区') || text.includes('楼') || text.includes('教室') || p.getAttribute('title') === '教室') location = text;
-                                            if (p.getAttribute('title') === '老师' || text.match(/[\u4e00-\u9fa5]{2,4}/)) {
-                                                if(!teacher && text !== name && !text.includes('周') && !text.includes('楼')) {
-                                                    teacher = text;
-                                                }
-                                            }
-                                        });
-                                    } else {
-                                        var lines = textContent.split('\n').map(l => l.trim()).filter(l => l !== '');
-                                        lines.forEach(function(line) {
-                                            if (line.match(/\d+-\d+节/)) timeText = line;
-                                            else if (line.match(/楼|教室|校区/)) location = line;
-                                        });
-                                    }
-                                    
+    
+                                nodes.forEach(function(node) {
+                                    var idStr = node.id;
+                                    if (!idStr) return;
+                                    var parts = idStr.split('-');
+                                    if (parts.length < 3) return;
+    
+                                    var nameNode = node.querySelector('a');
+                                    if (!nameNode) return;
+                                    var name = nameNode.innerText.trim();
+                                    if (!name) return;
+    
+                                    var teacherNode = node.querySelector('font[title="教师"]');
+                                    var teacher = teacherNode ? teacherNode.innerText.trim() : '';
+    
+                                    var locationNode = node.querySelector('font[title="教室"]');
+                                    var location = locationNode ? locationNode.innerText.trim() : '未排地点';
+    
+                                    var timeNode = node.querySelector('font[title="周次(节次)"]');
+                                    if (!timeNode) return;
+                                    var timeText = timeNode.innerText.trim();
+    
+                                    var weekStr = timeText.split('(周)')[0];
+                                    var sectionStr = timeText.match(/\[(\d+)-(\d+)节\]/);
                                     var startNode = 1, endNode = 2;
-                                    var weeksArr = [];
-                                    
-                                    var timeMatch = timeText.match(/\((\d+)-(\d+)节\)(.*)/) || timeText.match(/(\d+)-(\d+)节(.*)/);
-                                    if (timeMatch) {
-                                        startNode = parseInt(timeMatch[1]);
-                                        endNode = parseInt(timeMatch[2]);
-                                        var weekStr = timeMatch[3].replace(/\s+/g, '');
-                                        
-                                        var parts = weekStr.split(/[,，、]+/);
-                                        parts.forEach(function(p) {
-                                            var isOdd = p.indexOf('单') !== -1;
-                                            var isEven = p.indexOf('双') !== -1;
-                                            var rangeMatch = p.match(/(\d+)-(\d+)/);
-                                            if (rangeMatch) {
-                                                for(var i = parseInt(rangeMatch[1]); i <= parseInt(rangeMatch[2]); i++) {
-                                                    if (isOdd && i % 2 === 0) continue;
-                                                    if (isEven && i % 2 !== 0) continue;
-                                                    weeksArr.push(i);
-                                                }
-                                            } else {
-                                                var singleMatch = p.match(/(\d+)/);
-                                                if (singleMatch) {
-                                                    var wNum = parseInt(singleMatch[1]);
-                                                    if (isOdd && wNum % 2 === 0) return;
-                                                    if (isEven && wNum % 2 !== 0) return;
-                                                    weeksArr.push(wNum);
-                                                }
+                                    if (sectionStr) {
+                                        startNode = parseInt(sectionStr[1], 10);
+                                        endNode = parseInt(sectionStr[2], 10);
+                                    } else {
+                                        var tr = node.closest('tr');
+                                        if(tr) {
+                                            var th = tr.querySelector('th');
+                                            if(th && th.innerText.match(/\((\d+),(\d+)小节\)/)) {
+                                                var m = th.innerText.match(/\((\d+),(\d+)小节\)/);
+                                                startNode = parseInt(m[1], 10);
+                                                endNode = parseInt(m[2], 10);
                                             }
-                                        });
+                                        }
                                     }
                                     
-                                    if (!name || weeksArr.length === 0) return;
-                                    
+                                    var dayOfWeek = parseInt(parts[1], 10);
+    
+                                    var weeksArr = [];
+                                    var weekParts = weekStr.split(',');
+                                    weekParts.forEach(function(p) {
+                                        var rangeMatch = p.match(/(\d+)-(\d+)/);
+                                        if (rangeMatch) {
+                                            for(var i = parseInt(rangeMatch[1], 10); i <= parseInt(rangeMatch[2], 10); i++) {
+                                                weeksArr.push(i);
+                                            }
+                                        } else {
+                                            var singleMatch = p.match(/(\d+)/);
+                                            if (singleMatch) {
+                                                weeksArr.push(parseInt(singleMatch[1], 10));
+                                            }
+                                        }
+                                    });
+    
+                                    if (weeksArr.length === 0) return;
+    
                                     var nameHash = 0;
                                     for(var i=0; i<name.length; i++) nameHash += name.charCodeAt(i);
                                     var colorTheme = colorList[nameHash % colorList.length];
-                                    
+    
                                     courses.push({
                                         name: name,
-                                        location: location.replace('上课地点：', '').trim(),
-                                        teacher: teacher.replace('教师：', '').trim(),
+                                        location: location,
+                                        teacher: teacher,
                                         dayOfWeek: dayOfWeek,
                                         startNode: startNode,
                                         endNode: endNode,
@@ -1444,33 +1355,200 @@ fun WebViewImportScreen(isDark: Boolean, onBack: () -> Unit, onImport: (String) 
                                         colorTheme: colorTheme
                                     });
                                 });
-                            });
-                            
-                            var uniqueCourses = [];
-                            var seen = new Set();
-                            courses.forEach(function(c) {
-                                var key = c.name + c.dayOfWeek + c.startNode + c.endNode + c.weeks;
-                                if(!seen.has(key)) {
-                                    seen.add(key);
-                                    uniqueCourses.push(c);
+    
+                                var uniqueCourses = [];
+                                var seen = new Set();
+                                courses.forEach(function(c) {
+                                    var key = c.name + c.dayOfWeek + c.startNode + c.endNode + c.weeks;
+                                    if(!seen.has(key)) {
+                                        seen.add(key);
+                                        uniqueCourses.push(c);
+                                    }
+                                });
+    
+                                window.Android.passData(JSON.stringify(uniqueCourses));
+                            } catch (e) {
+                                window.Android.passData("ERROR:提取异常:" + e.message);
+                            }
+                        })();
+                        """.trimIndent()
+                    } else {
+                        """
+                        javascript:(function() {
+                            try {
+                                var courses = [];
+                                var colorList = ['blue', 'pink', 'purple', 'slate', 'indigo', 'rose'];
+                                var nodes = document.querySelectorAll('.kbcontent, .timetable_con');
+                                
+                                if (nodes.length === 0) {
+                                    window.Android.passData("ERROR:未找到课程节点，请确保已进入「个人课表查询」页面且已显示课表！");
+                                    return;
                                 }
-                            });
-                            
-                            window.Android.passData(JSON.stringify(uniqueCourses));
+    
+                                nodes.forEach(function(node) {
+                                    var td = node.closest('td');
+                                    if (!td || !td.id) return;
+                                    var dayOfWeek = parseInt(td.id.split('-')[0]);
+                                    
+                                    var htmlBlocks = node.innerHTML.split(/<hr[^>]*>/i);
+                                    
+                                    htmlBlocks.forEach(function(html) {
+                                        var tempDiv = document.createElement('div');
+                                        tempDiv.innerHTML = html;
+                                        
+                                        var textContent = tempDiv.innerText.trim();
+                                        if (!textContent) return;
+                                        
+                                        var titleNode = tempDiv.querySelector('.title font, font[title="课程"], font.color-font');
+                                        var name = titleNode ? titleNode.innerText.replace(/[★○●◇]/g, '').trim() : '';
+                                        if (!name) {
+                                             var lines = textContent.split('\n').filter(l => l.trim() !== '');
+                                             if(lines.length > 0) name = lines[0].replace(/[★○●◇]/g, '').trim();
+                                        }
+                                        
+                                        var timeText = '', location = '未排地点', teacher = '';
+                                        
+                                        var ps = tempDiv.querySelectorAll('p, font, span');
+                                        if (ps.length > 0) {
+                                            ps.forEach(function(p) {
+                                                var text = p.innerText.trim();
+                                                if (text.includes('节/周') || text.includes('节)') || text.match(/\d+-\d+节/)) timeText = text;
+                                                if (text.includes('校区') || text.includes('楼') || text.includes('教室') || p.getAttribute('title') === '教室') location = text;
+                                                if (p.getAttribute('title') === '老师' || text.match(/[\u4e00-\u9fa5]{2,4}/)) {
+                                                    if(!teacher && text !== name && !text.includes('周') && !text.includes('楼')) {
+                                                        teacher = text;
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            var lines = textContent.split('\n').map(l => l.trim()).filter(l => l !== '');
+                                            lines.forEach(function(line) {
+                                                if (line.match(/\d+-\d+节/)) timeText = line;
+                                                else if (line.match(/楼|教室|校区/)) location = line;
+                                            });
+                                        }
+                                        
+                                        var startNode = 1, endNode = 2;
+                                        var weeksArr = [];
+                                        
+                                        var timeMatch = timeText.match(/\((\d+)-(\d+)节\)(.*)/) || timeText.match(/(\d+)-(\d+)节(.*)/);
+                                        if (timeMatch) {
+                                            startNode = parseInt(timeMatch[1]);
+                                            endNode = parseInt(timeMatch[2]);
+                                            var weekStr = timeMatch[3].replace(/\s+/g, '');
+                                            
+                                            var parts = weekStr.split(/[,，、]+/);
+                                            parts.forEach(function(p) {
+                                                var isOdd = p.indexOf('单') !== -1;
+                                                var isEven = p.indexOf('双') !== -1;
+                                                var rangeMatch = p.match(/(\d+)-(\d+)/);
+                                                if (rangeMatch) {
+                                                    for(var i = parseInt(rangeMatch[1]); i <= parseInt(rangeMatch[2]); i++) {
+                                                        if (isOdd && i % 2 === 0) continue;
+                                                        if (isEven && i % 2 !== 0) continue;
+                                                        weeksArr.push(i);
+                                                    }
+                                                } else {
+                                                    var singleMatch = p.match(/(\d+)/);
+                                                    if (singleMatch) {
+                                                        var wNum = parseInt(singleMatch[1]);
+                                                        if (isOdd && wNum % 2 === 0) return;
+                                                        if (isEven && wNum % 2 !== 0) return;
+                                                        weeksArr.push(wNum);
+                                                    }
+                                                }
+                                            });
+                                        }
+                                        
+                                        if (!name || weeksArr.length === 0) return;
+                                        
+                                        var nameHash = 0;
+                                        for(var i=0; i<name.length; i++) nameHash += name.charCodeAt(i);
+                                        var colorTheme = colorList[nameHash % colorList.length];
+                                        
+                                        courses.push({
+                                            name: name,
+                                            location: location.replace('上课地点：', '').trim(),
+                                            teacher: teacher.replace('教师：', '').trim(),
+                                            dayOfWeek: dayOfWeek,
+                                            startNode: startNode,
+                                            endNode: endNode,
+                                            weeks: JSON.stringify(weeksArr),
+                                            colorTheme: colorTheme
+                                        });
+                                    });
+                                });
+                                
+                                var uniqueCourses = [];
+                                var seen = new Set();
+                                courses.forEach(function(c) {
+                                    var key = c.name + c.dayOfWeek + c.startNode + c.endNode + c.weeks;
+                                    if(!seen.has(key)) {
+                                        seen.add(key);
+                                        uniqueCourses.push(c);
+                                    }
+                                });
+                                
+                                window.Android.passData(JSON.stringify(uniqueCourses));
+                            } catch (e) {
+                                window.Android.passData("ERROR:提取异常:" + e.message);
+                            }
+                        })();
+                        """.trimIndent()
+                    }
+                    webViewRef?.evaluateJavascript(jsCode, null)
+                    }
+                },
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if(isDark) BgDark else BgLight)
+            ) {
+                Text(if (loadUrl.contains("lzjtu")) "提取强智教务课表" else "提取正方教务课表", fontWeight = FontWeight.Bold)
+            }
+            
+            Button(
+                onClick = {
+                    val jsCode = """
+                    javascript:(function() {
+                        try {
+                            var grid = document.getElementById("tabGrid") || document.querySelector("table.ui-jqgrid-btable");
+                            if (!grid) {
+                                window.Android.passData("ERROR:未找到考试数据表格，请确保已进入「考试信息查询」页面且已加载完成！");
+                                return;
+                            }
+                            window.Android.passExamData(grid.outerHTML);
                         } catch (e) {
                             window.Android.passData("ERROR:提取异常:" + e.message);
                         }
                     })();
                     """.trimIndent()
-                }
-                webViewRef?.evaluateJavascript(jsCode, null)
-            },
-            modifier = Modifier.fillMaxWidth().padding(16.dp).height(50.dp).navigationBarsPadding(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if(isDark) BgDark else BgLight)
-        ) {
-            Text(if (loadUrl.contains("lzjtu")) "提取强智教务课表" else "提取正方教务课表", fontWeight = FontWeight.Bold)
+                    webViewRef?.evaluateJavascript(jsCode, null)
+                },
+                modifier = Modifier.weight(1f).height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isDark) Color(0xFF1F2937) else Color(0xFFF3F4F6),
+                    contentColor = textColor
+                ),
+                border = BorderStroke(1.dp, borderColor)
+            ) {
+                Text("提取考试安排", fontWeight = FontWeight.Bold)
+            }
         }
+        }
+
+        if (showBlockDialog) {
+            AlertDialog(
+                onDismissRequest = { showBlockDialog = false },
+                title = { Text("无法导入", fontWeight = FontWeight.Bold) },
+                text = { Text("当前课表中已经有数据啦！\n为了避免数据混乱叠加在一起，请先去【新建一个空白的课表】，然后再进行教务导入哦喵！") },
+                confirmButton = {
+                    TextButton(onClick = { showBlockDialog = false }) { Text("知道啦", color = textColor, fontWeight = FontWeight.Bold) }
+                },
+                containerColor = if (isDark) Color(0xFF18181B) else Color.White,
+                titleContentColor = textColor,
+                textContentColor = textColor.copy(alpha = 0.8f)
+            )
         }
     }
 }
@@ -2328,7 +2406,7 @@ fun AdjustCourseScreen(isDark: Boolean, onBack: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun MoreMenuBottomSheet(
     isDark: Boolean, currentPagerWeek: Int, totalWeeks: Int,
@@ -2337,14 +2415,20 @@ fun MoreMenuBottomSheet(
     onCreateScheduleClick: () -> Unit,
     onDismiss: () -> Unit, onManageCoursesClick: () -> Unit, onTimetableManageClick: () -> Unit,
     onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit, onReminderSettingsClick: () -> Unit,
-    onDeleteScheduleClick: () -> Unit
+    onDeleteScheduleClick: (String, String) -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
     val primaryColor = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE)
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = if (isDark) BgDark else BgLight, dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = if (isDark) BgDark else BgLight,
+        dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }
+    ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp).navigationBarsPadding().verticalScroll(rememberScrollState())) {
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -2372,7 +2456,7 @@ fun MoreMenuBottomSheet(
                 colors = SliderDefaults.colors(thumbColor = primaryColor, activeTrackColor = primaryColor, inactiveTrackColor = primaryColor.copy(alpha = 0.2f))
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("课表", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor)
@@ -2391,7 +2475,13 @@ fun MoreMenuBottomSheet(
                             .clip(RoundedCornerShape(12.dp))
                             .background(if (isSelected) primaryColor else surfaceColor)
                             .border(0.5.dp, if (isSelected) primaryColor else borderColor, RoundedCornerShape(12.dp))
-                            .clickable { onSwitchSchedule(group.id) }
+                            .combinedClickable(
+                                onClick = { onSwitchSchedule(group.id) },
+                                onLongClick = {
+                                    onDismiss()
+                                    onDeleteScheduleClick(group.id, group.name)
+                                }
+                            )
                             .padding(8.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -2411,7 +2501,7 @@ fun MoreMenuBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             data class MenuItem(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit)
             val menuItems = listOf(
@@ -2440,10 +2530,14 @@ fun MoreMenuBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             OutlinedButton(
-                onClick = { onDismiss(); onDeleteScheduleClick() },
+                onClick = {
+                    val currentName = scheduleGroups.find { it.id == currentScheduleId }?.name ?: "课表"
+                    onDismiss()
+                    onDeleteScheduleClick(currentScheduleId, currentName)
+                },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
                 border = BorderStroke(0.5.dp, Color(0xFFDC2626)),

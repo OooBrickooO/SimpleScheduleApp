@@ -96,6 +96,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewModelScope
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.work.*
 import java.util.concurrent.TimeUnit
 import androidx.glance.GlanceId
@@ -247,6 +249,12 @@ interface AppDao {
     suspend fun deleteTimetableGroup(tid: String)
 }
 
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE courses ADD COLUMN credits TEXT DEFAULT NULL")
+    }
+}
+
 @Database(entities = [ScheduleGroup::class, TimetableGroup::class, TimeNode::class, Course::class, CourseOverride::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao
@@ -254,7 +262,9 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile private var INSTANCE: AppDatabase? = null
         fun getDatabase(context: Context): AppDatabase = INSTANCE ?: synchronized(this) {
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "simpleschedule_db")
-                .fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                .addMigrations(MIGRATION_5_6)
+                .fallbackToDestructiveMigration()
+                .build().also { INSTANCE = it }
         }
     }
 }
