@@ -2578,7 +2578,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit, onCheckUpda
             Spacer(modifier = Modifier.width(20.dp))
             Column {
                 Text("Made By 视界Seekai ", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
-                Text("QQ:1057282231", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
+                Text("QQ交流群: 817954315", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
             }
         }
 
