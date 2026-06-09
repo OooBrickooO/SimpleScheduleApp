@@ -2,8 +2,8 @@
 
 一款基于 Android 原生 (Kotlin + Jetpack Compose) 开发的高颜值、极简几何风课表软件。支持复杂排课、多时间表管理、深度的系统级集成（前台服务提醒、精准闹钟、桌面组件）以及教务系统一键导入。
 
-> 🌐 **官方网站**：[www.lingflame.cn](https://www.lingflame.cn) (支持在线下载最新 APK 与检查更新)
-> 🤖 **开发特色**：本项目由 AI 辅助，采用最前沿的 **Vibecoding** 独立开发模式进行构建与迭代。
+>    分发网站：[www.lingflame.cn](https://www.lingflame.cn) (支持在线下载最新 APK 与检查更新)
+>    本项目由 AI 辅助，完全单人独立开发模式进行构建与迭代。
 
 ---
 
