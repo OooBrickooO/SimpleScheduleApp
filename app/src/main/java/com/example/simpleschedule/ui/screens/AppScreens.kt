@@ -2239,16 +2239,16 @@ fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
                 ) {
                     Text(
                         text = "[版本更新公告]\n\n" +
-                                "版本号：2.2.0.0609\n" +
-                                "更新时间：2026-06-09\n\n" +
+                                "版本号：2.3.0.0609\n" +
+                                "更新时间：2026-06-09 21:47\n\n" +
                                 "课程详情与删除确认优化：\n" +
-                                "1. 课程详情弹窗中，折叠了地点和教师的详细展示，改为上课地点与授课教师两个按钮，点击后即可弹窗查看详情。\n" +
+                                "1. 课程详情弹窗中，折叠了地点和教师的详细展示，改为“上课地点”与“授课教师”两个按钮，点击后即可弹窗查看详情，节省弹窗空间。\n" +
                                 "2. 安全性提升：为所有删除操作（删除时间表、长按删除课程、删除单门课程、删除课表等）新增了二次确认弹窗，防止误触导致数据丢失喵。\n" +
                                 "3. 详情弹窗中新增了旷课与被点名计数统计模块，同一个科目共享同一个计数器，点击可快捷计数，并支持在已添课程管理中增减。\n\n" +
                                 "版本更新与公告机制：\n" +
                                 "1. 每次更新后初次登录必弹出本更新公告，点击“我知道了”后关闭并持久化记录，后续再次启动不再弹出。\n" +
                                 "2. 支持每日首次打开软件自动检查更新，尊重隐私，绝不上传和收集您的个人课表数据。\n" +
-                                "3. 在PROFILE页面中，“关于”目录下新增了“更新说明”条目，用户点击此条目可以随时再次拉起该公告。\n\n" +
+                                "3. 在PROFILE页面中，“关于”目录下新增了“更新说明”入口，用户可随时再次拉起该公告。\n\n" +
                                 "--------------------\n\n" +
                                 "版本号：2.0.0.0520\n" +
                                 "更新时间：2026-05-20\n\n" +
@@ -2960,7 +2960,7 @@ fun ProfileScreen(
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v2.2.0.0609", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingValueItem(title = "版本", value = "v2.3.0.0609", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
                 SettingItemWithSubtext(
                     title = "更新说明",
                     subtext = "点击查看最近版本的更新公告说明",
