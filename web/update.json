@@ -1,0 +1,7 @@
+{
+  "versionCode": 2,
+  "versionName": "2.1.0.0609",
+  "changelog": "1. 修复了已知的部分闪退问题\n2. 适配了 Android 12+ 动态壁纸配色",
+  "apkUrl": "https://www.lingflame.cn/download.php",
+  "forceUpdate": false
+}

@@ -157,4 +157,25 @@ fun getPalette(theme: String, isDark: Boolean): CoursePalette {
     }
 }
 
+@Composable
+fun getCoursePalette(theme: String, isDark: Boolean, useMaterialYou: Boolean): CoursePalette {
+    if (useMaterialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val scheme = MaterialTheme.colorScheme
+        return when (theme) {
+            "blue" -> CoursePalette(scheme.primaryContainer, scheme.primary.copy(alpha = 0.2f), scheme.onPrimaryContainer, scheme.primary)
+            "pink" -> CoursePalette(scheme.errorContainer, scheme.error.copy(alpha = 0.2f), scheme.onErrorContainer, scheme.error)
+            "indigo" -> CoursePalette(scheme.secondaryContainer, scheme.secondary.copy(alpha = 0.2f), scheme.onSecondaryContainer, scheme.secondary)
+            "rose" -> CoursePalette(scheme.tertiaryContainer, scheme.tertiary.copy(alpha = 0.2f), scheme.onTertiaryContainer, scheme.tertiary)
+            "purple" -> CoursePalette(scheme.primaryContainer, scheme.primary.copy(alpha = 0.2f), scheme.onPrimaryContainer, scheme.primary)
+            "slate" -> CoursePalette(scheme.surfaceVariant, scheme.onSurfaceVariant.copy(alpha = 0.2f), scheme.onSurfaceVariant, scheme.outline)
+            "green" -> CoursePalette(scheme.secondaryContainer, scheme.secondary.copy(alpha = 0.2f), scheme.onSecondaryContainer, scheme.secondary)
+            "orange" -> CoursePalette(scheme.tertiaryContainer, scheme.tertiary.copy(alpha = 0.2f), scheme.onTertiaryContainer, scheme.tertiary)
+            "red" -> CoursePalette(scheme.errorContainer, scheme.error.copy(alpha = 0.2f), scheme.onErrorContainer, scheme.error)
+            else -> CoursePalette(scheme.primaryContainer, scheme.primary.copy(alpha = 0.2f), scheme.onPrimaryContainer, scheme.primary)
+        }
+    } else {
+        return getPalette(theme, isDark)
+    }
+}
+
 // --- 4. 主入口与全局结构 ---

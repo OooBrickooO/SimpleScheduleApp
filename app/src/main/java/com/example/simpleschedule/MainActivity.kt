@@ -132,6 +132,19 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.json.JSONArray
+import org.json.JSONObject
+import android.app.DownloadManager
+import android.net.Uri
+import android.os.Environment
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.example.simpleschedule.data.local.datastore.dataStore
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -145,12 +158,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ContextCompat.registerReceiver(
+            this,
+            downloadReceiver,
+            android.content.IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_EXPORTED
+        )
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             val context = LocalContext.current
+            val coroutineScope = rememberCoroutineScope()
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { }
+
+            var updateInfoToShow by remember { mutableStateOf<UpdateInfo?>(null) }
+            var isCheckingManualUpdate by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -170,11 +193,40 @@ class MainActivity : ComponentActivity() {
                     ExistingPeriodicWorkPolicy.KEEP,
                     fallbackRequest
                 )
+
+                // 启动时自动检查更新
+                launch {
+                    val enabled = try {
+                        context.dataStore.data.map { it[SettingsKeys.AUTO_UPDATE] ?: false }.first()
+                    } catch (e: Exception) {
+                        false
+                    }
+                    if (enabled) {
+                        val update = checkUpdate(UPDATE_URL)
+                        if (update != null) {
+                            val currentVersionCode = try {
+                                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                    packageInfo.longVersionCode.toInt()
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    packageInfo.versionCode
+                                }
+                            } catch (e: Exception) {
+                                1
+                            }
+                            if (update.versionCode > currentVersionCode) {
+                                updateInfoToShow = update
+                            }
+                        }
+                    }
+                }
             }
 
             val isSystemDark = isSystemInDarkTheme()
             val isDarkSetting by viewModel.isDarkTheme.collectAsState()
             val isDark = isDarkSetting ?: isSystemDark
+            val materialYou by viewModel.materialYou.collectAsState()
 
             val currentWeek by viewModel.currentWeek.collectAsState()
             val displayCourses by viewModel.displayCourses.collectAsState()
@@ -183,8 +235,6 @@ class MainActivity : ComponentActivity() {
             val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
             val timetableGroups by viewModel.timetableGroups.collectAsState()
             val totalWeeks by viewModel.totalWeeks.collectAsState()
-
-            val animatedBgColor by animateColorAsState(if (isDark) BgDark else BgLight, tween(500), label = "bg")
 
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
@@ -205,8 +255,22 @@ class MainActivity : ComponentActivity() {
             var showShareCodeDialog by remember { mutableStateOf(false) }
             var showCreateScheduleDialog by remember { mutableStateOf(false) }
 
-            Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
-                DotMatrixBackground(isDark = isDark)
+            SimpleScheduleTheme(
+                darkTheme = isDark,
+                dynamicColor = materialYou
+            ) {
+                val animatedBgColor by animateColorAsState(
+                    targetValue = if (isDark) {
+                        if (materialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.background else BgDark
+                    } else {
+                        if (materialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.background else BgLight
+                    },
+                    animationSpec = tween(500),
+                    label = "bg"
+                )
+
+                Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
+                    DotMatrixBackground(isDark = isDark)
 
                 AnimatedContent(
                     targetState = currentRoute,
@@ -222,6 +286,7 @@ class MainActivity : ComponentActivity() {
                             CourseManagementScreen(
                                 courses = displayCourses.map { it.course }.distinctBy { it.id },
                                 isDark = isDark,
+                                materialYou = materialYou,
                                 onBack = { currentRoute = "main" },
                                 onEditCourse = { courseToEdit = it; showAddDialog = true },
                                 onDeleteCourse = { viewModel.deleteCourse(it) }
@@ -344,7 +409,40 @@ class MainActivity : ComponentActivity() {
                                                 onReminderSettingsClick = { currentRoute = "reminder_settings" }
                                             )
                                         } else {
-                                            ProfileScreen(isDark = isDark, onThemeToggle = { viewModel.toggleTheme(it) })
+                                            ProfileScreen(
+                                                isDark = isDark,
+                                                onThemeToggle = { viewModel.toggleTheme(it) },
+                                                onCheckUpdateClick = {
+                                                    if (!isCheckingManualUpdate) {
+                                                        isCheckingManualUpdate = true
+                                                        Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
+                                                        coroutineScope.launch {
+                                                            val update = checkUpdate(UPDATE_URL)
+                                                            isCheckingManualUpdate = false
+                                                            if (update != null) {
+                                                                val currentVersionCode = try {
+                                                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                                        packageInfo.longVersionCode.toInt()
+                                                                    } else {
+                                                                        @Suppress("DEPRECATION")
+                                                                        packageInfo.versionCode
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    1
+                                                                }
+                                                                if (update.versionCode > currentVersionCode) {
+                                                                    updateInfoToShow = update
+                                                                } else {
+                                                                    Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                }
+                                                            } else {
+                                                                Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            )
                                         }
                                     }
                                 }
@@ -392,6 +490,160 @@ class MainActivity : ComponentActivity() {
                             showCreateScheduleDialog = false
                         }
                     )
+                }
+
+                if (updateInfoToShow != null) {
+                    UpdateDialog(
+                        updateInfo = updateInfoToShow!!,
+                        isDark = isDark,
+                        onDismiss = { updateInfoToShow = null },
+                        onConfirm = {
+                            startDownloadApk(context, updateInfoToShow!!.apkUrl)
+                            updateInfoToShow = null
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(downloadReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    companion object {
+        const val UPDATE_URL = "https://www.lingflame.cn/update.json"
+    }
+
+    data class UpdateInfo(
+        val versionCode: Int,
+        val versionName: String,
+        val changelog: String,
+        val apkUrl: String,
+        val forceUpdate: Boolean
+    )
+
+    private var downloadId: Long = -1
+
+    private val downloadReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+            if (id == downloadId && id != -1L) {
+                installDownloadedApk(context)
+            }
+        }
+    }
+
+    private fun startDownloadApk(context: Context, url: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url)).apply {
+                setTitle("正在下载课表更新...")
+                setDescription("SimpleSchedule 最新版本")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "app-release.apk")
+                setMimeType("application/vnd.android.package-archive")
+            }
+            val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            downloadId = manager.enqueue(request)
+            Toast.makeText(context, "开始下载更新喵，请查看通知栏", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "启动下载失败: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun installDownloadedApk(context: Context) {
+        val apkFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+        if (!apkFile.exists()) {
+            Toast.makeText(context, "未找到下载的更新包喵", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val authority = "${context.packageName}.fileprovider"
+        try {
+            val apkUri = FileProvider.getUriForFile(context, authority, apkFile)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "拉起安装程序失败，请尝试在文件管理器中手动安装: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private suspend fun checkUpdate(updateUrl: String): UpdateInfo? = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+        try {
+            val url = URL(updateUrl)
+            connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            
+            if (connection.responseCode == 200) {
+                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    response.append(line)
+                }
+                
+                val jsonObject = JSONObject(response.toString())
+                UpdateInfo(
+                    versionCode = jsonObject.getInt("versionCode"),
+                    versionName = jsonObject.getString("versionName"),
+                    changelog = jsonObject.getString("changelog"),
+                    apkUrl = jsonObject.getString("apkUrl"),
+                    forceUpdate = jsonObject.optBoolean("forceUpdate", false)
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+}
+
+@Composable
+fun UpdateDialog(
+    updateInfo: MainActivity.UpdateInfo,
+    isDark: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    val bgColor = if (isDark) Color(0xFF18181B) else Color.White
+    val textColor = if (isDark) Color.White else Color.Black
+
+    Dialog(onDismissRequest = { if (!updateInfo.forceUpdate) onDismiss() }) {
+        Surface(shape = RoundedCornerShape(12.dp), color = bgColor, modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("发现新版本: ${updateInfo.versionName}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(updateInfo.changelog, fontSize = 14.sp, color = textColor.copy(alpha = 0.8f))
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (!updateInfo.forceUpdate) {
+                        TextButton(onClick = onDismiss) { Text("以后再说", color = textColor.copy(alpha = 0.5f)) }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onConfirm,
+                        colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = bgColor),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text("立即更新")
+                    }
                 }
             }
         }

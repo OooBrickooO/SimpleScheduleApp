@@ -218,6 +218,7 @@ fun TimetableScreen(
 
     val showNotThisWeek by viewModel.showNotThisWeek.collectAsState()
     val bottomBlank by viewModel.bottomBlank.collectAsState()
+    val materialYou by viewModel.materialYou.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -316,6 +317,7 @@ fun TimetableScreen(
                 bottomBlank = bottomBlank,
                 startDate = startDate,
                 displayedWeek = weekForThisPage,
+                materialYou = materialYou,
                 onCourseClick = { course, isFuture -> selectedCourseWithWeek = Pair(course, if (isFuture) 0 else weekForThisPage) }
             )
         }
@@ -329,6 +331,7 @@ fun TimetableScreen(
             displayCourse = course,
             clickedWeek = clickedWeek,
             isDark = isDark,
+            materialYou = materialYou,
             onDismiss = { selectedCourseWithWeek = null },
             onDelete = { viewModel.deleteCourse(course.course.id); selectedCourseWithWeek = null },
             onEdit = { onEditCourse(course.course); selectedCourseWithWeek = null }
@@ -383,6 +386,7 @@ fun TimetableGrid(
     bottomBlank: Boolean,
     startDate: String,
     displayedWeek: Int,
+    materialYou: Boolean,
     onCourseClick: (DisplayCourse, Boolean) -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
@@ -502,7 +506,7 @@ fun TimetableGrid(
                     val mappedCol = visualColMap[displayCourse.displayDay]
                     if (mappedCol != null) {
                         val course = displayCourse.course
-                        val palette = getPalette(course.colorTheme, isDark)
+                        val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
                         var dragOffset by remember { mutableStateOf(Offset.Zero) }
                         var isDragging by remember { mutableStateOf(false) }
 
@@ -1865,7 +1869,7 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
 }
 
 @Composable
-fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
+fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     BackHandler { onBack() }
@@ -1892,7 +1896,7 @@ fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, onBack: () ->
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(courses) { course ->
-                val palette = getPalette(course.colorTheme, isDark)
+                val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
                 Box(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).animateContentSize().clip(RoundedCornerShape(8.dp)).background(palette.bg).border(0.5.dp, palette.border, RoundedCornerShape(8.dp)).pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
@@ -1937,11 +1941,11 @@ fun ChangeWeekDialog(isDark: Boolean, title: String, currentValue: Int, maxValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CourseDetailSheet(displayCourse: DisplayCourse, clickedWeek: Int, isDark: Boolean, onDismiss: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit) {
+fun CourseDetailSheet(displayCourse: DisplayCourse, clickedWeek: Int, isDark: Boolean, materialYou: Boolean, onDismiss: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val course = displayCourse.course
-    val palette = getPalette(course.colorTheme, isDark)
+    val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
     val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = if (isDark) BgDark else BgLight, dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }) {
@@ -2552,7 +2556,7 @@ fun MoreMenuBottomSheet(
 }
 
 @Composable
-fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
+fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit, onCheckUpdateClick: () -> Unit = {}) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
@@ -2595,7 +2599,7 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit) {
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v2.0.3.607", textColor = textColor, borderColor = borderColor)
+                SettingValueItem(title = "版本", value = "v2.1.0.0609", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
