@@ -159,5 +159,8 @@ object SettingsKeys {
     val REMINDER_ADVANCE_MINS = intPreferencesKey("reminder_advance_mins")
 
     val WIDGET_TRANSLUCENT = booleanPreferencesKey("widget_translucent")
+    val LAST_SEEN_ANNOUNCEMENT_VERSION = stringPreferencesKey("last_seen_announcement_version")
+    val LAST_CHECKED_UPDATE_DATE = stringPreferencesKey("last_checked_update_date")
+    val SILENCE_UPDATE_NOTIFICATION = booleanPreferencesKey("silence_update_notification")
 }
 

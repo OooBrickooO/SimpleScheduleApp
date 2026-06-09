@@ -525,6 +525,34 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun getCourseStatistic(courseName: String): Flow<CourseStatistic?> {
+        return appDao.getStatisticFlow(courseName)
+    }
+
+    suspend fun getCourseStatisticDirect(courseName: String): CourseStatistic? {
+        return appDao.getStatisticDirect(courseName)
+    }
+
+    fun incrementAbsenceCount(courseName: String) {
+        viewModelScope.launch {
+            val stats = appDao.getStatisticDirect(courseName) ?: CourseStatistic(courseName, 0, 0)
+            appDao.insertStatistic(stats.copy(absenceCount = stats.absenceCount + 1))
+        }
+    }
+
+    fun incrementCalledCount(courseName: String) {
+        viewModelScope.launch {
+            val stats = appDao.getStatisticDirect(courseName) ?: CourseStatistic(courseName, 0, 0)
+            appDao.insertStatistic(stats.copy(calledCount = stats.calledCount + 1))
+        }
+    }
+
+    fun updateCourseStatistic(courseName: String, absence: Int, called: Int) {
+        viewModelScope.launch {
+            appDao.insertStatistic(CourseStatistic(courseName, absence, called))
+        }
+    }
+
     fun importFromJson(jsonString: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {

@@ -182,6 +182,13 @@ data class CourseOverride(
     val newEndNode: Int
 )
 
+@Entity(tableName = "course_statistics")
+data class CourseStatistic(
+    @PrimaryKey val courseName: String,
+    val absenceCount: Int = 0,
+    val calledCount: Int = 0
+)
+
 data class DisplayCourse(
     val course: Course,
     val displayDay: Int,
@@ -247,6 +254,15 @@ interface AppDao {
 
     @Query("DELETE FROM timetable_groups WHERE id = :tid")
     suspend fun deleteTimetableGroup(tid: String)
+
+    @Query("SELECT * FROM course_statistics WHERE courseName = :name")
+    fun getStatisticFlow(name: String): Flow<CourseStatistic?>
+
+    @Query("SELECT * FROM course_statistics WHERE courseName = :name")
+    suspend fun getStatisticDirect(name: String): CourseStatistic?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStatistic(statistic: CourseStatistic)
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
@@ -255,14 +271,20 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
     }
 }
 
-@Database(entities = [ScheduleGroup::class, TimetableGroup::class, TimeNode::class, Course::class, CourseOverride::class], version = 6, exportSchema = false)
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `course_statistics` (`courseName` TEXT NOT NULL, `absenceCount` INTEGER NOT NULL, `calledCount` INTEGER NOT NULL, PRIMARY KEY(`courseName`))")
+    }
+}
+
+@Database(entities = [ScheduleGroup::class, TimetableGroup::class, TimeNode::class, Course::class, CourseOverride::class, CourseStatistic::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun appDao(): AppDao
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
         fun getDatabase(context: Context): AppDatabase = INSTANCE ?: synchronized(this) {
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "simpleschedule_db")
-                .addMigrations(MIGRATION_5_6)
+                .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
                 .fallbackToDestructiveMigration()
                 .build().also { INSTANCE = it }
         }

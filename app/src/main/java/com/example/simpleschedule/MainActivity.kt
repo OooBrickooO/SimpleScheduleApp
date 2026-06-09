@@ -174,6 +174,7 @@ class MainActivity : ComponentActivity() {
 
             var updateInfoToShow by remember { mutableStateOf<UpdateInfo?>(null) }
             var isCheckingManualUpdate by remember { mutableStateOf(false) }
+            var showAnnouncementDialog by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -194,28 +195,84 @@ class MainActivity : ComponentActivity() {
                     fallbackRequest
                 )
 
-                // 启动时自动检查更新
                 launch {
-                    val enabled = try {
-                        context.dataStore.data.map { it[SettingsKeys.AUTO_UPDATE] ?: false }.first()
+                    val currentVersionName = try {
+                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            context.packageManager.getPackageInfo(context.packageName, 0)
+                        }.versionName ?: "1.0.0"
                     } catch (e: Exception) {
-                        false
+                        "1.0.0"
                     }
-                    if (enabled) {
-                        val update = checkUpdate(UPDATE_URL)
-                        if (update != null) {
-                            val currentVersionCode = try {
-                                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                    val lastSeenVersion = try {
+                        context.dataStore.data.map { it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_VERSION] ?: "" }.first()
+                    } catch (e: Exception) {
+                        ""
+                    }
+                    if (lastSeenVersion != currentVersionName) {
+                        showAnnouncementDialog = true
+                        try {
+                            context.dataStore.edit {
+                                it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_VERSION] = currentVersionName
+                            }
+                        } catch (e: Exception) {}
+                    }
+                }
+
+                launch {
+                    val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val lastCheckedDate = try {
+                        context.dataStore.data.map { it[SettingsKeys.LAST_CHECKED_UPDATE_DATE] ?: "" }.first()
+                    } catch (e: Exception) { "" }
+
+                    if (lastCheckedDate != todayStr) {
+                        try {
+                            context.dataStore.edit { it[SettingsKeys.LAST_CHECKED_UPDATE_DATE] = todayStr }
+                        } catch (e: Exception) {}
+
+                        val packageInfo = try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                            } else {
+                                @Suppress("DEPRECATION")
+                                context.packageManager.getPackageInfo(context.packageName, 0)
+                            }
+                        } catch (e: Exception) { null }
+
+                        val currentVersionCode = try {
+                            if (packageInfo != null) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                     packageInfo.longVersionCode.toInt()
                                 } else {
                                     @Suppress("DEPRECATION")
                                     packageInfo.versionCode
                                 }
-                            } catch (e: Exception) {
-                                1
-                            }
-                            if (update.versionCode > currentVersionCode) {
+                            } else { 1 }
+                        } catch (e: Exception) { 1 }
+
+                        val currentVersionName = packageInfo?.versionName ?: "1.0.0"
+                        val currentMajor = currentVersionName.split(".")[0].toIntOrNull() ?: 1
+
+                        val update = checkUpdate(UPDATE_URL)
+                        if (update != null && update.versionCode > currentVersionCode) {
+                            val isSilenced = try {
+                                context.dataStore.data.map { it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] ?: false }.first()
+                            } catch (e: Exception) { false }
+
+                            val serverMajor = update.versionName.split(".")[0].toIntOrNull() ?: 1
+                            val isMajorUpdate = serverMajor > currentMajor
+
+                            if (!isSilenced || isMajorUpdate) {
+                                if (isMajorUpdate && isSilenced) {
+                                    try {
+                                        context.dataStore.edit {
+                                            it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] = false
+                                        }
+                                    } catch (e: Exception) {}
+                                }
                                 updateInfoToShow = update
                             }
                         }
@@ -412,6 +469,7 @@ class MainActivity : ComponentActivity() {
                                             ProfileScreen(
                                                 isDark = isDark,
                                                 onThemeToggle = { viewModel.toggleTheme(it) },
+                                                onShowAnnouncementClick = { showAnnouncementDialog = true },
                                                 onCheckUpdateClick = {
                                                     if (!isCheckingManualUpdate) {
                                                         isCheckingManualUpdate = true
@@ -455,13 +513,15 @@ class MainActivity : ComponentActivity() {
                     CourseEditDialog(
                         isDark = isDark,
                         initialCourse = courseToEdit,
+                        viewModel = viewModel,
                         onDismiss = { showAddDialog = false; courseToEdit = null },
-                        onConfirm = { id, name, loc, t, d, s, e, c, w, credits ->
+                        onConfirm = { id, name, loc, t, d, s, e, c, w, credits, abs, call ->
                             if (id == null) {
                                 viewModel.addCustomCourse(name, loc, t, d, s, e, c, credits)
                             } else {
                                 viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w, credits)
                             }
+                            viewModel.updateCourseStatistic(name, abs, call)
                             showAddDialog = false
                             courseToEdit = null
                         }
@@ -492,6 +552,13 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                if (showAnnouncementDialog) {
+                    AnnouncementDialog(
+                        isDark = isDark,
+                        onDismiss = { showAnnouncementDialog = false }
+                    )
+                }
+
                 if (updateInfoToShow != null) {
                     UpdateDialog(
                         updateInfo = updateInfoToShow!!,
@@ -499,6 +566,16 @@ class MainActivity : ComponentActivity() {
                         onDismiss = { updateInfoToShow = null },
                         onConfirm = {
                             startDownloadApk(context, updateInfoToShow!!.apkUrl)
+                            updateInfoToShow = null
+                        },
+                        onSilence = {
+                            coroutineScope.launch {
+                                try {
+                                    context.dataStore.edit {
+                                        it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] = true
+                                    }
+                                } catch (e: Exception) {}
+                            }
                             updateInfoToShow = null
                         }
                     )
@@ -620,7 +697,8 @@ fun UpdateDialog(
     updateInfo: MainActivity.UpdateInfo,
     isDark: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    onSilence: () -> Unit
 ) {
     val bgColor = if (isDark) Color(0xFF18181B) else Color.White
     val textColor = if (isDark) Color.White else Color.Black
@@ -632,8 +710,14 @@ fun UpdateDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(updateInfo.changelog, fontSize = 14.sp, color = textColor.copy(alpha = 0.8f))
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (!updateInfo.forceUpdate) {
+                        TextButton(onClick = onSilence) { Text("不再提醒", color = Color(0xFFDC2626)) }
+                        Spacer(modifier = Modifier.width(8.dp))
                         TextButton(onClick = onDismiss) { Text("以后再说", color = textColor.copy(alpha = 0.5f)) }
                     }
                     Spacer(modifier = Modifier.width(8.dp))

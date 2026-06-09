@@ -327,11 +327,12 @@ fun TimetableScreen(
 
     if (selectedCourseWithWeek != null) {
         val (course, clickedWeek) = selectedCourseWithWeek!!
-        CourseDetailSheet(
+        CourseDetailDialog(
             displayCourse = course,
             clickedWeek = clickedWeek,
             isDark = isDark,
             materialYou = materialYou,
+            viewModel = viewModel,
             onDismiss = { selectedCourseWithWeek = null },
             onDelete = { viewModel.deleteCourse(course.course.id); selectedCourseWithWeek = null },
             onEdit = { onEditCourse(course.course); selectedCourseWithWeek = null }
@@ -1939,63 +1940,228 @@ fun ChangeWeekDialog(isDark: Boolean, title: String, currentValue: Int, maxValue
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CourseDetailSheet(displayCourse: DisplayCourse, clickedWeek: Int, isDark: Boolean, materialYou: Boolean, onDismiss: () -> Unit, onDelete: () -> Unit, onEdit: () -> Unit) {
-    val textColor = if (isDark) TextDark else TextLight
+fun CourseDetailDialog(
+    displayCourse: DisplayCourse,
+    clickedWeek: Int,
+    isDark: Boolean,
+    materialYou: Boolean,
+    viewModel: ScheduleViewModel,
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
+) {
+    val bgColor = if (isDark) Color(0xFF18181B) else Color.White
+    val textColor = if (isDark) Color.White else Color.Black
     val borderColor = if (isDark) BorderDark else BorderLight
     val course = displayCourse.course
     val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
     val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = if (isDark) BgDark else BgLight, dragHandle = { BottomSheetDefaults.DragHandle(color = borderColor) }) {
-        Column(modifier = Modifier.padding(24.dp).padding(bottom = 32.dp).navigationBarsPadding()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(12.dp).background(palette.accent))
-                Spacer(modifier = Modifier.width(8.dp))
+    val statistic by viewModel.getCourseStatistic(course.name).collectAsState(initial = null)
+    val absenceCount = statistic?.absenceCount ?: 0
+    val calledCount = statistic?.calledCount ?: 0
 
-                val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
-                val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
-                val modeText = if (isOddOnly) " (单周)" else if (isEvenOnly) " (双周)" else ""
-
-                Text(text = if (clickedWeek > 0) "WEEK $clickedWeek$modeText" else "STARTS W${weeksList.firstOrNull() ?: 1}$modeText", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), letterSpacing = 1.sp)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(course.name, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = textColor, lineHeight = 32.sp)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(16.dp)) {
-                    Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = textColor.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("LOCATION", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
-                    Text(course.location, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
-                }
-                Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(16.dp)) {
-                    Icon(Icons.Rounded.Person, contentDescription = "Teacher", tint = textColor.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("INSTRUCTOR", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
-                    Text(course.teacher, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
-                }
-            }
-            if (!course.credits.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth().border(0.5.dp, borderColor).padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Rounded.Info, contentDescription = "Credits", tint = textColor.copy(alpha = 0.5f))
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = bgColor,
+            modifier = Modifier.fillMaxWidth().padding(16.dp).border(0.5.dp, borderColor, RoundedCornerShape(16.dp))
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                // Header with Color bar
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(12.dp).background(palette.accent))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("CREDITS: ", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
-                    Text(course.credits, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
+
+                    val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
+                    val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
+                    val modeText = if (isOddOnly) " (单周)" else if (isEvenOnly) " (双周)" else ""
+
+                    Text(
+                        text = if (clickedWeek > 0) "第 $clickedWeek 周$modeText" else "从第 ${weeksList.firstOrNull() ?: 1} 周开始$modeText",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor.copy(alpha = 0.6f),
+                        letterSpacing = 1.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(course.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor, lineHeight = 28.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Location and Teacher Info
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(12.dp)) {
+                        Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = textColor.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("上课地点", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
+                        Text(course.location, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    }
+                    Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(12.dp)) {
+                        Icon(Icons.Rounded.Person, contentDescription = "Teacher", tint = textColor.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("授课教师", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
+                        Text(course.teacher, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    }
+                }
+                if (!course.credits.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().border(0.5.dp, borderColor).padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.Info, contentDescription = "Credits", tint = textColor.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("学分: ", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
+                        Text(course.credits, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).background(borderColor))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Stats / Counters Section
+                Text("课堂表现统计 (科目内共享)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Absence Increment Button
+                    Button(
+                        onClick = { viewModel.incrementAbsenceCount(course.name) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5), contentColor = textColor),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("旷课: ", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("$absenceCount 次", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Rounded.Add, contentDescription = "+1", modifier = Modifier.size(14.dp), tint = textColor.copy(alpha = 0.6f))
+                        }
+                    }
+                    // Called Increment Button
+                    Button(
+                        onClick = { viewModel.incrementCalledCount(course.name) },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5), contentColor = textColor),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("被点名: ", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Text("$calledCount 次", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Rounded.Add, contentDescription = "+1", modifier = Modifier.size(14.dp), tint = textColor.copy(alpha = 0.6f))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Bottom actions (EDIT / REMOVE)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = onEdit,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = bgColor)
+                    ) {
+                        Text("编辑", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
+                    OutlinedButton(
+                        onClick = onDelete,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
+                        border = BorderStroke(0.5.dp, borderColor)
+                    ) {
+                        Text("删除", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Button(onClick = onEdit, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(0.dp), colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if (isDark) BgDark else BgLight)) {
-                    Text("EDIT", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        }
+    }
+}
+
+@Composable
+fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
+    val bgColor = if (isDark) Color(0xFF18181B) else Color.White
+    val textColor = if (isDark) Color.White else Color.Black
+    val borderColor = if (isDark) BorderDark else BorderLight
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = bgColor,
+            modifier = Modifier.fillMaxWidth().padding(16.dp).border(0.5.dp, borderColor, RoundedCornerShape(16.dp))
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Rounded.Notifications,
+                        contentDescription = "Notification",
+                        tint = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("更新说明", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 }
-                OutlinedButton(onClick = onDelete, modifier = Modifier.weight(1f).height(56.dp), shape = RoundedCornerShape(0.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)), border = androidx.compose.foundation.BorderStroke(0.5.dp, borderColor)) {
-                    Text("REMOVE", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "[版本更新公告]\n\n" +
+                                "版本号：2.2.0.0609\n" +
+                                "更新时间：2026-06-09\n\n" +
+                                "课程块新增功能：\n" +
+                                "详情弹窗中新增了旷课计数和被点名计数统计模块，点击快捷增加计数。\n" +
+                                "同一个科目共享同一个计数器，无需为每节课单独统计。\n" +
+                                "如果误点击，在详情中点击编辑进入编辑页面，可以进行详细的增减。\n\n" +
+                                "版本更新公告弹窗：\n" +
+                                "每次更新后初次登陆必弹出本更新公告，点击“我知道了”后关闭并持久化记录，后续再次启动不再弹出。\n" +
+                                "在PROFILE页面中，“关于”目录下新增了“更新说明”条目，用户点击此条目可以随时再次拉起该公告。\n\n" +
+                                "--------------------\n\n" +
+                                "版本号：2.0.0.0520\n" +
+                                "更新时间：2026-05-20\n\n" +
+                                "壁纸动态配色功能：\n" +
+                                "适配了系统壁纸配色(Material You)，课程格子与应用主题颜色能够根据您当前的系统壁纸色调自动改变。\n" +
+                                "您可以在管理界面的外观设置中开启或关闭此功能。\n\n" +
+                                "客户端自动更新检测：\n" +
+                                "应用在启动时会自动检测云端最新版本，若检测到新版本将提供一键下载与快速安装。\n" +
+                                "如果您关闭了自动更新，也可以在管理页面的关于分栏下，手动点击版本号来主动发起检测。\n\n" +
+                                "桌面卡片与后台提醒优化：\n" +
+                                "重构了桌面微件的自动刷新机制，并优化了后台精准课程提醒广播，确保提醒能够准时送达。\n\n" +
+                                "--------------------\n\n" +
+                                "隐私与联网声明：\n" +
+                                "本应用的网络访问权限仅限用于版本更新检测及包体下载，我们完全尊重并保护您的个人隐私，不会收集或上传您的任何个人课表数据及其他敏感信息。",
+                        fontSize = 14.sp,
+                        color = textColor.copy(alpha = 0.8f),
+                        lineHeight = 20.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5),
+                            contentColor = textColor
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(44.dp).fillMaxWidth()
+                    ) {
+                        Text("我知道了", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -2043,8 +2209,9 @@ fun CreateScheduleDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (Str
 fun CourseEditDialog(
     isDark: Boolean,
     initialCourse: Course?,
+    viewModel: ScheduleViewModel,
     onDismiss: () -> Unit,
-    onConfirm: (String?, String, String, String, Int, Int, Int, String, String, String?) -> Unit
+    onConfirm: (String?, String, String, String, Int, Int, Int, String, String, String?, Int, Int) -> Unit
 ) {
     val bgColor = if (isDark) Color(0xFF18181B) else Color.White
     val textColor = if (isDark) Color.White else Color.Black
@@ -2058,6 +2225,20 @@ fun CourseEditDialog(
     var startNode by remember { mutableStateOf(initialCourse?.startNode ?: 1) }
     var endNode by remember { mutableStateOf(initialCourse?.endNode ?: 2) }
     val colorTheme by remember { mutableStateOf(initialCourse?.colorTheme ?: listOf("blue", "pink", "purple", "slate", "indigo", "rose").random()) }
+
+    var absenceCount by remember { mutableIntStateOf(0) }
+    var calledCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(name) {
+        if (name.isNotBlank()) {
+            val stats = viewModel.getCourseStatisticDirect(name)
+            absenceCount = stats?.absenceCount ?: 0
+            calledCount = stats?.calledCount ?: 0
+        } else {
+            absenceCount = 0
+            calledCount = 0
+        }
+    }
 
     val initialParsedWeeks = remember(initialCourse) {
         initialCourse?.weeks?.removeSurrounding("[", "]")?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.sorted() ?: (1..16).toList()
@@ -2138,6 +2319,58 @@ fun CourseEditDialog(
                         value = credits, onValueChange = { credits = it }, label = { Text("学分 (选择性输入)", color = textColor.copy(alpha = 0.6f)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedTextColor = textColor, unfocusedTextColor = textColor, focusedBorderColor = textColor, unfocusedBorderColor = textColor.copy(alpha = 0.5f), cursorColor = textColor)
                     )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("课堂表现统计 (科目内共享)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("旷课次数", fontSize = 11.sp, color = textColor.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().border(0.5.dp, borderColor, RoundedCornerShape(8.dp)).padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = { if (absenceCount > 0) absenceCount-- },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Remove, contentDescription = "Decrease", tint = textColor, modifier = Modifier.size(16.dp))
+                                }
+                                Text("$absenceCount", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
+                                IconButton(
+                                    onClick = { absenceCount++ },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = "Increase", tint = textColor, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("被点名次数", fontSize = 11.sp, color = textColor.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().border(0.5.dp, borderColor, RoundedCornerShape(8.dp)).padding(4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = { if (calledCount > 0) calledCount-- },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Remove, contentDescription = "Decrease", tint = textColor, modifier = Modifier.size(16.dp))
+                                }
+                                Text("$calledCount", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
+                                IconButton(
+                                    onClick = { calledCount++ },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Rounded.Add, contentDescription = "Increase", tint = textColor, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
 
                     // Day of Week
                     Column {
@@ -2366,7 +2599,9 @@ fun CourseEditDialog(
                                     endNode,
                                     colorTheme,
                                     finalWeeksStr,
-                                    credits.trim().ifEmpty { null }
+                                    credits.trim().ifEmpty { null },
+                                    absenceCount,
+                                    calledCount
                                 )
                             }
                         },
@@ -2556,7 +2791,12 @@ fun MoreMenuBottomSheet(
 }
 
 @Composable
-fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit, onCheckUpdateClick: () -> Unit = {}) {
+fun ProfileScreen(
+    isDark: Boolean,
+    onThemeToggle: (Boolean) -> Unit,
+    onCheckUpdateClick: () -> Unit = {},
+    onShowAnnouncementClick: () -> Unit = {}
+) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
@@ -2599,7 +2839,15 @@ fun ProfileScreen(isDark: Boolean, onThemeToggle: (Boolean) -> Unit, onCheckUpda
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v2.1.0.0609", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingValueItem(title = "版本", value = "v2.2.0.0609", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingItemWithSubtext(
+                    title = "更新说明",
+                    subtext = "点击查看最近版本的更新公告说明",
+                    showBottomBorder = true,
+                    textColor = textColor,
+                    borderColor = borderColor,
+                    onClick = onShowAnnouncementClick
+                )
                 SettingItemWithSubtext(
                     title = "开源与反馈",
                     subtext = "点击访问 GitHub 仓库获取源码或提交建议",
