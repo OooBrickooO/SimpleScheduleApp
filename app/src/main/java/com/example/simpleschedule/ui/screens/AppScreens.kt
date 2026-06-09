@@ -1680,6 +1680,7 @@ fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: Strin
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
 
     BackHandler { onBack() }
+    var timetableIdToDelete by remember { mutableStateOf<String?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -1720,7 +1721,7 @@ fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: Strin
                                 val isBuiltIn = tGroup.id == "tt_cjlu" || tGroup.id == "tt_zjhu_summer" || tGroup.id == "tt_zjhu_winter"
                                 if (!isBuiltIn) {
                                     Divider(color = borderColor, thickness = 0.5.dp)
-                                    DropdownMenuItem(text = { Text("🗑️ 删除时间表", fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }, onClick = { showMenu = false; onDelete(tGroup.id) })
+                                    DropdownMenuItem(text = { Text("🗑️ 删除时间表", fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }, onClick = { showMenu = false; timetableIdToDelete = tGroup.id })
                                 }
                             }
                         }
@@ -1729,6 +1730,33 @@ fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: Strin
                 item { Spacer(modifier = Modifier.height(100.dp).navigationBarsPadding()) }
             }
         }
+
+        if (timetableIdToDelete != null) {
+            val targetGroup = timetables.find { it.id == timetableIdToDelete }
+            AlertDialog(
+                onDismissRequest = { timetableIdToDelete = null },
+                title = { Text("确认删除") },
+                text = { Text("确定要删除时间表「${targetGroup?.name ?: ""}」吗？删除后将无法恢复，且可能影响与之关联的课表喵。", color = textColor) },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val tid = timetableIdToDelete!!
+                            timetableIdToDelete = null
+                            onDelete(tid)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626), contentColor = Color.White)
+                    ) {
+                        Text("确认删除")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { timetableIdToDelete = null }) {
+                        Text("取消", color = textColor.copy(alpha = 0.6f))
+                    }
+                }
+            )
+        }
+
         FloatingActionButton(
             onClick = { onEdit(null) },
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(24.dp),
@@ -1874,6 +1902,7 @@ fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: 
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     BackHandler { onBack() }
+    var courseIdToDelete by remember { mutableStateOf<String?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -1901,7 +1930,7 @@ fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: 
                 Box(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).animateContentSize().clip(RoundedCornerShape(8.dp)).background(palette.bg).border(0.5.dp, palette.border, RoundedCornerShape(8.dp)).pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
-                            onDragStart = { onDeleteCourse(course.id) },
+                            onDragStart = { courseIdToDelete = course.id },
                             onDrag = { _, _ -> }, onDragEnd = {}, onDragCancel = {}
                         )
                     }.clickable { onEditCourse(course) }.padding(16.dp),
@@ -1911,6 +1940,32 @@ fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: 
                 }
             }
         }
+    }
+
+    if (courseIdToDelete != null) {
+        val targetCourse = courses.find { it.id == courseIdToDelete }
+        AlertDialog(
+            onDismissRequest = { courseIdToDelete = null },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除课程「${targetCourse?.name ?: ""}」吗？删除后将无法恢复喵。", color = textColor) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val cid = courseIdToDelete!!
+                        courseIdToDelete = null
+                        onDeleteCourse(cid)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626), contentColor = Color.White)
+                ) {
+                    Text("确认删除")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { courseIdToDelete = null }) {
+                    Text("取消", color = textColor.copy(alpha = 0.6f))
+                }
+            }
+        )
     }
 }
 
@@ -1968,6 +2023,10 @@ fun CourseDetailDialog(
             color = bgColor,
             modifier = Modifier.fillMaxWidth().padding(16.dp).border(0.5.dp, borderColor, RoundedCornerShape(16.dp))
         ) {
+            var showLocationAlert by remember { mutableStateOf(false) }
+            var showTeacherAlert by remember { mutableStateOf(false) }
+            var showDeleteConfirm by remember { mutableStateOf(false) }
+
             Column(modifier = Modifier.padding(24.dp)) {
                 // Header with Color bar
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1990,21 +2049,58 @@ fun CourseDetailDialog(
                 Text(course.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor, lineHeight = 28.sp)
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Location and Teacher Info
+                // Location and Teacher Info Buttons
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(12.dp)) {
-                        Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = textColor.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text("上课地点", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
-                        Text(course.location, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    Button(
+                        onClick = { showLocationAlert = true },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5), contentColor = textColor),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("上课地点", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    Column(modifier = Modifier.weight(1f).border(0.5.dp, borderColor).padding(12.dp)) {
-                        Icon(Icons.Rounded.Person, contentDescription = "Teacher", tint = textColor.copy(alpha = 0.5f), modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text("授课教师", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), letterSpacing = 1.sp)
-                        Text(course.teacher, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    Button(
+                        onClick = { showTeacherAlert = true },
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = if (isDark) Color(0xFF27272A) else Color(0xFFF4F4F5), contentColor = textColor),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Person, contentDescription = "Teacher", tint = textColor.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("授课教师", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
+
+                if (showLocationAlert) {
+                    AlertDialog(
+                        onDismissRequest = { showLocationAlert = false },
+                        title = { Text("上课地点") },
+                        text = { Text(course.location.ifBlank { "未排地点" }, fontSize = 15.sp, color = textColor) },
+                        confirmButton = {
+                            TextButton(onClick = { showLocationAlert = false }) { Text("确定", color = textColor) }
+                        }
+                    )
+                }
+
+                if (showTeacherAlert) {
+                    AlertDialog(
+                        onDismissRequest = { showTeacherAlert = false },
+                        title = { Text("授课教师") },
+                        text = { Text(course.teacher.ifBlank { "无" }, fontSize = 15.sp, color = textColor) },
+                        confirmButton = {
+                            TextButton(onClick = { showTeacherAlert = false }) { Text("确定", color = textColor) }
+                        }
+                    )
+                }
+
                 if (!course.credits.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
@@ -2071,7 +2167,7 @@ fun CourseDetailDialog(
                         Text("编辑", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                     OutlinedButton(
-                        onClick = onDelete,
+                        onClick = { showDeleteConfirm = true },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFDC2626)),
@@ -2079,6 +2175,30 @@ fun CourseDetailDialog(
                     ) {
                         Text("删除", fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
+                }
+
+                if (showDeleteConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showDeleteConfirm = false },
+                        title = { Text("确认删除") },
+                        text = { Text("确定要删除这门课程吗？删除后将无法恢复喵。", color = textColor) },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    showDeleteConfirm = false
+                                    onDelete()
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626), contentColor = Color.White)
+                            ) {
+                                Text("确认删除")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDeleteConfirm = false }) {
+                                Text("取消", color = textColor.copy(alpha = 0.6f))
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -2121,13 +2241,14 @@ fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
                         text = "[版本更新公告]\n\n" +
                                 "版本号：2.2.0.0609\n" +
                                 "更新时间：2026-06-09\n\n" +
-                                "课程块新增功能：\n" +
-                                "详情弹窗中新增了旷课计数和被点名计数统计模块，点击快捷增加计数。\n" +
-                                "同一个科目共享同一个计数器，无需为每节课单独统计。\n" +
-                                "如果误点击，在详情中点击编辑进入编辑页面，可以进行详细的增减。\n\n" +
-                                "版本更新公告弹窗：\n" +
-                                "每次更新后初次登陆必弹出本更新公告，点击“我知道了”后关闭并持久化记录，后续再次启动不再弹出。\n" +
-                                "在PROFILE页面中，“关于”目录下新增了“更新说明”条目，用户点击此条目可以随时再次拉起该公告。\n\n" +
+                                "课程详情与删除确认优化：\n" +
+                                "1. 课程详情弹窗中，折叠了地点和教师的详细展示，改为上课地点与授课教师两个按钮，点击后即可弹窗查看详情。\n" +
+                                "2. 安全性提升：为所有删除操作（删除时间表、长按删除课程、删除单门课程、删除课表等）新增了二次确认弹窗，防止误触导致数据丢失喵。\n" +
+                                "3. 详情弹窗中新增了旷课与被点名计数统计模块，同一个科目共享同一个计数器，点击可快捷计数，并支持在已添课程管理中增减。\n\n" +
+                                "版本更新与公告机制：\n" +
+                                "1. 每次更新后初次登录必弹出本更新公告，点击“我知道了”后关闭并持久化记录，后续再次启动不再弹出。\n" +
+                                "2. 支持每日首次打开软件自动检查更新，尊重隐私，绝不上传和收集您的个人课表数据。\n" +
+                                "3. 在PROFILE页面中，“关于”目录下新增了“更新说明”条目，用户点击此条目可以随时再次拉起该公告。\n\n" +
                                 "--------------------\n\n" +
                                 "版本号：2.0.0.0520\n" +
                                 "更新时间：2026-05-20\n\n" +
