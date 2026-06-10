@@ -1,0 +1,5252 @@
+[
+  {
+    "name": "安徽信息工程学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽农业大学",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽农业大学经济技术学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽医科大学临床医学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽卫生健康职业学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽国际商务职业学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽大学江淮学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽工商职业学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽建筑大学",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽建筑大学城市建设学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽新华学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽理工大学",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽职业技术学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安徽财经大学商学院",
+    "type": "zf",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安阳学院",
+    "type": "qg",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "安阳工学院",
+    "type": "qg",
+    "initial": "A",
+    "url": ""
+  },
+  {
+    "name": "保定学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "保定幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "保定职业技术学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "包头职业技术学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "包头轻工职业技术学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京交通大学海滨学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京交通大学运输学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京信息职业技术学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京农业职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京化工大学",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京外国语大学",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京工业大学",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京工业大学耿丹学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京师范大学珠海分校",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京电子科技职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京电影学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京社会管理职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "北京第二外国语大学",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "宝鸡文理学院",
+    "type": "qg",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "滨州科技职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "滨州职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "白银矿冶职业技术学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "蚌埠经济技术职业学院",
+    "type": "zf",
+    "initial": "B",
+    "url": ""
+  },
+  {
+    "name": "川南幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "常州信息职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "常州工学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "常州工程职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "常州纺织服装职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "常州轻工职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "成都信息工程大学银杏酒店管理学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "成都理工大学工程技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "成都纺织高等专科学校",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "楚雄医药高等专科学校",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "池州职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "滁州职业技术学院",
+    "type": "zf",
+    "initial": "C",
+    "url": ""
+  },
+  {
+    "name": "东华理工大学",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连大学",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连工业大学艺术与信息工程学院",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连海洋大学",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连海洋大学应用技术学院",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连理工大学城市学院",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连科技学院",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "大连职业技术学院",
+    "type": "zf",
+    "initial": "D",
+    "url": ""
+  },
+  {
+    "name": "福州外语外贸学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福州大学至诚学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福州工商学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福州职业技术学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建农林大学金山学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建医科大学",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建华南女子职业学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建卫生职业技术学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建商学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建工程学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建师范大学",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建技术师范学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建教育学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建林业职业技术学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建水利电力职业技术学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建理工学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建生物工程职业技术学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建船政交通职业学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "福建艺术职业学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "阜阳师范大学信息工程学院",
+    "type": "zf",
+    "initial": "F",
+    "url": ""
+  },
+  {
+    "name": "广东云浮中医药职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东信息工程职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东创新科技职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东医科大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东华南工商职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东华商学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东司法警官职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东培正学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东外语外贸大学南国商学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东女子职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东安防职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东岭南职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东工业大学华立学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东工程职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东建设职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东影视戏剧职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东技术师范大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东技术师范大学天河学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东文理职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东机电职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东松山职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东汕头幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东江门幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东海洋大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东潮州卫生健康职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东理工学院",
+    "type": "qg",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东生态工程职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东省环境保护职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东科学技术职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东科技学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东科贸职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东第二师范学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东茂名幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东行政职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东警官学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东财经大学华商学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东轻工职业技术大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东轻工职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东邮电职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广东酒店管理职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广安职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州中医药大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州体育职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州华立科技职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州南华工贸职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州南洋理工职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州卫生职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州城市理工学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州城市职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州大学华软软件学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州工商学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州工程技术职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州应用科技学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州现代信息工程职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州珠江职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州理工学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州科技职业技术大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州科技贸易职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州航海学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广州软件学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西中医药大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西中医药大学赛恩斯新医药学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西交通职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西体育高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西信息职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西农业职业技术大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西制造工程职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西医科大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西卫生职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西国际商务职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西城市职业大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西外国语学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西大学行健文理学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西工业职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西工程职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西师范大学漓江学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西师范学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西建设职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西开放大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西政法管理干部学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西教育学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西智能制造职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西机电职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西梧州职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西民族大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西民族职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西水利电力职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西演艺职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西现代职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西理工职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西生态工程职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西电力职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西科技大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西科技大学鹿山学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西科技师范学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西经济职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西自然资源职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "广西金融职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "桂林旅游学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "桂林理工大学",
+    "type": "qg",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "桂林理工大学博文管理学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "桂林电子科技大学",
+    "type": "qg",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "桂林航天工业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃农业大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃农业职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃医学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃卫生职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃工业职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃建筑职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃开放大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "甘肃林业职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "硅湖职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州交通职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州传媒职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州健康职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州农业职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州商学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州城市职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州大学明德学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州大学科技学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州工业职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州工商职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州工程应用技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州工程职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州工贸职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州应用技术职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州建设职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州开放大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州护理职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州文化旅游职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州民族大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州民航职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州水利电力职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州经贸职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州航天职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州航空职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州装备制造职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州警察学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州财政学校",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州轻工职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵州食品工程职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵阳中医药大学",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵阳信息职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "贵阳职业技术学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "赣南卫生健康职业学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "赣南师范大学科技学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "赣南科技学院",
+    "type": "zf",
+    "initial": "G",
+    "url": ""
+  },
+  {
+    "name": "华东交通大学理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华东师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华东政法大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华东理工大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华中农业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华中师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华南师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华南理工大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "华南理工大学广州学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥信息技术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥城市学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥工业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥师范学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥科技职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "合肥通用职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "呼伦贝尔职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "呼和浩特民族学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "呼和浩特职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨体育学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨信息工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨剑桥学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨华德学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨商业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨广厦学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨应用职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨开放大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨电力职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨石油学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨科学技术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨职业技术大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨远东理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨金融学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "哈尔滨铁道职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "徽商职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "怀化工业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "怀化职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "惠州卫生职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "惠州经济职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州医学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州工人业余大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州师范大学钱江学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州电子科技大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州电子科技大学信息工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州科技职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "杭州职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "汉中职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "汉口学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "汉江师范学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "汉阳大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北东方学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北中医药大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北交通职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北传媒学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北体育学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北司法警官职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工业大学城市学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工程大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工程大学科信学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工程技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北工艺美术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北师范大学汇华学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北建材职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北建筑工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北开放大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北政法职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北旅游职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北机电职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北石油职业技术大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北科技大学理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北科技工程职业技术大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北经贸大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北美术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河北软件职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南交通职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南体育学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南大学",
+    "type": "qg",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南工业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南应用技术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南新乡工商职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南机电职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南林业职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南检察职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南测绘职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南科技大学应用工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南科技学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南警察学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "河南财政金融学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南卫生健康职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南工商职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南经贸职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南艺术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海南软件职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "海口经济学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北中医药大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北交通职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北体育职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北健康职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北城市建设职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北工业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北工业大学工程技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北工业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北工程学院新技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北开放大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北开放职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北文理学院理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北汽车工业学院科技学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北生态工程职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北生物科技职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北第二师范学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北经济学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北经济学院法商学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北艺术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北财税职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北轻工职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖北铁道运输职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南中医药大学",
+    "type": "qg",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南交通职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南人文科技学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南体育职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南农业大学东方科技学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南冶金职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南劳动人事职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南化工职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南医药学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南司法警官职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南商务职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南城建职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南外国语职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南外贸职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南大众传媒职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南女子学院",
+    "type": "qg",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南工业大学科技学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南工业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南工程学院应用技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南工程职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南工艺美术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南应用技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南开放大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南文理学院芙蓉学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南机电职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南民族职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南汽车工程职业大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南环境生物职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南现代物流职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南理工学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南理工学院南湖学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南理工职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南生物机电职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南电子科技职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南科技大学",
+    "type": "qg",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南网络工程职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南艺术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南警官学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南财经工业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南邮电职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南都市职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南铁路科技职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南铁道职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖南食品药品职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "湖州师范大学",
+    "type": "zf",
+    "initial": "H",
+    "url": "http://syjw.zjhu.edu.cn/"
+  },
+  {
+    "name": "贺州学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "贺州职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "鹤壁职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黄山学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黄山职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑河学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江中医药大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江农业工程职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江农业经济职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江农业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江农垦职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江外国语学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江工业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江工程学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江工程学院昆仑旅游学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江建筑职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江开放大学",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江林业职业技术学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江民族职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江生物科技职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江艺术职业学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "黑龙江财经学院",
+    "type": "zf",
+    "initial": "H",
+    "url": ""
+  },
+  {
+    "name": "九州职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "九江学院",
+    "type": "qg",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "井冈山大学",
+    "type": "qg",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林交通职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林体育学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林农业科技学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林工业职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林工商学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林建筑大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林建筑大学城建学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林开放大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林水利电力职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林电子信息职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林职工医科大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林艺术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "吉林警察学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "嘉兴南湖学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "嘉兴学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "嘉兴学院南湖学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "嘉兴职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "晋中学院",
+    "type": "qg",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "晋中职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "景德镇学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江南大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江汉大学",
+    "type": "qg",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏农林职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏医药职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏卫生健康职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏司法警官职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏商贸职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏城乡建设职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏城市职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏大学京江学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏工程职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏建筑职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏开放大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏护理职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏旅游职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏海事职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏海洋大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏理工学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏电子信息职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏科技大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏科技大学苏州理工学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏第二师范学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏经贸职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏联合职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏航空职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏警官学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏财经职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江苏食品药品职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西中医药大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西中医药大学科技学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西交通职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西信息应用职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西农业大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西农业大学南昌商学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西外语外贸职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西工程职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西应用技术职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西建设职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西开放大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西新能源科技职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西服装学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西机电职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西泰豪动漫职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西环境工程职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西现代职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西理工大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西生物科技职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西电子信息职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西科技学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西管理职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西经济管理干部学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西警察学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西财经大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江西软件职业技术大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "江门职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "济南大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "济南工程职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "济南职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "济宁学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "济宁职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "焦作大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "焦作工贸职业学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "金华职业技术大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "金华职业技术学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "锦州医科大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "集美大学",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "集美大学诚毅学院",
+    "type": "zf",
+    "initial": "J",
+    "url": ""
+  },
+  {
+    "name": "临沂大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "临沂职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "丽水学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "丽水职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "兰州交通大学",
+    "type": "qg",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "兰州文理学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "兰州现代职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "兰州理工大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "兰州职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "洛阳师范学院",
+    "type": "qg",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁中医药大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁中医药大学杏林学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁农业职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁工程技术大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁建筑职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁开放大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁机电职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁现代服务职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁理工学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁理工职业大学",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁科技学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁装备制造职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁警察学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁财经职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "辽宁轻工职业学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "连云港中医药高等专科学校",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "连云港师范高等专科学校",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "连云港职业技术学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "龙岩学院",
+    "type": "zf",
+    "initial": "L",
+    "url": ""
+  },
+  {
+    "name": "满洲里俄语职业学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "牡丹江医学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "牡丹江大学",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "牡丹江师范学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "眉山职业技术学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "眉山药科职业学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "绵阳职业技术学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "闽江学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "闽西职业技术学院",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "马鞍山师范高等专科学校",
+    "type": "zf",
+    "initial": "M",
+    "url": ""
+  },
+  {
+    "name": "内江卫生健康职业学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "内江职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "内蒙古工业大学",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "内蒙古机电职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "内蒙古民族大学",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "南昌大学科学技术学院",
+    "type": "qg",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "南阳医学高等专科学校",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "南阳城市职业学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁夏理工学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁夏职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁夏艺术职业学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁夏财经职业学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波卫生职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波城市职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波大学",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波工程学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波开放大学",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "宁波职业技术学院",
+    "type": "zf",
+    "initial": "N",
+    "url": ""
+  },
+  {
+    "name": "平顶山学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "平顶山工业职业技术学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "濮阳医学高等专科学校",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "濮阳石油化工职业技术学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "盘锦职业技术学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "莆田学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "萍乡卫生职业学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "萍乡学院",
+    "type": "zf",
+    "initial": "P",
+    "url": ""
+  },
+  {
+    "name": "青岛城市学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛恒星科技学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛港湾职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛滨海学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛理工大学",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛理工大学琴岛学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛电影学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛航空职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛远洋船员职业学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青岛黄海学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青海交通职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青海大学",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青海大学昆仑学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "青海民族大学",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "黔东南民族职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "黔西南民族职业技术学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐鲁医药学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐鲁师范学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐鲁理工学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐齐哈尔医学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐齐哈尔大学",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "齐齐哈尔工程学院",
+    "type": "zf",
+    "initial": "Q",
+    "url": ""
+  },
+  {
+    "name": "日照职业技术学院",
+    "type": "zf",
+    "initial": "R",
+    "url": ""
+  },
+  {
+    "name": "日照航海工程职业学院",
+    "type": "zf",
+    "initial": "R",
+    "url": ""
+  },
+  {
+    "name": "三亚学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三亚理工职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三亚航空旅游职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三峡大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三峡大学科技学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三明学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三明职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "三江学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海中侨职业技术大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海中医药大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海交通大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海体育大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海体育学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海健康医学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海公安学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海建桥学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海开放大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海政法学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海旅游高等专科学校",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海民航职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海海事大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海海事职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海现代化工职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海理工大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海电力大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海电子信息职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海科学技术职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海科技大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海科技管理干部学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海行健职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海视觉艺术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "上海财经大学浙江学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "厦门城市职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "厦门开放大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "厦门海洋职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "厦门演艺职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "商丘工学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "商丘师范学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "商丘职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川体育职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川司法警官职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川商务职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川国际标榜职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川外国语大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川外国语大学成都学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川大学锦城学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川大学锦江学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川天一学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川工业科技学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川工程职业技术大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川工程职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川应用技术职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川建筑职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川文化艺术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川文理学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川机电职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川民族学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川水利职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川汽车职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川现代职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川理工学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川电力职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川电子机械职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川电影电视学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川科技职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川航天职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川艺术职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川西南航空职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川警察学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川财经职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川铁道职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四川长江职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "四州师范大学（四川师范大学）",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "宿州职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "宿州航空职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "宿迁学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "宿迁职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西中医药大学",
+    "type": "qg",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西大同大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西工商学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西工程技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西工程职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西师范大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西应用科技学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西开放大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "山西机电职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄工商职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄工程职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄科技信息职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄科技职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄财政职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "石家庄铁道大学",
+    "type": "qg",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "绍兴工业职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "绍兴文理学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "绍兴文理学院元培学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "绍兴文理学院兰亭书法学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "绍兴职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "陕西工业职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "陕西机电职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "陕西科技大学",
+    "type": "qg",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "陕西财经职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "陕西青年职业学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "韶关学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "韶关职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "顺德职业技术学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "首都体育学院",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "首都师范大学",
+    "type": "zf",
+    "initial": "S",
+    "url": ""
+  },
+  {
+    "name": "台州学院",
+    "type": "zf",
+    "initial": "T",
+    "url": ""
+  },
+  {
+    "name": "台州学院",
+    "type": "zf",
+    "initial": "T",
+    "url": ""
+  },
+  {
+    "name": "太原工业学院",
+    "type": "qg",
+    "initial": "T",
+    "url": ""
+  },
+  {
+    "name": "泰州学院",
+    "type": "qg",
+    "initial": "T",
+    "url": ""
+  },
+  {
+    "name": "文山学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "文山职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "梧州学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "梧州职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武夷学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉交通职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉商学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉城市职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉外语外事职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉大学",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉工程大学",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉工程职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉工贸职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉晴川学院",
+    "type": "qg",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉理工大学",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉纺织大学",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉航海职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉船舶职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉警官职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉软件工程职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉铁路职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "武汉长江工商学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "温州大学",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "温州大学瓯江学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "温州理工学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "温州科技职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "渭南职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "潍坊职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "芜湖职业技术学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "芜湖航空职业学院",
+    "type": "zf",
+    "initial": "W",
+    "url": ""
+  },
+  {
+    "name": "信阳师范大学",
+    "type": "qg",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "信阳师范大学信阳师范学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "信阳职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "兴义民族师范学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "兴安职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "咸阳师范学院",
+    "type": "qg",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "咸阳职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "徐州工业职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "徐州工程学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "徐州幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "徐州生物工程职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新乡学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新乡工程学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新乡职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新疆交通职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新疆农业职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新疆科技学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "新疆职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "湘潭大学兴湘学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "湘潭理工学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南交通大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南交通大学希望学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南医科大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南大学荣昌校区",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南政法大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南林业大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南民族大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南石油大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西南财经大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西双版纳职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西宁城市职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安交通大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安交通高专",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安培华学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安外事学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安外国语大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安工程大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安文理学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安汽车职业大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安海棠职业学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安理工大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安电子科技大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安科技大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安航空职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安财经大学",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安铁路职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安音乐学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西安高新科技职业学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "西昌学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "许昌学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "许昌职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "邢台职业技术学院",
+    "type": "zf",
+    "initial": "X",
+    "url": ""
+  },
+  {
+    "name": "云南中医药大学",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南交通职业技术学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南农业大学",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南农业职业技术学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南国土资源职业学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南工商学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南工程职业学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南旅游职业学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南林业职业技术学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "云南经济管理学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "右江民族医学院",
+    "type": "qg",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "宜宾学院",
+    "type": "qg",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "银川科技学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "银川能源学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "阳光学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "阳江职业技术学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "雅安职业技术学院",
+    "type": "zf",
+    "initial": "Y",
+    "url": ""
+  },
+  {
+    "name": "专业职业技术学院（原名汝州职业技术学院）",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "中南林业科技大学",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "中国计量大学",
+    "type": "zf",
+    "initial": "Z",
+    "url": "https://jwxt.cjlu.edu.cn/"
+  },
+  {
+    "name": "郑州轻工业大学",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆三峡医药高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆交通职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆传媒职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆城市职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆工商大学",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆工商大学派斯学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆工贸职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆师范大学",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆师范大学涉外商贸学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆幼儿师范高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆应用技术职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆建筑工程职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆建筑科技职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆护理职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆文化艺术职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆文学学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆旅游职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆智能工程职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆机电职业技术大学",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆海联职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆现代制造职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆理工大学",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆电信职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆电力高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆电子工程职业学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "重庆科技大学",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春东方学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春医学高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春师范大学高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春汽车工业高等专科学校",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春理工大学光电信息学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长春青年职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长江大学",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长江大学工程技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长江工程职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长沙商贸旅游职业技术学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长沙学院",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长沙理工大学",
+    "type": "qg",
+    "initial": "Z",
+    "url": ""
+  },
+  {
+    "name": "长沙理工大学城南学院",
+    "type": "zf",
+    "initial": "Z",
+    "url": ""
+  }
+]
