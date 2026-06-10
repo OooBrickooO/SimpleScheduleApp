@@ -4,7 +4,7 @@ import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.receiver.ReminderEngine
-import com.example.simpleschedule.widget.CourseWidget
+import com.example.simpleschedule.widget.*
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -325,6 +325,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun notifyWidgetUpdate() {
         viewModelScope.launch {
             CourseWidget().updateAll(getApplication())
+            CourseWidget2x2().updateAll(getApplication())
             ReminderEngine.scheduleNextWidgetUpdate(getApplication(), appDao)
         }
     }

@@ -181,6 +181,8 @@ class MainActivity : ComponentActivity() {
 
             var updateInfoToShow by remember { mutableStateOf<UpdateInfo?>(null) }
             var isCheckingManualUpdate by remember { mutableStateOf(false) }
+            var announcementDialogTitle by remember { mutableStateOf("") }
+            var announcementDialogContent by remember { mutableStateOf("") }
             var showAnnouncementDialog by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
@@ -203,29 +205,24 @@ class MainActivity : ComponentActivity() {
                 )
 
                 launch {
-                    val currentVersionName = try {
-                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            context.packageManager.getPackageInfo(context.packageName, 0)
-                        }.versionName ?: "1.0.0"
-                    } catch (e: Exception) {
-                        "1.0.0"
-                    }
-                    val lastSeenVersion = try {
-                        context.dataStore.data.map { it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_VERSION] ?: "" }.first()
-                    } catch (e: Exception) {
-                        ""
-                    }
-                    if (lastSeenVersion != currentVersionName) {
-                        showAnnouncementDialog = true
-                        try {
-                            context.dataStore.edit {
-                                it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_VERSION] = currentVersionName
-                            }
-                        } catch (e: Exception) {}
+                    val result = fetchAnnouncement()
+                    if (result != null) {
+                        val (id, title, content) = result
+                        announcementDialogTitle = title
+                        announcementDialogContent = content
+                        
+                        val lastSeenId = try {
+                            context.dataStore.data.map { it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_ID] ?: "" }.first()
+                        } catch (e: Exception) { "" }
+                        
+                        if (lastSeenId != id) {
+                            showAnnouncementDialog = true
+                            try {
+                                context.dataStore.edit {
+                                    it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_ID] = id
+                                }
+                            } catch (e: Exception) {}
+                        }
                     }
                 }
 
@@ -463,7 +460,24 @@ class MainActivity : ComponentActivity() {
                                             ProfileScreen(
                                                 isDark = isDark,
                                                 onThemeToggle = { viewModel.toggleTheme(it) },
-                                                onShowAnnouncementClick = { showAnnouncementDialog = true },
+                                                onShowAnnouncementClick = {
+                                                     if (announcementDialogTitle.isNotEmpty()) {
+                                                         showAnnouncementDialog = true
+                                                     } else {
+                                                         Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
+                                                         coroutineScope.launch {
+                                                             val result = fetchAnnouncement()
+                                                             if (result != null) {
+                                                                 val (id, title, content) = result
+                                                                 announcementDialogTitle = title
+                                                                 announcementDialogContent = content
+                                                                 showAnnouncementDialog = true
+                                                             } else {
+                                                                 Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
+                                                             }
+                                                         }
+                                                     }
+                                                 },
                                                 onCheckUpdateClick = {
                                                     if (!isCheckingManualUpdate) {
                                                         isCheckingManualUpdate = true
@@ -548,6 +562,8 @@ class MainActivity : ComponentActivity() {
 
                 if (showAnnouncementDialog) {
                     AnnouncementDialog(
+                        title = announcementDialogTitle,
+                        content = announcementDialogContent,
                         isDark = isDark,
                         onDismiss = { showAnnouncementDialog = false }
                     )
@@ -609,6 +625,12 @@ class MainActivity : ComponentActivity() {
         val changelog: String,
         val apkUrl: String,
         val forceUpdate: Boolean
+    )
+
+    data class AnnouncementInfo(
+        val id: String,
+        val title: String,
+        val content: String
     )
 
     private var downloadId: Long = -1
@@ -814,6 +836,40 @@ class MainActivity : ComponentActivity() {
                     changelog = jsonObject.getString("changelog"),
                     apkUrl = jsonObject.getString("apkUrl"),
                     forceUpdate = jsonObject.optBoolean("forceUpdate", false)
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private suspend fun fetchAnnouncement(): AnnouncementInfo? = withContext(Dispatchers.IO) {
+        var connection: HttpURLConnection? = null
+        try {
+            val url = URL("https://www.lingflame.cn/announcement.json")
+            connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            
+            if (connection.responseCode == 200) {
+                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    response.append(line)
+                }
+                
+                val jsonObject = JSONObject(response.toString())
+                AnnouncementInfo(
+                    id = jsonObject.getString("id"),
+                    title = jsonObject.getString("title"),
+                    content = jsonObject.getString("content")
                 )
             } else {
                 null

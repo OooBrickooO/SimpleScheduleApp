@@ -13,8 +13,8 @@ android {
         applicationId = "com.example.simpleschedule"
         minSdk = 24
         targetSdk = 35
-        versionCode = 6
-        versionName = "2.5.1.0610"
+        versionCode = 8
+        versionName = "2.5.4.0610"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

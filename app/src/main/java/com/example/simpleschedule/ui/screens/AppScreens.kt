@@ -2883,7 +2883,7 @@ fun CourseDetailDialog(
 }
 
 @Composable
-fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
+fun AnnouncementDialog(title: String, content: String, isDark: Boolean, onDismiss: () -> Unit) {
     val bgColor = if (isDark) Color(0xFF18181B) else Color.White
     val textColor = if (isDark) Color.White else Color.Black
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -2903,7 +2903,7 @@ fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("更新说明", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+                    Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -2915,39 +2915,7 @@ fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = "[版本更新公告]\n\n" +
-                                "版本号：2.5.1.0610\n" +
-                                "更新时间：2026-06-10 17:45\n\n" +
-                                "从教务导入课表与考试向导优化：\n" +
-                                "1. 导入方式页面改版与常用学校快捷入口：新增常用学校快捷跳转，默认支持中国计量大学（正方）、湖州师范大学（正方）、兰州交通大学（青果/XLS）一键访问与导入。\n" +
-                                "2. 支持“按学校”和“按教务分类”选择：按教务分类可直接访问正方并搜索其学校，或针对青果系统使用 XLS 导入；按学校可按首字母拼音分组浏览 870+ 所学校，右侧支持字母快速点击或滑动拖拽定位，非常丝滑喵。\n" +
-                                "3. 导入数据表逻辑优化：自动联网搜索正方学校教务地址，且自动去重剔除了多类别重合的学校。\n" +
-                                "4. 导入阻碍与警告提醒：若当前课表中已有课程，导入课表强阻碍拦截以防混乱，导入考试安排则触发二次警告确认弹窗。\n\n" +
-                                "--------------------\n\n" +
-                                "版本号：2.3.0.0609\n" +
-                                "更新时间：2026-06-09 21:48\n\n" +
-                                "课程详情与删除确认优化：\n" +
-                                "1. 课程详情弹窗中，折叠了地点和教师的详细展示，改为上课地点与授课教师两个按钮，点击后即可弹窗查看详情。\n" +
-                                "2. 安全性提升：为所有删除操作（删除时间表、长按删除课程、删除单门课程、删除课表等）新增了二次确认弹窗，防止误触导致数据丢失喵。\n" +
-                                "3. 详情弹窗中新增了旷课与被点名计数统计模块，同一个科目共享同一个计数器，点击可快捷计数，并支持在已添课程管理中增减。\n\n" +
-                                "版本更新与公告机制：\n" +
-                                "1. 每次更新后初次登录必弹出本更新公告，点击“我知道了”后关闭并持久化记录，后续再次启动不再弹出。\n" +
-                                "2. 支持每日首次打开软件自动检查更新，尊重隐私，绝不上传和收集您的个人课表数据。\n" +
-                                "3. 在PROFILE页面中，“关于”目录下新增了“更新说明”条目，用户点击此条目可以随时再次拉起该公告。\n\n" +
-                                "--------------------\n\n" +
-                                "版本号：2.0.0.0520\n" +
-                                "更新时间：2026-05-20\n\n" +
-                                "壁纸动态配色功能：\n" +
-                                "适配了系统壁纸配色(Material You)，课程格子与应用主题颜色能够根据您当前的系统壁纸色调自动改变。\n" +
-                                "您可以在管理界面的外观设置中开启或关闭此功能。\n\n" +
-                                "客户端自动更新检测：\n" +
-                                "应用在启动时会自动检测云端最新版本，若检测到新版本将提供一键下载与快速安装。\n" +
-                                "如果您关闭了自动更新，也可以在管理页面的关于分栏下，手动点击版本号来主动发起检测。\n\n" +
-                                "桌面卡片与后台提醒优化：\n" +
-                                "重构了桌面微件的自动刷新机制，并优化了后台精准课程提醒广播，确保提醒能够准时送达。\n\n" +
-                                "--------------------\n\n" +
-                                "隐私与联网声明：\n" +
-                                "本应用的网络访问权限仅限用于版本更新检测及包体下载，我们完全尊重并保护您的个人隐私，不会收集或上传您的任何个人课表数据及其他敏感信息。",
+                        text = content,
                         fontSize = 14.sp,
                         color = textColor.copy(alpha = 0.8f),
                         lineHeight = 20.sp

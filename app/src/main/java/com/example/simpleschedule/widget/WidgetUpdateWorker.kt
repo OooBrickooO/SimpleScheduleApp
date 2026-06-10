@@ -140,6 +140,7 @@ class WidgetUpdateWorker(context: Context, params: WorkerParameters) : Coroutine
         return try {
             val appDao = AppDatabase.getDatabase(applicationContext).appDao()
             CourseWidget().updateAll(applicationContext)
+            CourseWidget2x2().updateAll(applicationContext)
             ReminderEngine.scheduleNextWidgetUpdate(applicationContext, appDao)
             ReminderEngine.calculateAndScheduleNext(applicationContext, appDao)
             Result.success()

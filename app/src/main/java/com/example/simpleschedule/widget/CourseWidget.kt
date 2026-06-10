@@ -141,213 +141,232 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.LocalSize
 import androidx.compose.ui.unit.dp
 
-class CourseWidget : GlanceAppWidget() {
-    override val sizeMode: SizeMode = SizeMode.Exact
+data class WidgetData(
+    val todayCourses: List<DisplayCourse>,
+    val timeNodeMap: Map<Int, TimeNode>,
+    val isTranslucent: Boolean
+)
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val appDao = AppDatabase.getDatabase(context).appDao()
-        val prefs = context.dataStore.data.firstOrNull()
-        val savedId = prefs?.get(SettingsKeys.CURRENT_SCHEDULE_ID)
-        val isTranslucent = prefs?.get(SettingsKeys.WIDGET_TRANSLUCENT) ?: false
+suspend fun loadWidgetData(context: Context): WidgetData {
+    val appDao = AppDatabase.getDatabase(context).appDao()
+    val prefs = context.dataStore.data.firstOrNull()
+    val savedId = prefs?.get(SettingsKeys.CURRENT_SCHEDULE_ID)
+    val isTranslucent = prefs?.get(SettingsKeys.WIDGET_TRANSLUCENT) ?: false
 
-        val scheduleGroups = appDao.getAllScheduleGroups().firstOrNull() ?: emptyList()
-        val currentSchedule = scheduleGroups.find { it.id == savedId } ?: scheduleGroups.firstOrNull()
+    val scheduleGroups = appDao.getAllScheduleGroups().firstOrNull() ?: emptyList()
+    val currentSchedule = scheduleGroups.find { it.id == savedId } ?: scheduleGroups.firstOrNull()
 
-        val cal = Calendar.getInstance()
-        val todayDayOfWeek = if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else cal.get(Calendar.DAY_OF_WEEK) - 1
+    val cal = Calendar.getInstance()
+    val todayDayOfWeek = if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else cal.get(Calendar.DAY_OF_WEEK) - 1
 
-        var currentWeek = 1
-        if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
-            try {
-                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
-                while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
-                val currentCalForWeek = Calendar.getInstance()
-                while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
-                val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
-                currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
-                if (currentWeek < 1) currentWeek = 1
-            } catch (e: Exception) {}
+    var currentWeek = 1
+    if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
+        try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
+            while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
+            val currentCalForWeek = Calendar.getInstance()
+            while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
+            val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
+            currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
+            if (currentWeek < 1) currentWeek = 1
+        } catch (e: Exception) {}
+    }
+
+    val rawCourses = if (currentSchedule != null) appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
+    val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
+    val overrideMap = overrides.associateBy { it.courseId }
+
+    val timeNodes = if (currentSchedule != null) appDao.getTimeNodes(currentSchedule.timetableId) else emptyList()
+    val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+
+    val currentTimeStr = String.format(Locale.getDefault(), "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+
+    val todayCourses = rawCourses.mapNotNull { course ->
+        val over = overrideMap[course.id]
+        val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
+        val effectiveStart = over?.newStartNode ?: course.startNode
+        val effectiveEnd = over?.newEndNode ?: course.endNode
+
+        if (effectiveDay != todayDayOfWeek) return@mapNotNull null
+
+        val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+        if (!weeksList.contains(currentWeek)) return@mapNotNull null
+
+        val endNodeInfo = timeNodeMap[effectiveEnd]
+        if (endNodeInfo != null && endNodeInfo.endTime <= currentTimeStr) {
+            return@mapNotNull null
         }
 
-        val rawCourses = if (currentSchedule != null) appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
-        val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
-        val overrideMap = overrides.associateBy { it.courseId }
+        DisplayCourse(course, effectiveDay, effectiveStart, effectiveEnd)
+    }.sortedBy { it.displayStartNode }
 
-        val timeNodes = if (currentSchedule != null) appDao.getTimeNodes(currentSchedule.timetableId) else emptyList()
-        val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+    return WidgetData(todayCourses, timeNodeMap, isTranslucent)
+}
 
-        val currentTimeStr = String.format(Locale.getDefault(), "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
-
-        val todayCourses = rawCourses.mapNotNull { course ->
-            val over = overrideMap[course.id]
-            val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-            val effectiveStart = over?.newStartNode ?: course.startNode
-            val effectiveEnd = over?.newEndNode ?: course.endNode
-
-            if (effectiveDay != todayDayOfWeek) return@mapNotNull null
-
-            val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-            if (!weeksList.contains(currentWeek)) return@mapNotNull null
-
-            val endNodeInfo = timeNodeMap[effectiveEnd]
-            if (endNodeInfo != null && endNodeInfo.endTime <= currentTimeStr) {
-                return@mapNotNull null
-            }
-
-            DisplayCourse(course, effectiveDay, effectiveStart, effectiveEnd)
-        }.sortedBy { it.displayStartNode }
-
+class CourseWidget : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val data = loadWidgetData(context)
         provideContent {
-            CourseWidgetContent(context, todayCourses, timeNodeMap, isTranslucent)
+            CourseWidgetContent4x2(context, data.todayCourses, data.timeNodeMap, data.isTranslucent)
+        }
+    }
+}
+
+class CourseWidget2x2 : GlanceAppWidget() {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val data = loadWidgetData(context)
+        provideContent {
+            CourseWidgetContentNarrow(context, data.todayCourses, data.timeNodeMap, data.isTranslucent, maxShow = 2)
+        }
+    }
+}
+
+
+@Suppress("RestrictedApi")
+@Composable
+fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean) {
+    val intent = Intent(context, MainActivity::class.java).apply {
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+
+    GlanceColumn(
+        modifier = GlanceModifier.glanceFillMaxSize()
+            .appWidgetBackground()
+            .cornerRadius(16.dp)
+            .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
+            .glancePadding(16.dp)
+            .glanceClickable(actionStartActivity(intent))
+    ) {
+        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
+        GlanceText(
+            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
+            style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
+        )
+        GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
+
+        val showCourses = todayCourses.take(4)
+
+        showCourses.forEach { displayCourse ->
+            val course = displayCourse.course
+            val startNode = timeNodeMap[displayCourse.displayStartNode]
+            val endNode = timeNodeMap[displayCourse.displayEndNode]
+            val timeStr = "${startNode?.startTime ?: ""} - ${endNode?.endTime ?: ""}"
+
+            val palette = getPalette(course.colorTheme, isDark = true)
+            val cardAlpha = if (isTranslucent) 0.7f else 1.0f
+
+            GlanceColumn(
+                modifier = GlanceModifier
+                    .glanceFillMaxWidth()
+                    .cornerRadius(12.dp)
+                    .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
+                    .glancePadding(12.dp)
+                    .glanceClickable(actionStartActivity(intent))
+            ) {
+                GlanceText(course.name, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
+                GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
+                GlanceText("$timeStr ${course.location}", style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 11.sp))
+            }
+            GlanceSpacer(modifier = GlanceModifier.glanceHeight(8.dp))
+        }
+
+        if (todayCourses.size > 4) {
+            GlanceText(
+                text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
+            )
+        }
+
+        if (todayCourses.isEmpty()) {
+            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            GlanceText(
+                text = "(๑•̀ㅂ•́)و✧\n今天没有课啦！",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 16.sp, textAlign = GlanceTextAlign.Center),
+                modifier = GlanceModifier.glanceFillMaxWidth()
+            )
+        } else if (todayCourses.size <= 4) {
+            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            GlanceText(
+                text = "(ฅ´ω`ฅ) 加油喵~",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
+                modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
+            )
         }
     }
 }
 
 @Suppress("RestrictedApi")
 @Composable
-fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean) {
+fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean, maxShow: Int) {
     val intent = Intent(context, MainActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 
-    val size = LocalSize.current
-    val width = size.width
-    val height = size.height
-    val isNarrow = width < 150.dp
+    GlanceColumn(
+        modifier = GlanceModifier.glanceFillMaxSize()
+            .appWidgetBackground()
+            .cornerRadius(12.dp)
+            .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
+            .glancePadding(8.dp)
+            .glanceClickable(actionStartActivity(intent))
+    ) {
+        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
+        GlanceText(
+            text = if (todayCourses.isEmpty()) "今日无课" else "今日 $distinctCourseCount 门课",
+            style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp, fontWeight = GlanceFontWeight.Bold)
+        )
+        GlanceSpacer(modifier = GlanceModifier.glanceHeight(6.dp))
 
-    if (isNarrow) {
-        GlanceColumn(
-            modifier = GlanceModifier.glanceFillMaxSize()
-                .appWidgetBackground()
-                .cornerRadius(12.dp)
-                .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
-                .glancePadding(8.dp)
-                .glanceClickable(actionStartActivity(intent))
-        ) {
-            val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
-            GlanceText(
-                text = if (todayCourses.isEmpty()) "今日无课" else "今日 $distinctCourseCount 门课",
-                style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp, fontWeight = GlanceFontWeight.Bold)
-            )
-            GlanceSpacer(modifier = GlanceModifier.glanceHeight(6.dp))
+        val showCourses = todayCourses.take(maxShow)
 
-            val maxShow = if (height < 150.dp) 2 else 3
-            val showCourses = todayCourses.take(maxShow)
+        showCourses.forEach { displayCourse ->
+            val course = displayCourse.course
+            val startNode = timeNodeMap[displayCourse.displayStartNode]
+            val startTime = startNode?.startTime ?: ""
+            val cleanLocation = course.location.replace("楼", "")
+            val infoText = if (cleanLocation.isNotEmpty()) "$startTime @$cleanLocation" else startTime
 
-            showCourses.forEach { displayCourse ->
-                val course = displayCourse.course
-                val startNode = timeNodeMap[displayCourse.displayStartNode]
-                val startTime = startNode?.startTime ?: ""
-                val cleanLocation = course.location.replace("楼", "")
-                val infoText = if (cleanLocation.isNotEmpty()) "$startTime @$cleanLocation" else startTime
+            val palette = getPalette(course.colorTheme, isDark = true)
+            val cardAlpha = if (isTranslucent) 0.7f else 1.0f
 
-                val palette = getPalette(course.colorTheme, isDark = true)
-                val cardAlpha = if (isTranslucent) 0.7f else 1.0f
-
-                GlanceColumn(
-                    modifier = GlanceModifier
-                        .glanceFillMaxWidth()
-                        .cornerRadius(8.dp)
-                        .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
-                        .glancePadding(6.dp)
-                        .glanceClickable(actionStartActivity(intent))
-                ) {
-                    GlanceText(
-                        text = course.name,
-                        maxLines = 1,
-                        style = TextStyle(color = ColorProvider(palette.text), fontSize = 11.sp, fontWeight = GlanceFontWeight.Bold)
-                    )
-                    GlanceSpacer(modifier = GlanceModifier.glanceHeight(2.dp))
-                    GlanceText(
-                        text = infoText,
-                        maxLines = 1,
-                        style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 9.sp)
-                    )
-                }
-                GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
-            }
-
-            if (todayCourses.size > maxShow) {
+            GlanceColumn(
+                modifier = GlanceModifier
+                    .glanceFillMaxWidth()
+                    .cornerRadius(8.dp)
+                    .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
+                    .glancePadding(6.dp)
+                    .glanceClickable(actionStartActivity(intent))
+            ) {
                 GlanceText(
-                    text = "... 还有 ${todayCourses.size - maxShow} 门",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 9.sp)
+                    text = course.name,
+                    maxLines = 1,
+                    style = TextStyle(color = ColorProvider(palette.text), fontSize = 11.sp, fontWeight = GlanceFontWeight.Bold)
+                )
+                GlanceSpacer(modifier = GlanceModifier.glanceHeight(2.dp))
+                GlanceText(
+                    text = infoText,
+                    maxLines = 1,
+                    style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 9.sp)
                 )
             }
-
-            if (todayCourses.isEmpty()) {
-                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
-                GlanceText(
-                    text = "好好休息喵~",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.4f)), fontSize = 11.sp, textAlign = GlanceTextAlign.Center),
-                    modifier = GlanceModifier.glanceFillMaxWidth()
-                )
-            }
+            GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
         }
-    } else {
-        GlanceColumn(
-            modifier = GlanceModifier.glanceFillMaxSize()
-                .appWidgetBackground()
-                .cornerRadius(16.dp)
-                .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
-                .glancePadding(16.dp)
-                .glanceClickable(actionStartActivity(intent))
-        ) {
-            val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
+
+        if (todayCourses.size > maxShow) {
             GlanceText(
-                text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
-                style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
+                text = "... 还有 ${todayCourses.size - maxShow} 门",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 9.sp)
             )
-            GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
+        }
 
-            val showCourses = todayCourses.take(4)
-
-            showCourses.forEach { displayCourse ->
-                val course = displayCourse.course
-                val startNode = timeNodeMap[displayCourse.displayStartNode]
-                val endNode = timeNodeMap[displayCourse.displayEndNode]
-                val timeStr = "${startNode?.startTime ?: ""} - ${endNode?.endTime ?: ""}"
-
-                val palette = getPalette(course.colorTheme, isDark = true)
-                val cardAlpha = if (isTranslucent) 0.7f else 1.0f
-
-                GlanceColumn(
-                    modifier = GlanceModifier
-                        .glanceFillMaxWidth()
-                        .cornerRadius(12.dp)
-                        .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
-                        .glancePadding(12.dp)
-                        .glanceClickable(actionStartActivity(intent))
-                ) {
-                    GlanceText(course.name, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
-                    GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
-                    GlanceText("$timeStr ${course.location}", style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 11.sp))
-                }
-                GlanceSpacer(modifier = GlanceModifier.glanceHeight(8.dp))
-            }
-
-            if (todayCourses.size > 4) {
-                GlanceText(
-                    text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
-                )
-            }
-
-            if (todayCourses.isEmpty()) {
-                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
-                GlanceText(
-                    text = "(๑•̀ㅂ•́)و✧\n今天没有课啦！",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 16.sp, textAlign = GlanceTextAlign.Center),
-                    modifier = GlanceModifier.glanceFillMaxWidth()
-                )
-            } else if (todayCourses.size <= 4) {
-                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
-                GlanceText(
-                    text = "(ฅ´ω`ฅ) 加油喵~",
-                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
-                    modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
-                )
-            }
+        if (todayCourses.isEmpty()) {
+            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            GlanceText(
+                text = "好好休息喵~",
+                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.4f)), fontSize = 11.sp, textAlign = GlanceTextAlign.Center),
+                modifier = GlanceModifier.glanceFillMaxWidth()
+            )
         }
     }
 }
@@ -355,6 +374,11 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
 class CourseWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CourseWidget()
 }
+
+class CourseWidget2x2Receiver : GlanceAppWidgetReceiver() {
+    override val glanceAppWidget: GlanceAppWidget = CourseWidget2x2()
+}
+
 
 // --- 9. 后台守护任务 (WorkManager) ---
 
