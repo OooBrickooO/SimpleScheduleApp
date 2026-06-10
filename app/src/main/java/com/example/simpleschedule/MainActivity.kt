@@ -102,6 +102,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.graphics.StrokeCap
+import kotlinx.coroutines.delay
 import androidx.room.*
 import androidx.work.*
 import java.util.concurrent.TimeUnit
@@ -155,6 +158,10 @@ import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     private val viewModel: ScheduleViewModel by viewModels()
+
+    private var downloadProgress by mutableFloatStateOf(0f)
+    private var downloadStatus by mutableStateOf<String?>(null)
+    private var downloadedSizeLabel by mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -253,26 +260,13 @@ class MainActivity : ComponentActivity() {
                             } else { 1 }
                         } catch (e: Exception) { 1 }
 
-                        val currentVersionName = packageInfo?.versionName ?: "1.0.0"
-                        val currentMajor = currentVersionName.split(".")[0].toIntOrNull() ?: 1
-
                         val update = checkUpdate(UPDATE_URL)
                         if (update != null && update.versionCode > currentVersionCode) {
-                            val isSilenced = try {
-                                context.dataStore.data.map { it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] ?: false }.first()
-                            } catch (e: Exception) { false }
+                            val lastSilencedCode = try {
+                                context.dataStore.data.map { it[SettingsKeys.LAST_SILENCED_VERSION_CODE] ?: -1 }.first()
+                            } catch (e: Exception) { -1 }
 
-                            val serverMajor = update.versionName.split(".")[0].toIntOrNull() ?: 1
-                            val isMajorUpdate = serverMajor > currentMajor
-
-                            if (!isSilenced || isMajorUpdate) {
-                                if (isMajorUpdate && isSilenced) {
-                                    try {
-                                        context.dataStore.edit {
-                                            it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] = false
-                                        }
-                                    } catch (e: Exception) {}
-                                }
+                            if (update.versionCode > lastSilencedCode) {
                                 updateInfoToShow = update
                             }
                         }
@@ -569,15 +563,26 @@ class MainActivity : ComponentActivity() {
                             updateInfoToShow = null
                         },
                         onSilence = {
+                            val silencedCode = updateInfoToShow!!.versionCode
                             coroutineScope.launch {
                                 try {
                                     context.dataStore.edit {
-                                        it[SettingsKeys.SILENCE_UPDATE_NOTIFICATION] = true
+                                        it[SettingsKeys.LAST_SILENCED_VERSION_CODE] = silencedCode
                                     }
                                 } catch (e: Exception) {}
                             }
                             updateInfoToShow = null
                         }
+                    )
+                }
+
+                if (downloadStatus != null) {
+                    DownloadProgressDialog(
+                        progress = downloadProgress,
+                        sizeLabel = downloadedSizeLabel,
+                        status = downloadStatus,
+                        isDark = isDark,
+                        onCancel = { cancelDownload(context) }
                     )
                 }
             }
@@ -612,12 +617,33 @@ class MainActivity : ComponentActivity() {
         override fun onReceive(context: Context, intent: Intent) {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
             if (id == downloadId && id != -1L) {
-                installDownloadedApk(context)
+                val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                val query = DownloadManager.Query().setFilterById(id)
+                val cursor = manager.query(query)
+                if (cursor != null && cursor.moveToFirst()) {
+                    val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        installDownloadedApk(context)
+                    } else {
+                        Toast.makeText(context, "下载失败，请检查网络后重试喵", Toast.LENGTH_SHORT).show()
+                        downloadStatus = null
+                    }
+                    cursor.close()
+                }
             }
         }
     }
 
     private fun startDownloadApk(context: Context, url: String) {
+        try {
+            val apkFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+            if (apkFile.exists()) {
+                apkFile.delete()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         try {
             val request = DownloadManager.Request(Uri.parse(url)).apply {
                 setTitle("正在下载课表更新...")
@@ -628,19 +654,127 @@ class MainActivity : ComponentActivity() {
             }
             val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadId = manager.enqueue(request)
-            Toast.makeText(context, "开始下载更新喵，请查看通知栏", Toast.LENGTH_SHORT).show()
+            
+            trackDownloadProgress(context, downloadId)
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "启动下载失败: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
+    private fun trackDownloadProgress(context: Context, id: Long) {
+        downloadStatus = "pending"
+        downloadProgress = 0f
+        downloadedSizeLabel = "准备中..."
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            var downloading = true
+            while (downloading) {
+                val query = DownloadManager.Query().setFilterById(id)
+                val cursor = manager.query(query)
+                if (cursor != null && cursor.moveToFirst()) {
+                    val bytesDownloaded = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                    val bytesTotal = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                    val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+
+                    withContext(Dispatchers.Main) {
+                        if (bytesTotal > 0) {
+                            downloadProgress = bytesDownloaded.toFloat() / bytesTotal
+                            val downloadedMb = String.format(Locale.US, "%.2f", bytesDownloaded.toFloat() / (1024 * 1024))
+                            val totalMb = String.format(Locale.US, "%.2f", bytesTotal.toFloat() / (1024 * 1024))
+                            downloadedSizeLabel = "$downloadedMb MB / $totalMb MB"
+                        }
+
+                        when (status) {
+                            DownloadManager.STATUS_SUCCESSFUL -> {
+                                downloadStatus = "success"
+                                downloading = false
+                                installDownloadedApk(context)
+                            }
+                            DownloadManager.STATUS_FAILED -> {
+                                downloadStatus = "failed"
+                                downloading = false
+                            }
+                            DownloadManager.STATUS_PENDING -> {
+                                downloadStatus = "pending"
+                            }
+                            DownloadManager.STATUS_RUNNING -> {
+                                downloadStatus = "downloading"
+                            }
+                            DownloadManager.STATUS_PAUSED -> {
+                                downloadStatus = "paused"
+                            }
+                        }
+                    }
+                    cursor.close()
+} else {
+                    downloading = false
+                }
+                delay(300)
+            }
+        }
+    }
+
+    private fun cancelDownload(context: Context) {
+        if (downloadId != -1L) {
+            try {
+                val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                manager.remove(downloadId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            downloadId = -1
+        }
+        downloadStatus = null
+    }
+
     private fun installDownloadedApk(context: Context) {
-        val apkFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        var fileUri: Uri? = null
+        if (downloadId != -1L) {
+            val query = DownloadManager.Query().setFilterById(downloadId)
+            val cursor = manager.query(query)
+            if (cursor != null && cursor.moveToFirst()) {
+                val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                    val uriString = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI))
+                    if (!uriString.isNullOrEmpty()) {
+                        fileUri = Uri.parse(uriString)
+                    }
+                }
+                cursor.close()
+            }
+        }
+
+        val apkFile = if (fileUri != null && fileUri.path != null) {
+            File(fileUri.path!!)
+        } else {
+            File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+        }
+
         if (!apkFile.exists()) {
             Toast.makeText(context, "未找到下载的更新包喵", Toast.LENGTH_SHORT).show()
+            downloadStatus = null
             return
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(intent)
+                    Toast.makeText(context, "请先允许应用「安装未知应用」权限喵！", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "无法自动跳转设置，请在系统设置中手动授权未知应用安装权限", Toast.LENGTH_LONG).show()
+                }
+                return
+            }
+        }
+
         val authority = "${context.packageName}.fileprovider"
         try {
             val apkUri = FileProvider.getUriForFile(context, authority, apkFile)
@@ -649,6 +783,7 @@ class MainActivity : ComponentActivity() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
             context.startActivity(intent)
+            downloadStatus = null
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(context, "拉起安装程序失败，请尝试在文件管理器中手动安装: ${e.message}", Toast.LENGTH_LONG).show()
@@ -734,5 +869,74 @@ fun UpdateDialog(
     }
 }
 
-// --- 组件部分 ---
+@Composable
+fun DownloadProgressDialog(
+    progress: Float,
+    sizeLabel: String,
+    status: String?,
+    isDark: Boolean,
+    onCancel: () -> Unit
+) {
+    val bgColor = if (isDark) Color(0xFF18181B) else Color.White
+    val textColor = if (isDark) Color.White else Color.Black
+    val progressColor = if (isDark) Color(0xFF818CF8) else Color(0xFF4F46E5)
 
+    Dialog(onDismissRequest = { /* Prevent dismissal by clicking outside */ }) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = bgColor,
+            modifier = Modifier.padding(16.dp).fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "正在下载更新...",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textColor
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                    color = progressColor,
+                    trackColor = textColor.copy(alpha = 0.1f),
+                    strokeCap = StrokeCap.Round
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (status == "pending") "等待中..." else "${(progress * 100).roundToInt()}%",
+                        fontSize = 13.sp,
+                        color = textColor.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = sizeLabel,
+                        fontSize = 13.sp,
+                        color = textColor.copy(alpha = 0.6f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TextButton(
+                    onClick = onCancel,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("取消下载", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+// --- 组件部分 ---

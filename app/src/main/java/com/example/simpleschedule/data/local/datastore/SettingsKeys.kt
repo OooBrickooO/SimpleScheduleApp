@@ -162,5 +162,6 @@ object SettingsKeys {
     val LAST_SEEN_ANNOUNCEMENT_VERSION = stringPreferencesKey("last_seen_announcement_version")
     val LAST_CHECKED_UPDATE_DATE = stringPreferencesKey("last_checked_update_date")
     val SILENCE_UPDATE_NOTIFICATION = booleanPreferencesKey("silence_update_notification")
+    val LAST_SILENCED_VERSION_CODE = intPreferencesKey("last_silenced_version_code")
 }
 
