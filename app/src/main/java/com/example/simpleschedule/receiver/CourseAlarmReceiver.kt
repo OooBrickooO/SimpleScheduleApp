@@ -5,6 +5,7 @@ import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.WidgetUpdateWorker
+import com.example.simpleschedule.service.DynamicIslandService
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -75,6 +76,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -155,36 +157,70 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val classStartMillis = intent.getLongExtra("CLASS_START_MILLIS", 0L)
                 val showNotify = intent.getBooleanExtra("SHOW_NOTIFY", true)
                 val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
+                val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
-                if (showNotify) {
-                    showNotification(context, courseName, location, timeStr, classStartMillis)
-                }
-
-                if (playVoice) {
-                    val pendingResult = goAsync()
-                    val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
-                    tts = TextToSpeech(context) { status ->
-                        if (status == TextToSpeech.SUCCESS) {
-                            val result = tts?.setLanguage(Locale.CHINESE)
-                            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                                tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, "CourseTTS")
+                val pendingResult = goAsync()
+                kotlinx.coroutines.GlobalScope.launch {
+                    try {
+                        val prefs = context.dataStore.data.firstOrNull()
+                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                        
+                        if (islandEnabled && classStartMillis > System.currentTimeMillis() && Settings.canDrawOverlays(context)) {
+                            val serviceIntent = Intent(context, DynamicIslandService::class.java).apply {
+                                putExtra("COURSE_NAME", courseName)
+                                putExtra("LOCATION", location)
+                                putExtra("CLASS_START_MILLIS", classStartMillis)
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startForegroundService(serviceIntent)
                             } else {
-                                android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                    Toast.makeText(context, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
+                                context.startService(serviceIntent)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    if (showNotify) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme)
+                        }
+                    }
+
+                    if (playVoice) {
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
+                            tts = TextToSpeech(context) { status ->
+                                if (status == TextToSpeech.SUCCESS) {
+                                    val result = tts?.setLanguage(Locale.CHINESE)
+                                    if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                                        tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, "CourseTTS")
+                                    } else {
+                                        Toast.makeText(context, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                                kotlinx.coroutines.GlobalScope.launch {
+                                    kotlinx.coroutines.delay(6000)
+                                    try { tts?.stop(); tts?.shutdown() } catch (e: Exception) {}
+                                    pendingResult.finish()
                                 }
                             }
                         }
-                        kotlinx.coroutines.GlobalScope.launch {
-                            kotlinx.coroutines.delay(6000)
-                            try { tts?.stop(); tts?.shutdown() } catch (e: Exception) {}
-                            pendingResult.finish()
-                        }
+                    } else {
+                        pendingResult.finish()
                     }
                 }
             }
             "ACTION_DISMISS_REMINDER" -> {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
+
+                try {
+                    val serviceIntent = Intent(context, DynamicIslandService::class.java)
+                    context.stopService(serviceIntent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
 
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
                 WorkManager.getInstance(context).enqueue(workRequest)
@@ -193,7 +229,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long) {
+    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val CHANNEL_ID = "CourseAlarmChannel"
 
@@ -209,6 +245,14 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         if (classStartMillis > 0) {
             remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
             remoteViews.setChronometerCountDown(R.id.chronometer, true)
+        }
+
+        try {
+            val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
+            val colorInt = palette.accent.toArgb()
+            remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }

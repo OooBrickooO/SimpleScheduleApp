@@ -2,76 +2,89 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#2E1C21"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#121214"
+    android:orientation="horizontal">
+
+    <!-- Vertical color stripe indicating course theme -->
+    <View
+        android:id="@+id/view_stripe"
+        android:layout_width="5dp"
+        android:layout_height="match_parent"
+        android:background="#64748B" />
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="09:55-12:20"
+                android:textColor="#E4E4E7"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="环宇楼A504"
+                android:textColor="#A1A1AA"
+                android:textSize="14sp"
+                android:textStyle="normal" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_time"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_course_name"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="09:55-12:20"
+            android:layout_marginTop="4dp"
+            android:text="课程名称"
             android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="end" />
 
-        <TextView
-            android:id="@+id/tv_location"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="环宇楼A504"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="10dp">
+
+            <Chronometer
+                android:id="@+id/chronometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:textColor="#F43F5E"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Custom flat-style button to dismiss the notification -->
+            <Button
+                android:id="@+id/btn_mute"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@android:color/transparent"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:text="一键清除"
+                android:textColor="#F43F5E"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/tv_course_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:text="习近平新时代中国特色社会主义思想概论"
-        android:textColor="#B3FFFFFF"
-        android:textSize="13sp"
-        android:maxLines="2"
-        android:ellipsize="end" />
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
-        android:background="#1AFFFFFF" />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <Chronometer
-            android:id="@+id/chronometer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:textColor="#E11D48"
-            android:textSize="15sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btn_mute"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:backgroundTint="#40FFFFFF"
-            android:text="上课免打扰"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp" />
-    </RelativeLayout>
 </LinearLayout>

@@ -223,12 +223,12 @@ object ReminderEngine {
 
         if (nextCourseToRemind != null) {
             val classStartCal = Calendar.getInstance().apply { timeInMillis = nextTriggerTimeMillis + advanceMins * 60000L }
-            scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartCal.timeInMillis, isNotifyOn, isVoiceOn)
+            scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartCal.timeInMillis, isNotifyOn, isVoiceOn, nextCourseToRemind.colorTheme)
         }
     }
 
     @SuppressLint("MissingPermission")
-    fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, showNotify: Boolean, playVoice: Boolean) {
+    fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, showNotify: Boolean, playVoice: Boolean, colorTheme: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
 
         val showIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
@@ -239,6 +239,7 @@ object ReminderEngine {
             putExtra("CLASS_START_MILLIS", classStartMillis)
             putExtra("SHOW_NOTIFY", showNotify)
             putExtra("PLAY_VOICE", playVoice)
+            putExtra("COLOR_THEME", colorTheme)
         }
         val showPending = PendingIntent.getBroadcast(context, REQUEST_CODE_REMIND, showIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 

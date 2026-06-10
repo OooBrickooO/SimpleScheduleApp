@@ -137,8 +137,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.LocalSize
+import androidx.compose.ui.unit.dp
 
 class CourseWidget : GlanceAppWidget() {
+    override val sizeMode: SizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val appDao = AppDatabase.getDatabase(context).appDao()
         val prefs = context.dataStore.data.firstOrNull()
@@ -206,68 +211,143 @@ fun CourseWidgetContent(context: Context, todayCourses: List<DisplayCourse>, tim
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 
-    GlanceColumn(
-        modifier = GlanceModifier.glanceFillMaxSize()
-            .appWidgetBackground()
-            .cornerRadius(16.dp)
-            .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
-            .glancePadding(16.dp)
-            .glanceClickable(actionStartActivity(intent))
-    ) {
-        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
-        GlanceText(
-            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
-            style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
-        )
-        GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
+    val size = LocalSize.current
+    val width = size.width
+    val height = size.height
+    val isNarrow = width < 150.dp
 
-        val showCourses = todayCourses.take(4)
+    if (isNarrow) {
+        GlanceColumn(
+            modifier = GlanceModifier.glanceFillMaxSize()
+                .appWidgetBackground()
+                .cornerRadius(12.dp)
+                .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
+                .glancePadding(8.dp)
+                .glanceClickable(actionStartActivity(intent))
+        ) {
+            val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
+            GlanceText(
+                text = if (todayCourses.isEmpty()) "今日无课" else "今日 $distinctCourseCount 门课",
+                style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp, fontWeight = GlanceFontWeight.Bold)
+            )
+            GlanceSpacer(modifier = GlanceModifier.glanceHeight(6.dp))
 
-        showCourses.forEach { displayCourse ->
-            val course = displayCourse.course
-            val startNode = timeNodeMap[displayCourse.displayStartNode]
-            val endNode = timeNodeMap[displayCourse.displayEndNode]
-            val timeStr = "${startNode?.startTime ?: ""} - ${endNode?.endTime ?: ""}"
+            val maxShow = if (height < 150.dp) 2 else 3
+            val showCourses = todayCourses.take(maxShow)
 
-            val palette = getPalette(course.colorTheme, isDark = true)
-            val cardAlpha = if (isTranslucent) 0.7f else 1.0f
+            showCourses.forEach { displayCourse ->
+                val course = displayCourse.course
+                val startNode = timeNodeMap[displayCourse.displayStartNode]
+                val startTime = startNode?.startTime ?: ""
+                val cleanLocation = course.location.replace("楼", "")
+                val infoText = if (cleanLocation.isNotEmpty()) "$startTime @$cleanLocation" else startTime
 
-            GlanceColumn(
-                modifier = GlanceModifier
-                    .glanceFillMaxWidth()
-                    .cornerRadius(12.dp)
-                    .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
-                    .glancePadding(12.dp)
-                    .glanceClickable(actionStartActivity(intent))
-            ) {
-                GlanceText(course.name, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
+                val palette = getPalette(course.colorTheme, isDark = true)
+                val cardAlpha = if (isTranslucent) 0.7f else 1.0f
+
+                GlanceColumn(
+                    modifier = GlanceModifier
+                        .glanceFillMaxWidth()
+                        .cornerRadius(8.dp)
+                        .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
+                        .glancePadding(6.dp)
+                        .glanceClickable(actionStartActivity(intent))
+                ) {
+                    GlanceText(
+                        text = course.name,
+                        maxLines = 1,
+                        style = TextStyle(color = ColorProvider(palette.text), fontSize = 11.sp, fontWeight = GlanceFontWeight.Bold)
+                    )
+                    GlanceSpacer(modifier = GlanceModifier.glanceHeight(2.dp))
+                    GlanceText(
+                        text = infoText,
+                        maxLines = 1,
+                        style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 9.sp)
+                    )
+                }
                 GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
-                GlanceText("$timeStr ${course.location}", style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 11.sp))
             }
-            GlanceSpacer(modifier = GlanceModifier.glanceHeight(8.dp))
-        }
 
-        if (todayCourses.size > 4) {
-            GlanceText(
-                text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
-                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
-            )
-        }
+            if (todayCourses.size > maxShow) {
+                GlanceText(
+                    text = "... 还有 ${todayCourses.size - maxShow} 门",
+                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 9.sp)
+                )
+            }
 
-        if (todayCourses.isEmpty()) {
-            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+            if (todayCourses.isEmpty()) {
+                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+                GlanceText(
+                    text = "好好休息喵~",
+                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.4f)), fontSize = 11.sp, textAlign = GlanceTextAlign.Center),
+                    modifier = GlanceModifier.glanceFillMaxWidth()
+                )
+            }
+        }
+    } else {
+        GlanceColumn(
+            modifier = GlanceModifier.glanceFillMaxSize()
+                .appWidgetBackground()
+                .cornerRadius(16.dp)
+                .glanceBackground(ColorProvider(if (isTranslucent) Color(0x9918181B) else Color(0xFF18181B)))
+                .glancePadding(16.dp)
+                .glanceClickable(actionStartActivity(intent))
+        ) {
+            val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
             GlanceText(
-                text = "(๑•̀ㅂ•́)و✧\n今天没有课啦！",
-                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 16.sp, textAlign = GlanceTextAlign.Center),
-                modifier = GlanceModifier.glanceFillMaxWidth()
+                text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
+                style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
             )
-        } else if (todayCourses.size <= 4) {
-            GlanceSpacer(modifier = GlanceModifier.defaultWeight())
-            GlanceText(
-                text = "(ฅ´ω`ฅ) 加油喵~",
-                style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
-                modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
-            )
+            GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
+
+            val showCourses = todayCourses.take(4)
+
+            showCourses.forEach { displayCourse ->
+                val course = displayCourse.course
+                val startNode = timeNodeMap[displayCourse.displayStartNode]
+                val endNode = timeNodeMap[displayCourse.displayEndNode]
+                val timeStr = "${startNode?.startTime ?: ""} - ${endNode?.endTime ?: ""}"
+
+                val palette = getPalette(course.colorTheme, isDark = true)
+                val cardAlpha = if (isTranslucent) 0.7f else 1.0f
+
+                GlanceColumn(
+                    modifier = GlanceModifier
+                        .glanceFillMaxWidth()
+                        .cornerRadius(12.dp)
+                        .glanceBackground(ColorProvider(palette.bg.copy(alpha = cardAlpha)))
+                        .glancePadding(12.dp)
+                        .glanceClickable(actionStartActivity(intent))
+                ) {
+                    GlanceText(course.name, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
+                    GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
+                    GlanceText("$timeStr ${course.location}", style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 11.sp))
+                }
+                GlanceSpacer(modifier = GlanceModifier.glanceHeight(8.dp))
+            }
+
+            if (todayCourses.size > 4) {
+                GlanceText(
+                    text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
+                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
+                )
+            }
+
+            if (todayCourses.isEmpty()) {
+                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+                GlanceText(
+                    text = "(๑•̀ㅂ•́)و✧\n今天没有课啦！",
+                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 16.sp, textAlign = GlanceTextAlign.Center),
+                    modifier = GlanceModifier.glanceFillMaxWidth()
+                )
+            } else if (todayCourses.size <= 4) {
+                GlanceSpacer(modifier = GlanceModifier.defaultWeight())
+                GlanceText(
+                    text = "(ฅ´ω`ฅ) 加油喵~",
+                    style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.3f)), fontSize = 14.sp, textAlign = GlanceTextAlign.Center),
+                    modifier = GlanceModifier.glanceFillMaxWidth().glancePadding(top = 8.dp)
+                )
+            }
         }
     }
 }

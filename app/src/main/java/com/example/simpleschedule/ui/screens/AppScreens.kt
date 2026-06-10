@@ -813,6 +813,8 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderNotifyEnabled by viewModel.reminderNotifyEnabled.collectAsState()
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
+    val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
+    var showOverlayPermissionDialog by remember { mutableStateOf(false) }
 
     BackHandler { onBack() }
 
@@ -883,6 +885,26 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 showBottomBorder = true
                             )
 
+                            SettingCheckboxItem(
+                                title = "开启课前灵动岛悬浮窗",
+                                checked = dynamicIslandEnabled,
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        if (!android.provider.Settings.canDrawOverlays(context)) {
+                                            showOverlayPermissionDialog = true
+                                        } else {
+                                            viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
+                                        }
+                                    } else {
+                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
+                                    }
+                                },
+                                textColor = textColor,
+                                borderColor = borderColor,
+                                isDark = isDark,
+                                showBottomBorder = true
+                            )
+
                             SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
                                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
@@ -891,7 +913,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 } else {
                                     val triggerTime = System.currentTimeMillis() + 10000
                                     val classStartTime = triggerTime + reminderAdvanceMins * 60000
-                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled)
+                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled, "slate")
                                     Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
                                 }
                             })
@@ -901,6 +923,43 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                 Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
             }
         }
+    }
+
+    if (showOverlayPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showOverlayPermissionDialog = false },
+            title = { Text("授权悬浮窗权限", color = textColor, fontWeight = FontWeight.Bold) },
+            text = { Text("灵动岛需要在屏幕顶端显示悬浮小组件，请在接下来的系统设置中为 SimpleSchedule 开启「显示在其他应用上层」权限喵。", color = textColor.copy(alpha = 0.8f)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showOverlayPermissionDialog = false
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                data = android.net.Uri.parse("package:${context.packageName}")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
+                ) {
+                    Text("前往设置")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOverlayPermissionDialog = false }) {
+                    Text("取消", color = textColor.copy(alpha = 0.5f))
+                }
+            },
+            containerColor = surfaceColor,
+            shape = RoundedCornerShape(12.dp)
+        )
     }
 }
 
@@ -2857,8 +2916,8 @@ fun AnnouncementDialog(isDark: Boolean, onDismiss: () -> Unit) {
                 ) {
                     Text(
                         text = "[版本更新公告]\n\n" +
-                                "版本号：2.4.0.0610\n" +
-                                "更新时间：2026-06-10 13:12\n\n" +
+                                "版本号：2.5.1.0610\n" +
+                                "更新时间：2026-06-10 17:45\n\n" +
                                 "从教务导入课表与考试向导优化：\n" +
                                 "1. 导入方式页面改版与常用学校快捷入口：新增常用学校快捷跳转，默认支持中国计量大学（正方）、湖州师范大学（正方）、兰州交通大学（青果/XLS）一键访问与导入。\n" +
                                 "2. 支持“按学校”和“按教务分类”选择：按教务分类可直接访问正方并搜索其学校，或针对青果系统使用 XLS 导入；按学校可按首字母拼音分组浏览 870+ 所学校，右侧支持字母快速点击或滑动拖拽定位，非常丝滑喵。\n" +
@@ -3586,7 +3645,7 @@ fun ProfileScreen(
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v2.4.0.0610", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingValueItem(title = "版本", value = "v2.5.1.0610", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
                 SettingItemWithSubtext(
                     title = "更新说明",
                     subtext = "点击查看最近版本的更新公告说明",
