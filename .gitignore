@@ -1,20 +1,55 @@
+# Built objects
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+
+# Build artifacts
+bin/
+gen/
+out/
+build/
+.gradle/
+.kotlin/
+
+# IDE files
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.factorypath
+*.swp
+*.swo
+
+# Local configuration
 local.properties
-/app/release/
+.DS_Store
+
+# Android Studio / IntelliJ
+capture/
+memory_heap_dump/
+*.hprof
+.navigation/
+
+# Log files
+*.log
+
+# Keystore files (NEVER check these into version control)
+*.jks
+*.keystore
+*.p12
+
+# External libraries
+jxl.jar
+
+# Project specific
 /Target/
 /deploy.ps1
 /web/
 /AI_INSTRUCTIONS.md
+
+# Release artifacts
+/app/release/
