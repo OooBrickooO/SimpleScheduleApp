@@ -814,6 +814,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
+    val reminderStyleLiveUpdate by viewModel.reminderStyleLiveUpdate.collectAsState()
     var showOverlayPermissionDialog by remember { mutableStateOf(false) }
 
     BackHandler { onBack() }
@@ -839,7 +840,25 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             title = "启用上课提醒",
                             subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限。",
                             checked = reminderEnabled,
-                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ENABLED, it) },
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                                        try {
+                                            val intent = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                                data = android.net.Uri.parse("package:${context.packageName}")
+                                            }
+                                            context.startActivity(intent)
+                                            Toast.makeText(context, "请先授予精确闹钟权限喵！", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            val intent = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                            context.startActivity(intent)
+                                        }
+                                        return@SettingCheckboxItemWithSubtext
+                                    }
+                                }
+                                viewModel.updateSetting(SettingsKeys.REMINDER_ENABLED, checked)
+                            },
                             textColor = textColor,
                             borderColor = borderColor,
                             isDark = isDark,
@@ -868,7 +887,38 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             SettingCheckboxItem(
                                 title = "显示通知栏提醒",
                                 checked = reminderNotifyEnabled,
-                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, it) },
+                                onCheckedChange = { checked ->
+                                    if (checked) {
+                                        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                                        val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        } else {
+                                            notificationManager.areNotificationsEnabled()
+                                        }
+                                        
+                                        if (!isGranted) {
+                                            try {
+                                                val intent = Intent().apply {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                        action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                    } else {
+                                                        action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                                                        putExtra("app_package", context.packageName)
+                                                        putExtra("app_uid", context.applicationInfo.uid)
+                                                    }
+                                                }
+                                                context.startActivity(intent)
+                                                Toast.makeText(context, "请先授予通知权限喵！", Toast.LENGTH_SHORT).show()
+                                            } catch (e: Exception) {
+                                                val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                                context.startActivity(intent)
+                                            }
+                                            return@SettingCheckboxItem
+                                        }
+                                    }
+                                    viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, checked)
+                                },
                                 textColor = textColor,
                                 borderColor = borderColor,
                                 isDark = isDark,
@@ -886,7 +936,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启课前灵动岛悬浮窗",
+                                title = "开启课前提醒灵动岛通知",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
                                     if (checked) {
@@ -894,6 +944,9 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                             showOverlayPermissionDialog = true
                                         } else {
                                             viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
+                                            if (Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava") {
+                                                viewModel.updateSetting(SettingsKeys.REMINDER_STYLE_LIVE_UPDATE, true)
+                                            }
                                         }
                                     } else {
                                         viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
@@ -905,17 +958,49 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 showBottomBorder = true
                             )
 
+                            if (dynamicIslandEnabled) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                        .background(if(isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp))
+                                ) {
+                                    SettingCheckboxItemWithSubtext(
+                                        title = "使用实时通知 (Live Update)",
+                                        subtext = "实时通知仅在 Android 16+ 设备上生效，低于 Android 16 的设备开启后无效果。若不开启实时通知，则使用APP内建的悬浮窗灵动岛，请授予APP悬浮窗权限",
+                                        checked = reminderStyleLiveUpdate,
+                                        onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_STYLE_LIVE_UPDATE, it) },
+                                        textColor = textColor,
+                                        borderColor = Color.Transparent,
+                                        isDark = isDark,
+                                        showBottomBorder = false
+                                    )
+                                }
+                            }
+
                             SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
                                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                                
+                                // 1. 检测精确闹钟权限
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                                     context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
                                     Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    val triggerTime = System.currentTimeMillis() + 10000
-                                    val classStartTime = triggerTime + reminderAdvanceMins * 60000
-                                    ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled, "slate")
-                                    Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
+                                    return@SettingValueItem
                                 }
+
+                                // 2. 根据配置检测悬浮窗权限
+                                val isAndroid16Plus = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
+                                val needsOverlay = dynamicIslandEnabled && (!isAndroid16Plus || !reminderStyleLiveUpdate)
+                                if (needsOverlay && !android.provider.Settings.canDrawOverlays(context)) {
+                                    showOverlayPermissionDialog = true
+                                    return@SettingValueItem
+                                }
+
+                                // 3. 设置测试提醒
+                                val triggerTime = System.currentTimeMillis() + 10000
+                                val classStartTime = triggerTime + reminderAdvanceMins * 60000
+                                val classEndTime = classStartTime + 45 * 60000
+                                ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, classEndTime, reminderNotifyEnabled, reminderVoiceEnabled, "slate")
+                                Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
                             })
                         }
                     }
@@ -976,6 +1061,7 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
     val warnTimetableError by viewModel.warnTimetableError.collectAsState()
     val autoUpdate by viewModel.autoUpdate.collectAsState()
     val widgetTranslucent by viewModel.widgetTranslucent.collectAsState()
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
 
     BackHandler { onBack() }
 
@@ -1009,6 +1095,13 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                         )
                         SettingItemWithSubtext(title = "自定义空视图图片", subtext = "这个是空视图图片！就是没有课的时候显示的图片！目前仅在日视图小组件和周视图小组件生效。长按可以关闭~", textColor = textColor, borderColor = borderColor)
                         SettingCheckboxItem(title = "根据桌面壁纸更改主题色", checked = materialYou, onCheckedChange = { viewModel.updateSetting(SettingsKeys.MATERIAL_YOU, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
+                        SettingCheckboxItemWithSubtext(
+                            title = "预测式返回效果",
+                            subtext = "在支持的 Android 14+ 设备上侧滑返回将有缩放预览效果",
+                            checked = predictiveBackEnabled,
+                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.PREDICTIVE_BACK_ENABLED, it) },
+                            textColor = textColor, borderColor = borderColor, isDark = isDark
+                        )
                         SettingCheckboxItemWithSubtext(title = "课表下方增加留白区域", subtext = "开启后，课表下方会多出一段空白区域，便于将底部的课程滑动至屏幕中间查看", checked = bottomBlank, onCheckedChange = { viewModel.updateSetting(SettingsKeys.BOTTOM_BLANK, it) }, showBottomBorder = false, textColor = textColor, borderColor = borderColor, isDark = isDark)
                     }
                 }
@@ -3591,7 +3684,7 @@ fun ProfileScreen(
             }
             Spacer(modifier = Modifier.width(20.dp))
             Column {
-                Text("Made By 视界Seekai ", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
+                Text("Made By 视界Seekai & Yunomi", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
                 Text("QQ交流群: 817954315", fontSize = 12.sp, fontFamily = FontFamily.Monospace, color = textColor.copy(alpha = 0.5f))
             }
         }

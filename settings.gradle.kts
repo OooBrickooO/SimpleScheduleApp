@@ -5,6 +5,8 @@ pluginManagement {
                 includeGroupByRegex("com\\.android.*")
                 includeGroupByRegex("com\\.google.*")
                 includeGroupByRegex("androidx.*")
+                maven{url=uri("https://maven.aliyun.com/repository/google")}
+                maven{url=uri("https://maven.aliyun.com/repository/central")}
             }
         }
         mavenCentral()
@@ -16,6 +18,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven{url=uri("https://maven.aliyun.com/repository/google")}
+        maven{url=uri("https://maven.aliyun.com/repository/central")}
     }
 }
 

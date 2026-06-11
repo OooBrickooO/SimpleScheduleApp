@@ -3,11 +3,13 @@ package com.example.simpleschedule.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
@@ -57,13 +59,13 @@ class DynamicIslandService : Service(), LifecycleOwner, ViewModelStoreOwner, Sav
     private var courseName = "下一门课"
     private var location = "教室"
     private var classStartMillis = 0L
+    private var classEndMillis = 0L
+    private var useLiveUpdate = true
 
     override fun onCreate() {
         super.onCreate()
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-
-        showForegroundNotification()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -75,10 +77,21 @@ class DynamicIslandService : Service(), LifecycleOwner, ViewModelStoreOwner, Sav
             courseName = it.getStringExtra("COURSE_NAME") ?: courseName
             location = it.getStringExtra("LOCATION") ?: location
             classStartMillis = it.getLongExtra("CLASS_START_MILLIS", 0L)
+            classEndMillis = it.getLongExtra("CLASS_END_MILLIS", 0L)
+            useLiveUpdate = it.getBooleanExtra("USE_LIVE_UPDATE", true)
         }
 
-        if (composeView == null) {
+        // 统一通过此方法管理前台通知
+        showForegroundNotification()
+
+        // 核心判断：仅在非 Live Update 模式下启动自定义悬浮窗
+        val isAndroid16Plus = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
+        val showFloating = !isAndroid16Plus || !useLiveUpdate
+        
+        if (showFloating && composeView == null) {
             setupOverlayWindow()
+        } else if (!showFloating && composeView != null) {
+            removeOverlayWindow()
         }
 
         return START_NOT_STICKY
@@ -87,28 +100,57 @@ class DynamicIslandService : Service(), LifecycleOwner, ViewModelStoreOwner, Sav
     private fun showForegroundNotification() {
         val channelId = "DynamicIslandServiceChannel"
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val isAndroid16Plus = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
+        val isPromoted = isAndroid16Plus && useLiveUpdate
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, "灵动岛后台服务", NotificationManager.IMPORTANCE_LOW)
+            val name = if (isPromoted) "上课提醒（实时通知）" else "灵动岛后台服务"
+            val channel = NotificationChannel(channelId, name, NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
         }
 
-        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Notification.Builder(this, channelId)
-                .setContentTitle("正在显示灵动岛提醒")
-                .setContentText("已开启课前灵动岛倒计时")
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .build()
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(this)
-                .setContentTitle("正在显示灵动岛提醒")
-                .setContentText("已开启课前灵动岛倒计时")
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .build()
         }
 
-        startForeground(2001, notification)
+        if (isPromoted) {
+            // --- Android 16+ Live Update 模式 ---
+            builder.setContentTitle("正在上课：$courseName")
+                .setContentText("地点：$location")
+                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setOngoing(true)
+                .addExtras(Bundle().apply {
+                    putBoolean("android.requestPromotedOngoing", true)
+                    putString("android.shortCriticalText", courseName)
+                })
+        } else {
+            // --- 传统悬浮窗模式 ---
+            builder.setContentTitle("正在显示灵动岛提醒")
+                .setContentText("课程：$courseName @ $location")
+                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setPriority(Notification.PRIORITY_LOW)
+        }
+
+        // 添加点击跳转
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        if (launchIntent != null) {
+            val pendingIntent = PendingIntent.getActivity(this, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE)
+            builder.setContentIntent(pendingIntent)
+        }
+
+        startForeground(2001, builder.build())
+    }
+
+    private fun removeOverlayWindow() {
+        composeView?.let {
+            try {
+                windowManager?.removeView(it)
+            } catch (e: Exception) {}
+            composeView = null
+        }
     }
 
     private fun setupOverlayWindow() {
