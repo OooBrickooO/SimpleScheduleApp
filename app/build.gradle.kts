@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.seekai.simpleschedule"
+        applicationId = "com.example.simpleschedule"
         minSdk = 24
         targetSdk = 36
         versionCode = 10
