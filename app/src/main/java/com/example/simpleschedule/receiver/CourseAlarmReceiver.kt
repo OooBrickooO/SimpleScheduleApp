@@ -1,11 +1,12 @@
 package com.example.simpleschedule.receiver
 
-import com.example.simpleschedule.R
+import com.seekai.simpleschedule.R
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.WidgetUpdateWorker
 import com.example.simpleschedule.MainActivity
+import com.example.simpleschedule.service.DynamicIslandService
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -166,6 +167,23 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                         prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
                     } catch (e: Exception) { false }
 
+                    if (islandEnabled && Build.VERSION.SDK_INT < 36 && classStartMillis > System.currentTimeMillis() && Settings.canDrawOverlays(context)) {
+                        try {
+                            val serviceIntent = Intent(context, DynamicIslandService::class.java).apply {
+                                putExtra("COURSE_NAME", courseName)
+                                putExtra("LOCATION", location)
+                                putExtra("CLASS_START_MILLIS", classStartMillis)
+                            }
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startForegroundService(serviceIntent)
+                            } else {
+                                context.startService(serviceIntent)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+
                     if (showNotify || islandEnabled) {
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled)
@@ -174,19 +192,76 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
                     if (playVoice) {
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            val handler = android.os.Handler(android.os.Looper.getMainLooper())
                             val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
+                            
+                            var isFinished = false
+                            val timeoutRunnable = Runnable {
+                                if (!isFinished) {
+                                    isFinished = true
+                                    try {
+                                        tts?.stop()
+                                        tts?.shutdown()
+                                        tts = null
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
+                                    pendingResult.finish()
+                                }
+                            }
+                            
+                            // 8秒安全超时限制，确保广播接收器不挂起并防止ANR
+                            handler.postDelayed(timeoutRunnable, 8000)
+
                             tts = TextToSpeech(context) { status ->
                                 if (status == TextToSpeech.SUCCESS) {
                                     val result = tts?.setLanguage(Locale.CHINESE)
                                     if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                                        tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null, "CourseTTS")
+                                        tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                                            private fun finishTts() {
+                                                handler.post {
+                                                    if (!isFinished) {
+                                                        isFinished = true
+                                                        handler.removeCallbacks(timeoutRunnable)
+                                                        try {
+                                                            tts?.stop()
+                                                            tts?.shutdown()
+                                                            tts = null
+                                                        } catch (e: Exception) {
+                                                            e.printStackTrace()
+                                                        }
+                                                        pendingResult.finish()
+                                                    }
+                                                }
+                                            }
+
+                                            override fun onStart(utteranceId: String?) {}
+
+                                            override fun onDone(utteranceId: String?) {
+                                                finishTts()
+                                            }
+
+                                            override fun onError(utteranceId: String?) {
+                                                finishTts()
+                                            }
+
+                                            @Deprecated("Deprecated in Java")
+                                            override fun onError(utteranceId: String?, errorCode: Int) {
+                                                finishTts()
+                                            }
+                                        })
+
+                                        val ttsParams = Bundle().apply {
+                                            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CourseTTS")
+                                        }
+                                        tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, ttsParams, "CourseTTS")
                                     } else {
                                         Toast.makeText(context, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
+                                        handler.removeCallbacks(timeoutRunnable)
+                                        pendingResult.finish()
                                     }
-                                }
-                                kotlinx.coroutines.GlobalScope.launch {
-                                    kotlinx.coroutines.delay(6000)
-                                    try { tts?.stop(); tts?.shutdown() } catch (e: Exception) {}
+                                } else {
+                                    handler.removeCallbacks(timeoutRunnable)
                                     pendingResult.finish()
                                 }
                             }
@@ -199,6 +274,15 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             "ACTION_DISMISS_REMINDER" -> {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
+
+                if (Build.VERSION.SDK_INT < 36) {
+                    try {
+                        val serviceIntent = Intent(context, DynamicIslandService::class.java)
+                        context.stopService(serviceIntent)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
 
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
                 WorkManager.getInstance(context).enqueue(workRequest)
@@ -223,7 +307,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         }
         val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = if (islandEnabled) {
+        val notification = if (islandEnabled && Build.VERSION.SDK_INT >= 36) {
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_popup_reminder)
                 .setContentTitle("即将上课: $courseName")

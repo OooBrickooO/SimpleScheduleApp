@@ -814,6 +814,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
+    var showOverlayPermissionDialog by remember { mutableStateOf(false) }
 
     BackHandler { onBack() }
 
@@ -875,7 +876,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启语音播报（暂未实现，没音源）",
+                                title = "开启语音播报",
                                 checked = reminderVoiceEnabled,
                                 onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_VOICE_ENABLED, it) },
                                 textColor = textColor,
@@ -885,10 +886,18 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启系统原装灵动通知（状态栏倒计时芯片）",
+                                title = if (Build.VERSION.SDK_INT >= 36) "开启原生灵动提醒" else "开启课前灵动岛",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
-                                    viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
+                                    if (checked && Build.VERSION.SDK_INT < 36) {
+                                        if (!android.provider.Settings.canDrawOverlays(context)) {
+                                            showOverlayPermissionDialog = true
+                                        } else {
+                                            viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
+                                        }
+                                    } else {
+                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
+                                    }
                                 },
                                 textColor = textColor,
                                 borderColor = borderColor,
@@ -914,6 +923,43 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                 Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
             }
         }
+    }
+
+    if (showOverlayPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showOverlayPermissionDialog = false },
+            title = { Text("授权悬浮窗权限", color = textColor, fontWeight = FontWeight.Bold) },
+            text = { Text("灵动岛需要在屏幕顶端显示悬浮小组件，请在接下来的系统设置中为 SimpleSchedule 开启「显示在其他应用上层」权限喵。", color = textColor.copy(alpha = 0.8f)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showOverlayPermissionDialog = false
+                        try {
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                data = android.net.Uri.parse("package:${context.packageName}")
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
+                ) {
+                    Text("前往设置")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOverlayPermissionDialog = false }) {
+                    Text("取消", color = textColor.copy(alpha = 0.5f))
+                }
+            },
+            containerColor = surfaceColor,
+            shape = RoundedCornerShape(12.dp)
+        )
     }
 }
 
@@ -3543,7 +3589,7 @@ fun ProfileScreen(
             }
             "v${packageInfo.versionName}"
         } catch (e: Exception) {
-            "v2.6.0.0615"
+            "v2.6.2.0615"
         }
     }
 
