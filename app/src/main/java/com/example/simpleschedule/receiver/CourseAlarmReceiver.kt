@@ -1,6 +1,6 @@
 package com.example.simpleschedule.receiver
 
-import com.seekai.simpleschedule.R
+import com.example.simpleschedule.R
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*

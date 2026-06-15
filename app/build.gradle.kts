@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.seekai.simpleschedule"
+    namespace = "com.example.simpleschedule"
     compileSdk = 36
 
     defaultConfig {
