@@ -1003,16 +1003,16 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 }
                             }
 
-                            SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
+                            SettingValueItem(title = "发送一条测试提醒", value = "5秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
                                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                                     context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
                                     Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val triggerTime = System.currentTimeMillis() + 10000
+                                    val triggerTime = System.currentTimeMillis() + 5000
                                     val classStartTime = triggerTime + reminderAdvanceMins * 60000
                                     ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled, "slate")
-                                    Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "已设置 5 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
                                 }
                             })
                         }

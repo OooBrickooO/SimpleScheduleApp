@@ -274,16 +274,14 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         }
 
         val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
-        val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val cancelPending = PendingIntent.getBroadcast(context, 1002, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val canUseLiveUpdate = islandEnabled && liveUpdateEnabled && Build.VERSION.SDK_INT >= 35 // Android 15+
-
-        if (canUseLiveUpdate) {
+        if (islandEnabled) {
             val palette = try {
                 com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
             } catch (e: Exception) {
@@ -316,8 +314,10 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
 
             // Android 15 Live Updates (Promoted Ongoing) Extras
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", location.replace("楼", ""))
+            if (liveUpdateEnabled && Build.VERSION.SDK_INT >= 35) {
+                builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
+                builder.getExtras().putCharSequence("android.shortCriticalText", location.replace("楼", ""))
+            }
 
             notificationManager.notify(1001, builder.build())
         } else {
