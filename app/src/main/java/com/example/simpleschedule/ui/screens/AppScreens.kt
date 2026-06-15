@@ -2917,12 +2917,40 @@ fun AnnouncementDialog(title: String, content: String, isDark: Boolean, onDismis
                         .heightIn(max = 300.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        text = content,
-                        fontSize = 14.sp,
-                        color = textColor.copy(alpha = 0.8f),
-                        lineHeight = 20.sp
-                    )
+                    val lines = content.split("\n")
+                    lines.forEach { line ->
+                        if (line.trim().isEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        } else {
+                            val isHighlight = line.contains("官网") || line.contains("http") || 
+                                              line.contains("https") || line.contains("重要") || 
+                                              line.contains("⚠️") || line.contains("下载")
+                            if (isHighlight) {
+                                Surface(
+                                    color = if (isDark) Color(0xFF3F2D0B) else Color(0xFFFEF3C7),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = line,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706),
+                                        lineHeight = 22.sp,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = line,
+                                    fontSize = 14.sp,
+                                    color = textColor.copy(alpha = 0.8f),
+                                    lineHeight = 20.sp,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

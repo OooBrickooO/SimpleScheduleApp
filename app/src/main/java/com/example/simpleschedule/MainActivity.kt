@@ -657,8 +657,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startDownloadApk(context: Context, url: String) {
+        val apkFile = getApkTargetFile(context)
         try {
-            val apkFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
             if (apkFile.exists()) {
                 apkFile.delete()
             }
@@ -671,7 +671,7 @@ class MainActivity : ComponentActivity() {
                 setTitle("正在下载课表更新...")
                 setDescription("SimpleSchedule 最新版本")
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, "app-release.apk")
+                setDestinationUri(Uri.fromFile(apkFile))
                 setMimeType("application/vnd.android.package-archive")
             }
             val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
@@ -769,10 +769,10 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        val apkFile = if (fileUri != null && fileUri.path != null) {
+        val apkFile = if (fileUri != null && fileUri.path != null && !fileUri.toString().startsWith("content://")) {
             File(fileUri.path!!)
         } else {
-            File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+            getApkTargetFile(context)
         }
 
         if (!apkFile.exists()) {
@@ -810,6 +810,29 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
             Toast.makeText(context, "拉起安装程序失败，请尝试在文件管理器中手动安装: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    }
+
+    private fun getApkTargetFile(context: Context): File {
+        // 1. 尝试在外部存储根目录下创建 SimpleSchedule/UpGrade
+        val rootDir = File(Environment.getExternalStorageDirectory(), "SimpleSchedule/UpGrade")
+        try {
+            if (!rootDir.exists()) rootDir.mkdirs()
+            if (rootDir.exists() && rootDir.canWrite()) return File(rootDir, "app-release.apk")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. 尝试在公共下载目录下创建 Download/SimpleSchedule/UpGrade (适配高版本 Scoped Storage)
+        val publicDownloadDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "SimpleSchedule/UpGrade")
+        try {
+            if (!publicDownloadDir.exists()) publicDownloadDir.mkdirs()
+            if (publicDownloadDir.exists() && publicDownloadDir.canWrite()) return File(publicDownloadDir, "app-release.apk")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 3. 回退到应用私有外部存储目录
+        return File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
     }
 
     private suspend fun checkUpdate(updateUrl: String): UpdateInfo? = withContext(Dispatchers.IO) {
@@ -899,7 +922,47 @@ fun UpdateDialog(
             Column(modifier = Modifier.padding(24.dp)) {
                 Text("发现新版本: ${updateInfo.versionName}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(updateInfo.changelog, fontSize = 14.sp, color = textColor.copy(alpha = 0.8f))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    val lines = updateInfo.changelog.split("\n")
+                    lines.forEach { line ->
+                        if (line.trim().isEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        } else {
+                            val isHighlight = line.contains("官网") || line.contains("http") || 
+                                              line.contains("https") || line.contains("重要") || 
+                                              line.contains("⚠️") || line.contains("下载")
+                            if (isHighlight) {
+                                Surface(
+                                    color = if (isSystemInDarkTheme()) Color(0xFF3F2D0B) else Color(0xFFFEF3C7),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = line,
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = if (isSystemInDarkTheme()) Color(0xFFFBBF24) else Color(0xFFD97706),
+                                        lineHeight = 22.sp,
+                                        modifier = Modifier.padding(12.dp)
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = line,
+                                    fontSize = 14.sp,
+                                    color = textColor.copy(alpha = 0.8f),
+                                    lineHeight = 20.sp,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
