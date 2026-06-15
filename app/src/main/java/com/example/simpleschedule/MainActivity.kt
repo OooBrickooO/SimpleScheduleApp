@@ -165,6 +165,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 自动清理历史旧版本下载留下的沙盒文件以释放用户空间
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val oldApkFile = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
+                if (oldApkFile.exists()) {
+                    oldApkFile.delete()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
         ContextCompat.registerReceiver(
             this,
             downloadReceiver,
