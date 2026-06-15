@@ -814,7 +814,6 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
-    var showOverlayPermissionDialog by remember { mutableStateOf(false) }
 
     BackHandler { onBack() }
 
@@ -886,18 +885,10 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启课前灵动岛悬浮窗",
+                                title = "开启系统原装灵动通知（状态栏倒计时芯片）",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
-                                    if (checked) {
-                                        if (!android.provider.Settings.canDrawOverlays(context)) {
-                                            showOverlayPermissionDialog = true
-                                        } else {
-                                            viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
-                                        }
-                                    } else {
-                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
-                                    }
+                                    viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
                                 },
                                 textColor = textColor,
                                 borderColor = borderColor,
@@ -923,43 +914,6 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                 Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
             }
         }
-    }
-
-    if (showOverlayPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showOverlayPermissionDialog = false },
-            title = { Text("授权悬浮窗权限", color = textColor, fontWeight = FontWeight.Bold) },
-            text = { Text("灵动岛需要在屏幕顶端显示悬浮小组件，请在接下来的系统设置中为 SimpleSchedule 开启「显示在其他应用上层」权限喵。", color = textColor.copy(alpha = 0.8f)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showOverlayPermissionDialog = false
-                        try {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                data = android.net.Uri.parse("package:${context.packageName}")
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
-                ) {
-                    Text("前往设置")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showOverlayPermissionDialog = false }) {
-                    Text("取消", color = textColor.copy(alpha = 0.5f))
-                }
-            },
-            containerColor = surfaceColor,
-            shape = RoundedCornerShape(12.dp)
-        )
     }
 }
 
@@ -1620,7 +1574,7 @@ fun WebViewImportScreen(
             } else {
                 true
             }
-            matchesSearch && (activeTab == 1 || selectedSystem != null)
+            matchesSearch && matchesTab
         }
         filtered.sortedWith(compareBy({ it.initial }, { it.name }))
     }
@@ -1786,7 +1740,10 @@ fun WebViewImportScreen(
                             description = "青果系统暂不支持网页端一键提取，统一通过在电脑端导出为 .xls 格式文件后导入。",
                             icon = Icons.Rounded.Description,
                             gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFD97706)),
-                            onClick = { selectedSystem = "qg" }
+                            onClick = {
+                                selectedSchool = School("青果教务", "qg", "Q", "")
+                                stage = ImportStage.XLS_IMPORT
+                            }
                         )
                     }
                 } else {
@@ -3575,6 +3532,20 @@ fun ProfileScreen(
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current
+    val versionName = remember {
+        try {
+            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+            "v${packageInfo.versionName}"
+        } catch (e: Exception) {
+            "v2.6.0.0615"
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -3613,7 +3584,7 @@ fun ProfileScreen(
         Text("关于", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
-                SettingValueItem(title = "版本", value = "v2.5.1.0610", textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingValueItem(title = "版本", value = versionName, textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
                 SettingItemWithSubtext(
                     title = "更新说明",
                     subtext = "点击查看最近版本的更新公告说明",

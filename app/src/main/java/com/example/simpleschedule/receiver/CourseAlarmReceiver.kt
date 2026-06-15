@@ -5,7 +5,7 @@ import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.WidgetUpdateWorker
-import com.example.simpleschedule.service.DynamicIslandService
+import com.example.simpleschedule.MainActivity
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -161,29 +161,14 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
-                    try {
+                    val islandEnabled = try {
                         val prefs = context.dataStore.data.firstOrNull()
-                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
-                        
-                        if (islandEnabled && classStartMillis > System.currentTimeMillis() && Settings.canDrawOverlays(context)) {
-                            val serviceIntent = Intent(context, DynamicIslandService::class.java).apply {
-                                putExtra("COURSE_NAME", courseName)
-                                putExtra("LOCATION", location)
-                                putExtra("CLASS_START_MILLIS", classStartMillis)
-                            }
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                context.startForegroundService(serviceIntent)
-                            } else {
-                                context.startService(serviceIntent)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                        prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                    } catch (e: Exception) { false }
 
-                    if (showNotify) {
+                    if (showNotify || islandEnabled) {
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme)
+                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled)
                         }
                     }
 
@@ -215,13 +200,6 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
 
-                try {
-                    val serviceIntent = Intent(context, DynamicIslandService::class.java)
-                    context.stopService(serviceIntent)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
                 WorkManager.getInstance(context).enqueue(workRequest)
             }
@@ -229,7 +207,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String) {
+    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val CHANNEL_ID = "CourseAlarmChannel"
 
@@ -237,36 +215,64 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
         }
 
-        val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
-        remoteViews.setTextViewText(R.id.tv_time, timeStr)
-        remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
-        remoteViews.setTextViewText(R.id.tv_course_name, courseName)
-
-        if (classStartMillis > 0) {
-            remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
-            remoteViews.setChronometerCountDown(R.id.chronometer, true)
-        }
-
-        try {
-            val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
-            val colorInt = palette.accent.toArgb()
-            remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
         val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
         val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(remoteViews)
-            .setCustomBigContentView(remoteViews)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setOngoing(true)
-            .build()
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val notification = if (islandEnabled) {
+            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setContentTitle("即将上课: $courseName")
+                .setContentText("地点: ${location.replace("楼", "")} ($timeStr)")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(openPending)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "一键清除", cancelPending)
+
+            if (classStartMillis > 0) {
+                builder.setUsesChronometer(true)
+                builder.setChronometerCountDown(true)
+                builder.setWhen(classStartMillis)
+            }
+
+            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
+
+            builder.build()
+        } else {
+            val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
+            remoteViews.setTextViewText(R.id.tv_time, timeStr)
+            remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
+            remoteViews.setTextViewText(R.id.tv_course_name, courseName)
+
+            if (classStartMillis > 0) {
+                remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
+                remoteViews.setChronometerCountDown(R.id.chronometer, true)
+            }
+
+            try {
+                val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
+                val colorInt = palette.accent.toArgb()
+                remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
+
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+                .setCustomContentView(remoteViews)
+                .setCustomBigContentView(remoteViews)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setOngoing(true)
+                .setContentIntent(openPending)
+                .build()
+        }
 
         notificationManager.notify(1001, notification)
     }
