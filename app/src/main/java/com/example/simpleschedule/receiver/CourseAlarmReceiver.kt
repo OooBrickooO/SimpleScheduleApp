@@ -167,7 +167,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                         prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
                     } catch (e: Exception) { false }
 
-                    if (islandEnabled && Build.VERSION.SDK_INT < 36 && classStartMillis > System.currentTimeMillis() && Settings.canDrawOverlays(context)) {
+                    if (islandEnabled && classStartMillis > System.currentTimeMillis() && Settings.canDrawOverlays(context)) {
                         try {
                             val serviceIntent = Intent(context, DynamicIslandService::class.java).apply {
                                 putExtra("COURSE_NAME", courseName)
@@ -275,13 +275,11 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
 
-                if (Build.VERSION.SDK_INT < 36) {
-                    try {
-                        val serviceIntent = Intent(context, DynamicIslandService::class.java)
-                        context.stopService(serviceIntent)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+                try {
+                    val serviceIntent = Intent(context, DynamicIslandService::class.java)
+                    context.stopService(serviceIntent)
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
 
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
@@ -307,56 +305,35 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         }
         val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        val notification = if (islandEnabled && Build.VERSION.SDK_INT >= 36) {
-            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setContentTitle("即将上课: $courseName")
-                .setContentText("地点: ${location.replace("楼", "")} ($timeStr)")
-                .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(openPending)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "一键清除", cancelPending)
+        val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
+        remoteViews.setTextViewText(R.id.tv_time, timeStr)
+        remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
+        remoteViews.setTextViewText(R.id.tv_course_name, courseName)
 
-            if (classStartMillis > 0) {
-                builder.setUsesChronometer(true)
-                builder.setChronometerCountDown(true)
-                builder.setWhen(classStartMillis)
-            }
-
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-
-            builder.build()
-        } else {
-            val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
-            remoteViews.setTextViewText(R.id.tv_time, timeStr)
-            remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
-            remoteViews.setTextViewText(R.id.tv_course_name, courseName)
-
-            if (classStartMillis > 0) {
-                remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
-                remoteViews.setChronometerCountDown(R.id.chronometer, true)
-            }
-
-            try {
-                val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
-                val colorInt = palette.accent.toArgb()
-                remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
-
-            NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomContentView(remoteViews)
-                .setCustomBigContentView(remoteViews)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setOngoing(true)
-                .setContentIntent(openPending)
-                .build()
+        if (classStartMillis > 0) {
+            remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
+            remoteViews.setChronometerCountDown(R.id.chronometer, true)
         }
+
+        try {
+            val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
+            val colorInt = palette.accent.toArgb()
+            remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(remoteViews)
+            .setCustomBigContentView(remoteViews)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setOngoing(true)
+            .setContentIntent(openPending)
+            .build()
 
         notificationManager.notify(1001, notification)
     }

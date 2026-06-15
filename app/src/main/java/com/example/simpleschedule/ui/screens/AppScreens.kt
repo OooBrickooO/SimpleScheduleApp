@@ -886,17 +886,17 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = if (Build.VERSION.SDK_INT >= 36) "开启原生灵动提醒" else "开启课前灵动岛",
+                                title = "开启课前灵动岛",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
-                                    if (checked && Build.VERSION.SDK_INT < 36) {
+                                    if (checked) {
                                         if (!android.provider.Settings.canDrawOverlays(context)) {
                                             showOverlayPermissionDialog = true
                                         } else {
                                             viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
                                         }
                                     } else {
-                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
+                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
                                     }
                                 },
                                 textColor = textColor,
