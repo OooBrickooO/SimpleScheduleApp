@@ -286,6 +286,7 @@ class MainActivity : ComponentActivity() {
             val isDarkSetting by viewModel.isDarkTheme.collectAsState()
             val isDark = isDarkSetting ?: isSystemDark
             val materialYou by viewModel.materialYou.collectAsState()
+            val predictiveBack by viewModel.predictiveBack.collectAsState()
 
             val currentWeek by viewModel.currentWeek.collectAsState()
             val displayCourses by viewModel.displayCourses.collectAsState()
@@ -346,6 +347,7 @@ class MainActivity : ComponentActivity() {
                                 courses = displayCourses.map { it.course }.distinctBy { it.id },
                                 isDark = isDark,
                                 materialYou = materialYou,
+                                predictiveBack = predictiveBack,
                                 onBack = { currentRoute = "main" },
                                 onEditCourse = { courseToEdit = it; showAddDialog = true },
                                 onDeleteCourse = { viewModel.deleteCourse(it) }
@@ -357,6 +359,7 @@ class MainActivity : ComponentActivity() {
                                 timetables = timetableGroups,
                                 currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
                                 isDark = isDark,
+                                predictiveBack = predictiveBack,
                                 onBack = { currentRoute = "main" },
                                 onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
                                 onEdit = { id -> editingTimetableId = id; currentRoute = "timetable_edit" },
@@ -411,10 +414,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         "adjust_course" -> {
-                            AdjustCourseScreen(isDark = isDark, onBack = { currentRoute = "global_settings" })
+                            AdjustCourseScreen(isDark = isDark, predictiveBack = predictiveBack, onBack = { currentRoute = "global_settings" })
                         }
                         "webview_import" -> {
                             WebViewImportScreen(
+                                viewModel = viewModel,
                                 isDark = isDark,
                                 activeTimeNodes = activeTimeNodes,
                                 startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",

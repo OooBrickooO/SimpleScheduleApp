@@ -161,14 +161,16 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
-                    val islandEnabled = try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
-                    } catch (e: Exception) { false }
+                    val prefs = try {
+                        context.dataStore.data.firstOrNull()
+                    } catch (e: Exception) { null }
+                    
+                    val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                    val liveUpdateEnabled = prefs?.get(SettingsKeys.LIVE_UPDATE_ENABLED) ?: false
 
                     if (showNotify || islandEnabled) {
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled)
+                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled, liveUpdateEnabled)
                         }
                     }
 
@@ -263,7 +265,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean) {
+    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean, liveUpdateEnabled: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val CHANNEL_ID = "CourseAlarmChannel"
 
@@ -279,7 +281,9 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         }
         val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-        if (islandEnabled) {
+        val canUseLiveUpdate = islandEnabled && liveUpdateEnabled && Build.VERSION.SDK_INT >= 35 // Android 15+
+
+        if (canUseLiveUpdate) {
             val palette = try {
                 com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
             } catch (e: Exception) {
