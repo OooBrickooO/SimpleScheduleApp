@@ -814,7 +814,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
-    var showOverlayPermissionDialog by remember { mutableStateOf(false) }
+
 
     BackHandler { onBack() }
 
@@ -886,18 +886,10 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启课前灵动岛",
+                                title = "开启课前灵动通知 (状态栏胶囊)",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
-                                    if (checked) {
-                                        if (!android.provider.Settings.canDrawOverlays(context)) {
-                                            showOverlayPermissionDialog = true
-                                        } else {
-                                            viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
-                                        }
-                                    } else {
-                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
-                                    }
+                                    viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
                                 },
                                 textColor = textColor,
                                 borderColor = borderColor,
@@ -925,42 +917,9 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
         }
     }
 
-    if (showOverlayPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showOverlayPermissionDialog = false },
-            title = { Text("授权悬浮窗权限", color = textColor, fontWeight = FontWeight.Bold) },
-            text = { Text("灵动岛需要在屏幕顶端显示悬浮小组件，请在接下来的系统设置中为 SimpleSchedule 开启「显示在其他应用上层」权限喵。", color = textColor.copy(alpha = 0.8f)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showOverlayPermissionDialog = false
-                        try {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                data = android.net.Uri.parse("package:${context.packageName}")
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
-                ) {
-                    Text("前往设置")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showOverlayPermissionDialog = false }) {
-                    Text("取消", color = textColor.copy(alpha = 0.5f))
-                }
-            },
-            containerColor = surfaceColor,
-            shape = RoundedCornerShape(12.dp)
-        )
-    }
+
+    // 悬浮窗权限引导已因原生状态栏胶囊方案而移除
+
 }
 
 @Composable
@@ -3617,7 +3576,7 @@ fun ProfileScreen(
             }
             "v${packageInfo.versionName}"
         } catch (e: Exception) {
-            "v2.6.2.0615"
+            "v2.6.3.0615"
         }
     }
 
