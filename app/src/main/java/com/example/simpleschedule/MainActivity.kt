@@ -667,7 +667,12 @@ class MainActivity : ComponentActivity() {
         }
 
         try {
-            val request = DownloadManager.Request(Uri.parse(url)).apply {
+            val cacheBusterUrl = if (url.contains("?")) {
+                "$url&_t=${System.currentTimeMillis()}"
+            } else {
+                "$url?_t=${System.currentTimeMillis()}"
+            }
+            val request = DownloadManager.Request(Uri.parse(cacheBusterUrl)).apply {
                 setTitle("正在下载课表更新...")
                 setDescription("SimpleSchedule 最新版本")
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -838,7 +843,12 @@ class MainActivity : ComponentActivity() {
     private suspend fun checkUpdate(updateUrl: String): UpdateInfo? = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            val url = URL(updateUrl)
+            val cacheBusterUrl = if (updateUrl.contains("?")) {
+                "$updateUrl&_t=${System.currentTimeMillis()}"
+            } else {
+                "$updateUrl?_t=${System.currentTimeMillis()}"
+            }
+            val url = URL(cacheBusterUrl)
             connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 8000
