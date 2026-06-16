@@ -184,15 +184,11 @@ fun buildCourseNotification(
     }
     val accentColor = palette?.accent?.toArgb() ?: 0xFF6B7280.toInt()
 
-    val titleText = if (state == NotificationState.UPCOMING) {
-        "即将上课: $courseName"
-    } else {
-        "正在上课: $courseName"
-    }
-    val contentText = "地点: ${location.replace("楼", "")}"
+    val titleText = courseName
+    val contentText = location.replace("楼", "")
 
     val style = NotificationCompat.BigTextStyle()
-        .bigText("课程: $courseName\n地点: ${location.replace("楼", "")}")
+        .bigText("$courseName\n$contentText")
 
     val builder = NotificationCompat.Builder(context, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
@@ -218,9 +214,10 @@ fun buildCourseNotification(
         }
         if (islandEnabled) {
             builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortLocation = location.replace("楼", "").take(7)
+            val shortCourse = courseName.take(6)
+            val shortLocation = location.replace("楼", "").take(6)
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "即将:$shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
         } else {
             builder.setColorized(true)
         }
@@ -232,9 +229,10 @@ fun buildCourseNotification(
         }
         if (islandEnabled) {
             builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortLocation = location.replace("楼", "").take(7)
+            val shortCourse = courseName.take(6)
+            val shortLocation = location.replace("楼", "").take(6)
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "在课:$shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
         } else {
             builder.setColorized(true)
         }
