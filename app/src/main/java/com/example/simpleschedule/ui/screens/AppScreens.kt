@@ -968,7 +968,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 ) {
                                     SettingCheckboxItemWithSubtext(
                                         title = "使用实时通知 (Live Update)",
-                                        subtext = "实时通知仅在 Android 16+ 设备上生效，低于 Android 16 的设备开启后无效果。若不开启实时通知，则使用APP内建的悬浮窗灵动岛，请授予APP悬浮窗权限",
+                                        subtext = "仅适用于安卓16+",
                                         checked = reminderStyleLiveUpdate,
                                         onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_STYLE_LIVE_UPDATE, it) },
                                         textColor = textColor,
