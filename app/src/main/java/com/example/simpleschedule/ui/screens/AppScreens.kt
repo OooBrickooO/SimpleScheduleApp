@@ -814,8 +814,6 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
-    val reminderStyleLiveUpdate by viewModel.reminderStyleLiveUpdate.collectAsState()
-    var showOverlayPermissionDialog by remember { mutableStateOf(false) }
 
     BackHandler { onBack() }
 
@@ -935,49 +933,16 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 showBottomBorder = true
                             )
 
-                            SettingCheckboxItem(
-                                title = "开启课前提醒灵动岛通知",
+                            SettingCheckboxItemWithSubtext(
+                                title = "开启课前灵动通知 (状态栏胶囊)",
+                                subtext = "仅适用于安卓16+",
                                 checked = dynamicIslandEnabled,
-                                onCheckedChange = { checked ->
-                                    if (checked) {
-                                        val isAndroid16Plus = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
-                                        val needsOverlay = !isAndroid16Plus || !reminderStyleLiveUpdate
-                                        if (needsOverlay && !android.provider.Settings.canDrawOverlays(context)) {
-                                            showOverlayPermissionDialog = true
-                                        } else {
-                                            viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, true)
-                                            if (isAndroid16Plus) {
-                                                viewModel.updateSetting(SettingsKeys.REMINDER_STYLE_LIVE_UPDATE, true)
-                                            }
-                                        }
-                                    } else {
-                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, false)
-                                    }
-                                },
+                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, it) },
                                 textColor = textColor,
                                 borderColor = borderColor,
                                 isDark = isDark,
                                 showBottomBorder = true
                             )
-
-                            if (dynamicIslandEnabled) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                                        .background(if(isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp))
-                                ) {
-                                    SettingCheckboxItemWithSubtext(
-                                        title = "使用实时通知 (Live Update)",
-                                        subtext = "仅适用于安卓16+",
-                                        checked = reminderStyleLiveUpdate,
-                                        onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_STYLE_LIVE_UPDATE, it) },
-                                        textColor = textColor,
-                                        borderColor = Color.Transparent,
-                                        isDark = isDark,
-                                        showBottomBorder = false
-                                    )
-                                }
-                            }
 
                             SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
                                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
@@ -989,13 +954,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                     return@SettingValueItem
                                 }
 
-                                // 2. 根据配置检测悬浮窗权限
-                                val isAndroid16Plus = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
-                                val needsOverlay = dynamicIslandEnabled && (!isAndroid16Plus || !reminderStyleLiveUpdate)
-                                if (needsOverlay && !android.provider.Settings.canDrawOverlays(context)) {
-                                    showOverlayPermissionDialog = true
-                                    return@SettingValueItem
-                                }
+
 
                                 // 3. 设置测试提醒
                                 val triggerTime = System.currentTimeMillis() + 10000
@@ -1012,42 +971,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
         }
     }
 
-    if (showOverlayPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showOverlayPermissionDialog = false },
-            title = { Text("授权悬浮窗权限", color = textColor, fontWeight = FontWeight.Bold) },
-            text = { Text("灵动岛需要在屏幕顶端显示悬浮小组件，请在接下来的系统设置中为 SimpleSchedule 开启「显示在其他应用上层」权限喵。", color = textColor.copy(alpha = 0.8f)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showOverlayPermissionDialog = false
-                        try {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                data = android.net.Uri.parse("package:${context.packageName}")
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            context.startActivity(intent)
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
-                ) {
-                    Text("前往设置")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showOverlayPermissionDialog = false }) {
-                    Text("取消", color = textColor.copy(alpha = 0.5f))
-                }
-            },
-            containerColor = surfaceColor,
-            shape = RoundedCornerShape(12.dp)
-        )
-    }
+
 }
 
 @Composable
