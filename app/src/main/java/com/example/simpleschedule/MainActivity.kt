@@ -197,8 +197,8 @@ class MainActivity : ComponentActivity() {
 
             var updateInfoToShow by remember { mutableStateOf<UpdateInfo?>(null) }
             var isCheckingManualUpdate by remember { mutableStateOf(false) }
-            var announcementDialogTitle by remember { mutableStateOf("") }
-            var announcementDialogContent by remember { mutableStateOf("") }
+            var announcementDialogTitle by remember { mutableStateOf("2.6.7.0616 版本升级公告") }
+            var announcementDialogContent by remember { mutableStateOf("由于流体云与后台通知机制深度优化，本次升级包含重大改动：\n\n1. 请您主动前往官方网站下载 2.6.7.0616 正式版覆盖安装。\n2. 安装完成后请务必「重新导入一次您的课表」，以确保课前提醒与状态栏流体云胶囊能正常且准时唤起喵！") }
             var showAnnouncementDialog by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
@@ -236,6 +236,20 @@ class MainActivity : ComponentActivity() {
                             try {
                                 context.dataStore.edit {
                                     it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_ID] = id
+                                }
+                            } catch (e: Exception) {}
+                        }
+                    } else {
+                        // 如果线上获取公告失败，使用本地版本升级提示作为保底展示
+                        val lastSeenId = try {
+                            context.dataStore.data.map { it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_ID] ?: "" }.first()
+                        } catch (e: Exception) { "" }
+                        
+                        if (lastSeenId != "2.6.7.0616") {
+                            showAnnouncementDialog = true
+                            try {
+                                context.dataStore.edit {
+                                    it[SettingsKeys.LAST_SEEN_ANNOUNCEMENT_ID] = "2.6.7.0616"
                                 }
                             } catch (e: Exception) {}
                         }
