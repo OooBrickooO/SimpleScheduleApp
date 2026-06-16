@@ -269,7 +269,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     @SuppressLint("MissingPermission")
     private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val CHANNEL_ID = "CourseAlarmChannel"
+        val CHANNEL_ID = "CourseAlarmChannel_v2"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationManager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
@@ -295,7 +295,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 .bigText("课程: $courseName\n地点: ${location.replace("楼", "")}")
 
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("即将上课: $courseName")
                 .setContentText("地点: ${location.replace("楼", "")}")
                 .setStyle(style)
@@ -366,7 +366,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setStyle(NotificationCompat.DecoratedCustomViewStyle())
                 .setCustomContentView(remoteViews)
                 .setCustomBigContentView(remoteViews)
