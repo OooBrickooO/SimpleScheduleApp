@@ -165,5 +165,7 @@ object SettingsKeys {
     val LAST_SILENCED_VERSION_CODE = intPreferencesKey("last_silenced_version_code")
     val DYNAMIC_ISLAND_ENABLED = booleanPreferencesKey("dynamic_island_enabled")
     val LAST_SEEN_ANNOUNCEMENT_ID = stringPreferencesKey("last_seen_announcement_id")
+    val PREDICTIVE_BACK_ENABLED = booleanPreferencesKey("predictive_back_enabled")
+    val REMINDER_STYLE_LIVE_UPDATE = booleanPreferencesKey("reminder_style_live_update")
 }
 

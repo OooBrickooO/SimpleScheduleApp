@@ -176,6 +176,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     val widgetTranslucent = application.dataStore.data.map { it[SettingsKeys.WIDGET_TRANSLUCENT] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val dynamicIslandEnabled = application.dataStore.data.map { it[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+    val reminderStyleLiveUpdate = application.dataStore.data.map { it[SettingsKeys.REMINDER_STYLE_LIVE_UPDATE] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
+    val predictiveBackEnabled = application.dataStore.data.map { it[SettingsKeys.PREDICTIVE_BACK_ENABLED] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
 
     fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) {
         viewModelScope.launch {

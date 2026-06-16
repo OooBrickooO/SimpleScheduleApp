@@ -34,6 +34,10 @@ import android.webkit.WebViewClient
 import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -164,6 +168,7 @@ class MainActivity : ComponentActivity() {
     private var downloadedSizeLabel by mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // 自动清理历史旧版本下载留下的沙盒文件以释放用户空间
         lifecycleScope.launch(Dispatchers.IO) {
@@ -287,14 +292,6 @@ class MainActivity : ComponentActivity() {
             val isDark = isDarkSetting ?: isSystemDark
             val materialYou by viewModel.materialYou.collectAsState()
 
-            val currentWeek by viewModel.currentWeek.collectAsState()
-            val displayCourses by viewModel.displayCourses.collectAsState()
-            val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-            val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-            val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
-            val timetableGroups by viewModel.timetableGroups.collectAsState()
-            val totalWeeks by viewModel.totalWeeks.collectAsState()
-
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
@@ -306,7 +303,7 @@ class MainActivity : ComponentActivity() {
                 onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
-            var currentRoute by remember { mutableStateOf("main") }
+            val navController = rememberNavController()
             var currentTab by remember { mutableIntStateOf(0) }
             var courseToEdit by remember { mutableStateOf<Course?>(null) }
             var editingTimetableId by remember { mutableStateOf<String?>(null) }
@@ -331,200 +328,228 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
                     DotMatrixBackground(isDark = isDark)
 
-                AnimatedContent(
-                    targetState = currentRoute,
-                    transitionSpec = {
-                        val springSpec = spring<Float>(stiffness = Spring.StiffnessMediumLow)
-                        (fadeIn(animationSpec = springSpec) + scaleIn(initialScale = 0.95f, animationSpec = springSpec)) togetherWith fadeOut(animationSpec = springSpec)
-                    },
-                    label = "route_anim",
+                NavHost(
+                    navController = navController,
+                    startDestination = "main",
                     modifier = Modifier.fillMaxSize()
-                ) { route ->
-                    when (route) {
-                        "course_management" -> {
-                            CourseManagementScreen(
-                                courses = displayCourses.map { it.course }.distinctBy { it.id },
-                                isDark = isDark,
-                                materialYou = materialYou,
-                                onBack = { currentRoute = "main" },
-                                onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                onDeleteCourse = { viewModel.deleteCourse(it) }
-                            )
-                        }
-                        "timetable_list" -> {
-                            val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
-                            TimetableListScreen(
-                                timetables = timetableGroups,
-                                currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
-                                isDark = isDark,
-                                onBack = { currentRoute = "main" },
-                                onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
-                                onEdit = { id -> editingTimetableId = id; currentRoute = "timetable_edit" },
-                                onDelete = { viewModel.deleteTimetable(it) }
-                            )
-                        }
-                        "timetable_edit" -> {
-                            TimetableEditScreen(
-                                timetableId = editingTimetableId,
-                                timetables = timetableGroups,
-                                viewModel = viewModel,
-                                isDark = isDark,
-                                onBack = { currentRoute = "timetable_list" },
-                                onSave = { id, name, nodes ->
-                                    viewModel.saveTimetable(id, name, nodes)
-                                    currentRoute = "timetable_list"
-                                }
-                            )
-                        }
-                        "schedule_settings" -> {
-                            ScheduleSettingsScreen(
-                                viewModel = viewModel,
-                                scheduleGroups = scheduleGroups,
-                                currentScheduleId = currentScheduleId,
-                                currentWeek = currentWeek,
-                                timeNodeCount = activeTimeNodes.size,
-                                totalWeeks = totalWeeks,
-                                isDark = isDark,
-                                onBack = { currentRoute = "main" },
-                                onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
-                                onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
-                                onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
-                                onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
-                                onManageTimetableClick = { currentRoute = "timetable_list" },
-                                onManageCoursesClick = { currentRoute = "course_management" },
-                                onMoreAppearanceClick = { currentRoute = "appearance_settings" }
-                            )
-                        }
-                        "appearance_settings" -> {
-                            AppearanceSettingsScreen(
-                                viewModel = viewModel,
-                                isDark = isDark,
-                                onBack = { currentRoute = "schedule_settings" }
-                            )
-                        }
-                        "global_settings" -> {
-                            GlobalSettingsScreen(
-                                viewModel = viewModel,
-                                isDark = isDark,
-                                onBack = { currentRoute = "main" },
-                                onAdjustCourseClick = { currentRoute = "adjust_course" }
-                            )
-                        }
-                        "adjust_course" -> {
-                            AdjustCourseScreen(isDark = isDark, onBack = { currentRoute = "global_settings" })
-                        }
-                        "webview_import" -> {
-                            WebViewImportScreen(
-                                isDark = isDark,
-                                activeTimeNodes = activeTimeNodes,
-                                startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
-                                hasCourses = displayCourses.isNotEmpty(),
-                                onBack = { currentRoute = "main" },
-                                onImport = { json ->
-                                    viewModel.importFromJson(json) { success ->
-                                        Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
-                                        if (success) currentRoute = "main"
-                                    }
-                                }
-                            )
-                        }
-                        "reminder_settings" -> {
-                            ReminderSettingsScreen(
-                                viewModel = viewModel,
-                                isDark = isDark,
-                                onBack = { currentRoute = "main" }
-                            )
-                        }
-                        else -> {
-                            Scaffold(
-                                containerColor = Color.Transparent,
-                                bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
-                            ) { paddingValues ->
-                                Crossfade(
-                                    targetState = currentTab,
-                                    label = "tab_anim",
-                                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-                                ) { tab ->
-                                    Box(modifier = Modifier.padding(paddingValues)) {
-                                        if (tab == 0) {
-                                            TimetableScreen(
-                                                viewModel = viewModel,
-                                                courses = displayCourses,
-                                                timeNodes = activeTimeNodes,
-                                                currentWeek = currentWeek,
-                                                totalWeeks = totalWeeks,
-                                                scheduleGroups = scheduleGroups,
-                                                currentScheduleId = currentScheduleId,
-                                                isDark = isDark,
-                                                onAddClick = { courseToEdit = null; showAddDialog = true },
-                                                onManageCoursesClick = { currentRoute = "course_management" },
-                                                onManageTimetablesClick = { currentRoute = "timetable_list" },
-                                                onScheduleSettingsClick = { currentRoute = "schedule_settings" },
-                                                onGlobalSettingsClick = { currentRoute = "global_settings" },
-                                                onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                                onWebViewImportClick = { currentRoute = "webview_import" },
-                                                onShareCodeClick = { showShareCodeDialog = true },
-                                                onCreateScheduleClick = { showCreateScheduleDialog = true },
-                                                onReminderSettingsClick = { currentRoute = "reminder_settings" }
-                                            )
-                                        } else {
-                                            ProfileScreen(
-                                                isDark = isDark,
-                                                onThemeToggle = { viewModel.toggleTheme(it) },
-                                                onShowAnnouncementClick = {
-                                                     if (announcementDialogTitle.isNotEmpty()) {
-                                                         showAnnouncementDialog = true
-                                                     } else {
-                                                         Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
-                                                         coroutineScope.launch {
-                                                             val result = fetchAnnouncement()
-                                                             if (result != null) {
-                                                                 val (id, title, content) = result
-                                                                 announcementDialogTitle = title
-                                                                 announcementDialogContent = content
-                                                                 showAnnouncementDialog = true
-                                                             } else {
-                                                                 Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
-                                                             }
+                ) {
+                    composable("main") {
+                        val currentWeek by viewModel.currentWeek.collectAsState()
+                        val displayCourses by viewModel.displayCourses.collectAsState()
+                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+                        val totalWeeks by viewModel.totalWeeks.collectAsState()
+
+                        Scaffold(
+                            containerColor = Color.Transparent,
+                            bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
+                        ) { paddingValues ->
+                            Crossfade(
+                                targetState = currentTab,
+                                label = "tab_anim",
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                            ) { tab ->
+                                Box(modifier = Modifier.padding(paddingValues)) {
+                                    if (tab == 0) {
+                                        TimetableScreen(
+                                            viewModel = viewModel,
+                                            courses = displayCourses,
+                                            timeNodes = activeTimeNodes,
+                                            currentWeek = currentWeek,
+                                            totalWeeks = totalWeeks,
+                                            scheduleGroups = scheduleGroups,
+                                            currentScheduleId = currentScheduleId,
+                                            isDark = isDark,
+                                            onAddClick = { courseToEdit = null; showAddDialog = true },
+                                            onManageCoursesClick = { navController.navigate("course_management") },
+                                            onManageTimetablesClick = { navController.navigate("timetable_list") },
+                                            onScheduleSettingsClick = { navController.navigate("schedule_settings") },
+                                            onGlobalSettingsClick = { navController.navigate("global_settings") },
+                                            onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                            onWebViewImportClick = { navController.navigate("webview_import") },
+                                            onShareCodeClick = { showShareCodeDialog = true },
+                                            onCreateScheduleClick = { showCreateScheduleDialog = true },
+                                            onReminderSettingsClick = { navController.navigate("reminder_settings") }
+                                        )
+                                    } else {
+                                        ProfileScreen(
+                                            isDark = isDark,
+                                            onThemeToggle = { viewModel.toggleTheme(it) },
+                                            onShowAnnouncementClick = {
+                                                 if (announcementDialogTitle.isNotEmpty()) {
+                                                     showAnnouncementDialog = true
+                                                 } else {
+                                                     Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
+                                                     coroutineScope.launch {
+                                                         val result = fetchAnnouncement()
+                                                         if (result != null) {
+                                                             val (id, title, content) = result
+                                                             announcementDialogTitle = title
+                                                             announcementDialogContent = content
+                                                             showAnnouncementDialog = true
+                                                         } else {
+                                                             Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
                                                          }
                                                      }
-                                                 },
-                                                onCheckUpdateClick = {
-                                                    if (!isCheckingManualUpdate) {
-                                                        isCheckingManualUpdate = true
-                                                        Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
-                                                        coroutineScope.launch {
-                                                            val update = checkUpdate(UPDATE_URL)
-                                                            isCheckingManualUpdate = false
-                                                            if (update != null) {
-                                                                val currentVersionCode = try {
-                                                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                                        packageInfo.longVersionCode.toInt()
-                                                                    } else {
-                                                                        @Suppress("DEPRECATION")
-                                                                        packageInfo.versionCode
-                                                                    }
-                                                                } catch (e: Exception) {
-                                                                    1
-                                                                }
-                                                                if (update.versionCode > currentVersionCode) {
-                                                                    updateInfoToShow = update
+                                                 }
+                                             },
+                                            onCheckUpdateClick = {
+                                                if (!isCheckingManualUpdate) {
+                                                    isCheckingManualUpdate = true
+                                                    Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
+                                                    coroutineScope.launch {
+                                                        val update = checkUpdate(UPDATE_URL)
+                                                        isCheckingManualUpdate = false
+                                                        if (update != null) {
+                                                            val currentVersionCode = try {
+                                                                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                                    packageInfo.longVersionCode.toInt()
                                                                 } else {
-                                                                    Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                    @Suppress("DEPRECATION")
+                                                                    packageInfo.versionCode
                                                                 }
-                                                            } else {
-                                                                Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
+                                                            } catch (e: Exception) {
+                                                                1
                                                             }
+                                                            if (update.versionCode > currentVersionCode) {
+                                                                updateInfoToShow = update
+                                                            } else {
+                                                                Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        } else {
+                                                            Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
                                                         }
                                                     }
                                                 }
-                                            )
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }
                         }
+                    }
+
+                    composable("course_management") {
+                        val displayCourses by viewModel.displayCourses.collectAsState()
+                        CourseManagementScreen(
+                            courses = displayCourses.map { it.course }.distinctBy { it.id },
+                            isDark = isDark,
+                            materialYou = materialYou,
+                            onBack = { navController.popBackStack() },
+                            onEditCourse = { courseToEdit = it; showAddDialog = true },
+                            onDeleteCourse = { viewModel.deleteCourse(it) }
+                        )
+                    }
+
+                    composable("timetable_list") {
+                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                        val timetableGroups by viewModel.timetableGroups.collectAsState()
+
+                        val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
+                        TimetableListScreen(
+                            timetables = timetableGroups,
+                            currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() },
+                            onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
+                            onEdit = { id -> editingTimetableId = id; navController.navigate("timetable_edit") },
+                            onDelete = { viewModel.deleteTimetable(it) }
+                        )
+                    }
+
+                    composable("timetable_edit") {
+                        val timetableGroups by viewModel.timetableGroups.collectAsState()
+
+                        TimetableEditScreen(
+                            timetableId = editingTimetableId,
+                            timetables = timetableGroups,
+                            viewModel = viewModel,
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() },
+                            onSave = { id, name, nodes ->
+                                viewModel.saveTimetable(id, name, nodes)
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+
+                    composable("schedule_settings") {
+                        val currentWeek by viewModel.currentWeek.collectAsState()
+                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+                        val totalWeeks by viewModel.totalWeeks.collectAsState()
+
+                        ScheduleSettingsScreen(
+                            viewModel = viewModel,
+                            scheduleGroups = scheduleGroups,
+                            currentScheduleId = currentScheduleId,
+                            currentWeek = currentWeek,
+                            timeNodeCount = activeTimeNodes.size,
+                            totalWeeks = totalWeeks,
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() },
+                            onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
+                            onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
+                            onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
+                            onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
+                            onManageTimetableClick = { navController.navigate("timetable_list") },
+                            onManageCoursesClick = { navController.navigate("course_management") },
+                            onMoreAppearanceClick = { navController.navigate("appearance_settings") }
+                        )
+                    }
+
+                    composable("appearance_settings") {
+                        AppearanceSettingsScreen(
+                            viewModel = viewModel,
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable("global_settings") {
+                        GlobalSettingsScreen(
+                            viewModel = viewModel,
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() },
+                            onAdjustCourseClick = { navController.navigate("adjust_course") }
+                        )
+                    }
+
+                    composable("adjust_course") {
+                        AdjustCourseScreen(isDark = isDark, onBack = { navController.popBackStack() })
+                    }
+
+                    composable("webview_import") {
+                        val displayCourses by viewModel.displayCourses.collectAsState()
+                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+
+                        WebViewImportScreen(
+                            isDark = isDark,
+                            activeTimeNodes = activeTimeNodes,
+                            startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
+                            hasCourses = displayCourses.isNotEmpty(),
+                            onBack = { navController.popBackStack() },
+                            onImport = { json ->
+                                viewModel.importFromJson(json) { success ->
+                                    Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
+                                    if (success) navController.popBackStack("main", inclusive = false)
+                                }
+                            }
+                        )
+                    }
+
+                    composable("reminder_settings") {
+                        ReminderSettingsScreen(
+                            viewModel = viewModel,
+                            isDark = isDark,
+                            onBack = { navController.popBackStack() }
+                        )
                     }
                 }
 

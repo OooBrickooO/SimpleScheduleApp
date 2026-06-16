@@ -6,7 +6,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- 允许设置精确闹钟的权限 -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- 接收开机广播的权限，用于重新注册后台闹钟和小组件午夜更新 -->
@@ -68,6 +70,19 @@
                 android:resource="@xml/course_widget_2x2_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.CourseWeekWidgetReceiver"
+            android:exported="true"
+            android:label="全周课程表 (4x4)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/course_week_widget_info" />
+        </receiver>
+
+
 
         <activity
             android:name=".MainActivity"
@@ -89,5 +104,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <service
+            android:name=".service.DynamicIslandService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_DESCRIPTION_VALUE" android:value="显示课前灵动岛倒计时悬浮窗" />
+        </service>
     </application>
 </manifest>

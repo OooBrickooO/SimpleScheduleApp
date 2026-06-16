@@ -217,18 +217,25 @@ object ReminderEngine {
                 nextCourseToRemind = closest.first
                 nextCourseStartStr = closest.third.split("-")[0]
                 nextCourseEndStr = closest.third.split("-")[1]
+                
+                // 计算课程结束时间戳
+                val timePartsEnd = nextCourseEndStr.split(":")
+                val endCal = evalCal.clone() as Calendar
+                endCal.set(Calendar.HOUR_OF_DAY, timePartsEnd[0].toInt())
+                endCal.set(Calendar.MINUTE, timePartsEnd[1].toInt())
+                endCal.set(Calendar.SECOND, 0)
+                
+                val classEndMillis = endCal.timeInMillis
+                val classStartMillis = nextTriggerTimeMillis + advanceMins * 60000L
+                
+                scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartMillis, classEndMillis, isNotifyOn, isVoiceOn, nextCourseToRemind.colorTheme)
                 break
             }
-        }
-
-        if (nextCourseToRemind != null) {
-            val classStartCal = Calendar.getInstance().apply { timeInMillis = nextTriggerTimeMillis + advanceMins * 60000L }
-            scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartCal.timeInMillis, isNotifyOn, isVoiceOn, nextCourseToRemind.colorTheme)
         }
     }
 
     @SuppressLint("MissingPermission")
-    fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, showNotify: Boolean, playVoice: Boolean, colorTheme: String) {
+    fun scheduleAlarmByParams(context: Context, courseName: String, location: String, timeStr: String, triggerMillis: Long, classStartMillis: Long, classEndMillis: Long, showNotify: Boolean, playVoice: Boolean, colorTheme: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
 
         val showIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
@@ -237,6 +244,7 @@ object ReminderEngine {
             putExtra("LOCATION", location)
             putExtra("TIME_STR", timeStr)
             putExtra("CLASS_START_MILLIS", classStartMillis)
+            putExtra("CLASS_END_MILLIS", classEndMillis)
             putExtra("SHOW_NOTIFY", showNotify)
             putExtra("PLAY_VOICE", playVoice)
             putExtra("COLOR_THEME", colorTheme)
