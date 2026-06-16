@@ -161,14 +161,16 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
-                    val islandEnabled = try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
-                    } catch (e: Exception) { false }
+                    val prefs = try {
+                        context.dataStore.data.firstOrNull()
+                    } catch (e: Exception) { null }
+                    
+                    val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                    val liveUpdateEnabled = prefs?.get(SettingsKeys.LIVE_UPDATE_ENABLED) ?: false
 
                     if (showNotify || islandEnabled) {
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled)
+                            showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled, liveUpdateEnabled)
                         }
                     }
 
@@ -263,7 +265,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean) {
+    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean, liveUpdateEnabled: Boolean) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val CHANNEL_ID = "CourseAlarmChannel"
 
@@ -272,7 +274,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         }
 
         val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
-        val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val cancelPending = PendingIntent.getBroadcast(context, 1002, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val openIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -312,8 +314,10 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
 
             // Android 15 Live Updates (Promoted Ongoing) Extras
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", location.replace("楼", ""))
+            if (liveUpdateEnabled && Build.VERSION.SDK_INT >= 35) {
+                builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
+                builder.getExtras().putCharSequence("android.shortCriticalText", location.replace("楼", ""))
+            }
 
             notificationManager.notify(1001, builder.build())
         } else {

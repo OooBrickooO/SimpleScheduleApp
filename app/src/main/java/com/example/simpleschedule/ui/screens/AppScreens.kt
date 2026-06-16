@@ -35,7 +35,9 @@ import android.webkit.WebViewClient
 import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import android.window.BackEvent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -144,6 +146,51 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
+
+@Composable
+fun AppBackHandler(enabled: Boolean, onBack: () -> Unit): Modifier {
+    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        var scale by remember { mutableStateOf(1f) }
+        var translateX by remember { mutableStateOf(0f) }
+        var cornerRadius by remember { mutableStateOf(0.dp) }
+
+        PredictiveBackHandler { progress ->
+            try {
+                progress.collect { event ->
+                    scale = 1f - (event.progress * 0.08f)
+                    translateX = if (event.swipeEdge == BackEvent.EDGE_LEFT) {
+                        event.progress * 56f
+                    } else {
+                        -event.progress * 56f
+                    }
+                    cornerRadius = (event.progress * 24).dp
+                }
+                onBack()
+                scale = 1f
+                translateX = 0f
+                cornerRadius = 0.dp
+            } catch (e: Exception) {
+                scale = 1f
+                translateX = 0f
+                cornerRadius = 0.dp
+            }
+        }
+
+        return Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationX = translateX
+                if (cornerRadius > 0.dp) {
+                    clip = true
+                    shape = RoundedCornerShape(cornerRadius)
+                }
+            }
+    } else {
+        BackHandler(enabled = true, onBack = onBack)
+        return Modifier
+    }
+}
 
 @Composable
 fun DotMatrixBackground(isDark: Boolean) {
@@ -645,10 +692,10 @@ fun ScheduleSettingsScreen(
     val showNotThisWeek by viewModel.showNotThisWeek.collectAsState()
     val cellHeightDp by viewModel.cellHeight.collectAsState()
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -753,10 +800,10 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     val hideTime by viewModel.hideTime.collectAsState()
     val cellHeightDp by viewModel.cellHeight.collectAsState()
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -814,11 +861,11 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     val reminderVoiceEnabled by viewModel.reminderVoiceEnabled.collectAsState()
     val reminderAdvanceMins by viewModel.reminderAdvanceMins.collectAsState()
     val dynamicIslandEnabled by viewModel.dynamicIslandEnabled.collectAsState()
+    val liveUpdateEnabled by viewModel.liveUpdateEnabled.collectAsState()
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -837,9 +884,23 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                     Column {
                         SettingCheckboxItemWithSubtext(
                             title = "启用上课提醒",
-                            subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限。",
+                            subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限",
                             checked = reminderEnabled,
-                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ENABLED, it) },
+                            onCheckedChange = { checked ->
+                                viewModel.updateSetting(SettingsKeys.REMINDER_ENABLED, checked)
+                                if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                                    if (!alarmManager.canScheduleExactAlarms()) {
+                                        try {
+                                            context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                                data = android.net.Uri.parse("package:${context.packageName}")
+                                            })
+                                        } catch (e: Exception) {
+                                            context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                                        }
+                                    }
+                                }
+                            },
                             textColor = textColor,
                             borderColor = borderColor,
                             isDark = isDark,
@@ -858,7 +919,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报。",
+                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报",
                                     fontSize = 10.sp,
                                     color = textColor.copy(alpha = 0.6f),
                                     lineHeight = 14.sp
@@ -868,7 +929,29 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             SettingCheckboxItem(
                                 title = "显示通知栏提醒",
                                 checked = reminderNotifyEnabled,
-                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, it) },
+                                onCheckedChange = { checked ->
+                                    viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, checked)
+                                    if (checked) {
+                                        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                        val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            ContextCompat.checkSelfPermission(context, "android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED
+                                        } else {
+                                            notificationManager.areNotificationsEnabled()
+                                        }
+                                        if (!isGranted) {
+                                            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                }
+                                            } else {
+                                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                                    data = android.net.Uri.parse("package:${context.packageName}")
+                                                }
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                },
                                 textColor = textColor,
                                 borderColor = borderColor,
                                 isDark = isDark,
@@ -886,7 +969,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
 
                             SettingCheckboxItem(
-                                title = "开启课前灵动通知 (状态栏胶囊)",
+                                title = "开启课前提醒通知",
                                 checked = dynamicIslandEnabled,
                                 onCheckedChange = { checked ->
                                     viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, checked)
@@ -894,19 +977,42 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 textColor = textColor,
                                 borderColor = borderColor,
                                 isDark = isDark,
-                                showBottomBorder = true
+                                showBottomBorder = dynamicIslandEnabled
                             )
 
-                            SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
+                            if (dynamicIslandEnabled) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                        .background(
+                                            if (isDark) Color(0xFF27272A) else Color(0xFFE4E4E7),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(4.dp)
+                                ) {
+                                    SettingCheckboxItemWithSubtext(
+                                        title = "使用实时通知",
+                                        subtext = "需要授予通知权限。实时通知仅在Android 16+ 设备上生效，低于Android16的设备开启后无效果。若不开启实时知，则使用传统的通知栏常驻通知",
+                                        checked = liveUpdateEnabled,
+                                        onCheckedChange = { viewModel.updateSetting(SettingsKeys.LIVE_UPDATE_ENABLED, it) },
+                                        textColor = textColor,
+                                        borderColor = Color.Transparent,
+                                        isDark = isDark,
+                                        showBottomBorder = false
+                                    )
+                                }
+                            }
+
+                            SettingValueItem(title = "发送一条测试提醒", value = "5秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
                                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                                     context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
                                     Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
                                 } else {
-                                    val triggerTime = System.currentTimeMillis() + 10000
+                                    val triggerTime = System.currentTimeMillis() + 5000
                                     val classStartTime = triggerTime + reminderAdvanceMins * 60000
                                     ReminderEngine.scheduleAlarmByParams(context, "【测试】课A", "地球", "Start-End", triggerTime, classStartTime, reminderNotifyEnabled, reminderVoiceEnabled, "slate")
-                                    Toast.makeText(context, "已设置 10 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "已设置 5 秒后的测试提醒喵！请切出应用等待", Toast.LENGTH_SHORT).show()
                                 }
                             })
                         }
@@ -935,10 +1041,10 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
     val warnTimetableError by viewModel.warnTimetableError.collectAsState()
     val autoUpdate by viewModel.autoUpdate.collectAsState()
     val widgetTranslucent by viewModel.widgetTranslucent.collectAsState()
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1011,6 +1117,13 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                             }
                         })
                         SettingCheckboxItem(title = "自动检查更新", checked = autoUpdate, onCheckedChange = { viewModel.updateSetting(SettingsKeys.AUTO_UPDATE, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
+                        SettingCheckboxItemWithSubtext(
+                            title = "预见式返回",
+                            subtext = " 仅在Android 14 以上的设备生效，在支持的设备上侧滑返回时可预览上一个界面",
+                            checked = predictiveBack,
+                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.PREDICTIVE_BACK, it) },
+                            textColor = textColor, borderColor = borderColor, isDark = isDark
+                        )
                         SettingValueItem(title = "清除内置浏览器缓存", value = "", textColor = textColor, borderColor = borderColor, onClick = { Toast.makeText(context, "缓存已清除", Toast.LENGTH_SHORT).show() })
                         SettingCheckboxItemWithSubtext(title = "振动反馈", subtext = "点击、滑动等操作时有振动反馈", checked = vibration, onCheckedChange = { viewModel.updateSetting(SettingsKeys.VIBRATION, it) }, showBottomBorder = false, textColor = textColor, borderColor = borderColor, isDark = isDark)
                     }
@@ -1512,6 +1625,7 @@ fun executeZhengfangExamJs(webViewRef: WebView?) {
 
 @Composable
 fun WebViewImportScreen(
+    viewModel: ScheduleViewModel,
     isDark: Boolean,
     activeTimeNodes: List<TimeNode>,
     startDate: String,
@@ -1523,6 +1637,7 @@ fun WebViewImportScreen(
     val borderColor = if (isDark) BorderDark else BorderLight
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
 
     var stage by remember { mutableStateOf(ImportStage.SELECT_MODE) }
     var selectedSchool by remember { mutableStateOf<School?>(null) }
@@ -1559,7 +1674,7 @@ fun WebViewImportScreen(
         }
     }
 
-    BackHandler {
+    val backModifier = AppBackHandler(predictiveBack) {
         if (stage != ImportStage.SELECT_MODE) {
             stage = ImportStage.SELECT_MODE
         } else if (selectedSystem != null) {
@@ -1608,7 +1723,7 @@ fun WebViewImportScreen(
 
     val alphabet = ('A'..'Z').toList()
 
-    Column(modifier = Modifier.fillMaxSize().imePadding()) {
+    Column(modifier = Modifier.fillMaxSize().imePadding().then(backModifier)) {
         when (stage) {
             ImportStage.SELECT_MODE -> {
                 Row(
@@ -2313,15 +2428,15 @@ fun parseQingGuoXls(inputStream: InputStream): String? {
 }
 
 @Composable
-fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: String, isDark: Boolean, onBack: () -> Unit, onSelect: (String) -> Unit, onEdit: (String?) -> Unit, onDelete: (String) -> Unit) {
+fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: String, isDark: Boolean, predictiveBack: Boolean, onBack: () -> Unit, onSelect: (String) -> Unit, onEdit: (String?) -> Unit, onDelete: (String) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
 
-    BackHandler { onBack() }
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
     var timetableIdToDelete by remember { mutableStateOf<String?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
@@ -2436,9 +2551,10 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
         }
     }
 
-    BackHandler { onBack() }
+    val predictiveBack by viewModel.predictiveBack.collectAsState()
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2537,13 +2653,13 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
 }
 
 @Composable
-fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
+fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: Boolean, predictiveBack: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
-    BackHandler { onBack() }
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
     var courseIdToDelete by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -3378,14 +3494,14 @@ fun CourseEditDialog(
 }
 
 @Composable
-fun AdjustCourseScreen(isDark: Boolean, onBack: () -> Unit) {
+fun AdjustCourseScreen(isDark: Boolean, predictiveBack: Boolean, onBack: () -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
 
-    BackHandler { onBack() }
+    val backModifier = AppBackHandler(predictiveBack) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

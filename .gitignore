@@ -1,20 +1,45 @@
+# Built artifacts
+bin/
+gen/
+out/
+build/
+.gradle/
+
+# IDE files
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# Local configuration files
 local.properties
+
+# Log files
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Android Studio
+captures/
+
+# External native builds
+.externalNativeBuild/
+.cxx/
+
+# Project specific exclusions
 /app/release/
 /Target/
 /deploy.ps1
 /web/
 /AI_INSTRUCTIONS.md
+
+# Signing files
+*.jks
+*.keystore
+*.p12
+*.key
