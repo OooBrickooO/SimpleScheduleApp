@@ -6,6 +6,7 @@ import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.WidgetUpdateWorker
 import com.example.simpleschedule.MainActivity
+import com.example.simpleschedule.utils.LocalLogger
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -140,11 +141,112 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
 
+enum class NotificationState {
+    UPCOMING,
+    IN_CLASS
+}
+
+fun buildCourseNotification(
+    context: Context,
+    state: NotificationState,
+    courseName: String,
+    location: String,
+    timeStr: String,
+    classStartMillis: Long,
+    classEndMillis: Long,
+    colorTheme: String,
+    islandEnabled: Boolean
+): android.app.Notification {
+    val CHANNEL_ID = "CourseAlarmChannel_v2"
+    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        notificationManager.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH)
+        )
+    }
+
+    val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
+    val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+    val openIntent = Intent(context, MainActivity::class.java).apply {
+        action = Intent.ACTION_MAIN
+        addCategory("android.intent.category.NAVIGATION") // 兼容 ColorOS 16 要求的标准场景类别
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+    }
+    // ColorOS 16 强制要求 PendingIntent 必须是可变的 (FLAG_MUTABLE)
+    val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+
+    val palette = try {
+        com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
+    } catch (e: Exception) {
+        null
+    }
+    val accentColor = palette?.accent?.toArgb() ?: 0xFF6B7280.toInt()
+
+    val titleText = courseName
+    val contentText = location.replace("楼", "")
+
+    val style = NotificationCompat.BigTextStyle()
+        .bigText("$courseName\n$contentText")
+
+    val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(titleText)
+        .setContentText(contentText)
+        .setStyle(style)
+        .setColor(accentColor)
+        .setCategory(NotificationCompat.CATEGORY_NAVIGATION) // 兼容 ColorOS 16 要求的标准场景分类
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setOngoing(true)
+        .setContentIntent(openPending)
+        .addAction(
+            android.R.drawable.ic_menu_close_clear_cancel,
+            "一键清除",
+            cancelPending
+        )
+
+    if (state == NotificationState.UPCOMING) {
+        if (classStartMillis > 0) {
+            builder.setWhen(classStartMillis)
+            builder.setUsesChronometer(true)
+            builder.setChronometerCountDown(true)
+        }
+        if (islandEnabled) {
+            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
+            val shortCourse = courseName.take(6)
+            val shortLocation = location.replace("楼", "").take(6)
+            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
+            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+        } else {
+            builder.setColorized(true)
+        }
+    } else {
+        if (classEndMillis > 0) {
+            builder.setWhen(classEndMillis)
+            builder.setUsesChronometer(true)
+            builder.setChronometerCountDown(true)
+        }
+        if (islandEnabled) {
+            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
+            val shortCourse = courseName.take(6)
+            val shortLocation = location.replace("楼", "").take(6)
+            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
+            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+        } else {
+            builder.setColorized(true)
+        }
+    }
+
+    return builder.build()
+}
+
 class CourseAlarmReceiver : BroadcastReceiver() {
     private var tts: TextToSpeech? = null
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
+        LocalLogger.log(context, "Receiver", "onReceive 触发: action=${intent.action}")
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, "ACTION_UPDATE_WIDGET" -> {
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
@@ -160,15 +262,16 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
                 val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
+                LocalLogger.log(context, "Receiver", "课前提醒 ACTION_SHOW_REMINDER: 课程=$courseName, 通知=$showNotify, 语音=$playVoice")
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
                         val prefs = context.dataStore.data.firstOrNull()
                         val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
 
-                        if (showNotify || islandEnabled) {
+                        if (showNotify) {
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                showNotification(context, courseName, location, timeStr, classStartMillis, colorTheme, islandEnabled)
+                                showNotification(context, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
                             }
                         }
 
@@ -257,9 +360,37 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                     }
                 }
             }
+            "ACTION_CLASS_START" -> {
+                val courseName = intent.getStringExtra("COURSE_NAME") ?: "未知课程"
+                val location = intent.getStringExtra("LOCATION") ?: "未知地点"
+                val timeStr = intent.getStringExtra("TIME_STR") ?: "00:00"
+                val classStartMillis = intent.getLongExtra("CLASS_START_MILLIS", 0L)
+                val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
+                val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
+
+                LocalLogger.log(context, "Receiver", "上课开始 ACTION_CLASS_START: 课程=$courseName")
+                kotlinx.coroutines.GlobalScope.launch {
+                    try {
+                        val prefs = context.dataStore.data.firstOrNull()
+                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+
+                        android.os.Handler(android.os.Looper.getMainLooper()).post {
+                            updateNotificationState(context, NotificationState.IN_CLASS, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
             "ACTION_DISMISS_REMINDER" -> {
+                LocalLogger.log(context, "Receiver", "下课清理 ACTION_DISMISS_REMINDER: 取消通知并停止前台服务")
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
+                try {
+                    context.stopService(Intent(context, CourseAlarmService::class.java))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
                 WorkManager.getInstance(context).enqueue(workRequest)
             }
@@ -267,94 +398,87 @@ class CourseAlarmReceiver : BroadcastReceiver() {
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(context: Context, courseName: String, location: String, timeStr: String, classStartMillis: Long, colorTheme: String, islandEnabled: Boolean) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val CHANNEL_ID = "CourseAlarmChannel"
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH))
-        }
-
-        val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
-        val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
+    private fun showNotification(
+        context: Context,
+        courseName: String,
+        location: String,
+        timeStr: String,
+        classStartMillis: Long,
+        classEndMillis: Long,
+        colorTheme: String,
+        islandEnabled: Boolean
+    ) {
+        LocalLogger.log(context, "Receiver", "showNotification: 开启胶囊=$islandEnabled, 课程=$courseName")
         if (islandEnabled) {
-            val palette = try {
-                com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
-            } catch (e: Exception) {
-                null
+            val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
+                putExtra("STATE", "UPCOMING")
+                putExtra("COURSE_NAME", courseName)
+                putExtra("LOCATION", location)
+                putExtra("TIME_STR", timeStr)
+                putExtra("CLASS_START_MILLIS", classStartMillis)
+                putExtra("CLASS_END_MILLIS", classEndMillis)
+                putExtra("COLOR_THEME", colorTheme)
             }
-            val accentColor = palette?.accent?.toArgb() ?: 0xFF6B7280.toInt()
-
-            val style = NotificationCompat.BigTextStyle()
-                .bigText("课程: $courseName\n地点: ${location.replace("楼", "")}")
-
-            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setContentTitle("即将上课: $courseName")
-                .setContentText("地点: ${location.replace("楼", "")}")
-                .setStyle(style)
-                .setColor(accentColor)
-                .setColorized(true)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setOngoing(true)
-                .setContentIntent(openPending)
-                .addAction(
-                    android.R.drawable.ic_menu_close_clear_cancel,
-                    "一键清除",
-                    cancelPending
-                )
-
-            if (classStartMillis > 0) {
-                builder.setWhen(classStartMillis)
-                builder.setUsesChronometer(true)
-                builder.setChronometerCountDown(true)
-            }
-
-            // Android 15 Live Updates (Promoted Ongoing) Extras
-            val shortLocation = location.replace("楼", "").take(7)
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
-
-            notificationManager.notify(1001, builder.build())
-        } else {
-            val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
-            remoteViews.setTextViewText(R.id.tv_time, timeStr)
-            remoteViews.setTextViewText(R.id.tv_location, location.replace("楼", ""))
-            remoteViews.setTextViewText(R.id.tv_course_name, courseName)
-
-            if (classStartMillis > 0) {
-                remoteViews.setChronometer(R.id.chronometer, classStartMillis, null, true)
-                remoteViews.setChronometerCountDown(R.id.chronometer, true)
-            }
-
             try {
-                val palette = com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
-                val colorInt = palette.accent.toArgb()
-                remoteViews.setInt(R.id.view_stripe, "setBackgroundColor", colorInt)
+                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
+                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 启动 CourseAlarmService")
             } catch (e: Exception) {
+                LocalLogger.log(context, "Receiver", "前台服务启动崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
+                // 后台启动前台服务受限时（如 Android 12+ FGS 限制），直接在广播接收器内弹出标准通知兜底
+                val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(1001, notification)
+                LocalLogger.log(context, "Receiver", "已降级直接通过接收器展示标准通知")
             }
-
-            remoteViews.setOnClickPendingIntent(R.id.btn_mute, cancelPending)
-
-            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomContentView(remoteViews)
-                .setCustomBigContentView(remoteViews)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setOngoing(true)
-                .setContentIntent(openPending)
-                .build()
-
+        } else {
+            val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
+            LocalLogger.log(context, "Receiver", "直接通过接收器展示普通标准通知")
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun updateNotificationState(
+        context: Context,
+        state: NotificationState,
+        courseName: String,
+        location: String,
+        timeStr: String,
+        classStartMillis: Long,
+        classEndMillis: Long,
+        colorTheme: String,
+        islandEnabled: Boolean
+    ) {
+        LocalLogger.log(context, "Receiver", "updateNotificationState: 状态=$state, 开启胶囊=$islandEnabled")
+        if (islandEnabled) {
+            val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
+                putExtra("STATE", "IN_CLASS")
+                putExtra("COURSE_NAME", courseName)
+                putExtra("LOCATION", location)
+                putExtra("TIME_STR", timeStr)
+                putExtra("CLASS_START_MILLIS", classStartMillis)
+                putExtra("CLASS_END_MILLIS", classEndMillis)
+                putExtra("COLOR_THEME", colorTheme)
+            }
+            try {
+                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
+                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 更新服务状态 (IN_CLASS)")
+            } catch (e: Exception) {
+                LocalLogger.log(context, "Receiver", "更新前台服务崩溃拦截 (FGS限制)：${e.message}")
+                e.printStackTrace()
+                // 后台启动前台服务受限时，直接在广播接收器内更新通知兜底
+                val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.notify(1001, notification)
+                LocalLogger.log(context, "Receiver", "已降级直接通过接收器更新标准通知")
+            }
+        } else {
+            val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(1001, notification)
+            LocalLogger.log(context, "Receiver", "直接通过接收器更新普通标准通知")
         }
     }
 }

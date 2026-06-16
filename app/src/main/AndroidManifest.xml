@@ -12,6 +12,11 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- 声明我们需要访问 TTS 语音引擎包 -->
     <queries>
@@ -42,6 +47,15 @@
                 <action android:name="ACTION_DISMISS_REMINDER" />
             </intent-filter>
         </receiver>
+
+        <service
+            android:name=".receiver.CourseAlarmService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="显示课前状态栏胶囊倒计时以及课程提醒" />
+        </service>
 
         <receiver
             android:name=".widget.CourseWidgetReceiver"
