@@ -143,7 +143,7 @@ object ReminderEngine {
     private const val REQUEST_CODE_CANCEL = 1002
 
     suspend fun calculateAndScheduleNext(context: Context, appDao: AppDao) {
-        val prefs = context.dataStore.data.firstOrNull() ?: return
+        val prefs = context.dataStore.data.first()
         val enabled = prefs[SettingsKeys.REMINDER_ENABLED] ?: false
         if (!enabled) {
             LocalLogger.log(context, "ReminderEngine", "上课提醒开关未开启，不进行调度计算")
@@ -303,7 +303,7 @@ object ReminderEngine {
     }
 
     suspend fun scheduleNextWidgetUpdate(context: Context, appDao: AppDao) {
-        val prefs = context.dataStore.data.firstOrNull() ?: return
+        val prefs = context.dataStore.data.first()
         val savedId = prefs[SettingsKeys.CURRENT_SCHEDULE_ID] ?: return
         val groups = appDao.getAllScheduleGroups().firstOrNull() ?: return
         val currentSchedule = groups.find { it.id == savedId } ?: return

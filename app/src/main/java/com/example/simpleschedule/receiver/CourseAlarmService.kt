@@ -37,11 +37,11 @@ class CourseAlarmService : Service() {
         val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
         val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
         val stateStr = intent.getStringExtra("STATE") ?: "UPCOMING"
+        val islandContentMode = intent.getIntExtra("ISLAND_CONTENT_MODE", 0)
         val state = if (stateStr == "IN_CLASS") NotificationState.IN_CLASS else NotificationState.UPCOMING
 
         LocalLogger.log(this, "Service", "onStartCommand: 课程=$courseName, 地点=$location, 状态=$stateStr")
 
-        // 使用 CourseAlarmReceiver 中的统一构建函数构建通知
         val notification = buildCourseNotification(
             this,
             state,
@@ -51,7 +51,8 @@ class CourseAlarmService : Service() {
             classStartMillis,
             classEndMillis,
             colorTheme,
-            true
+            true,
+            islandContentMode
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -61,7 +62,6 @@ class CourseAlarmService : Service() {
         }
         LocalLogger.log(this, "Service", "成功调用 startForeground 并启动前台通知")
 
-        // 设置安全定时器：在下课 5 分钟后自动停止服务（兜底防止电池优化拦截 ACTION_DISMISS_REMINDER 导致服务常驻）
         handler?.let { h ->
             stopRunnable?.let { r -> h.removeCallbacks(r) }
         }
@@ -69,9 +69,9 @@ class CourseAlarmService : Service() {
         val targetSafetyStopMillis = if (classEndMillis > 0) {
             classEndMillis + 5 * 60 * 1000L
         } else if (classStartMillis > 0) {
-            classStartMillis + 120 * 60 * 1000L // 默认最多持续2小时
+            classStartMillis + 120 * 60 * 1000L
         } else {
-            System.currentTimeMillis() + 60 * 60 * 1000L // 默认1小时
+            System.currentTimeMillis() + 60 * 60 * 1000L
         }
 
         val delay = targetSafetyStopMillis - System.currentTimeMillis()

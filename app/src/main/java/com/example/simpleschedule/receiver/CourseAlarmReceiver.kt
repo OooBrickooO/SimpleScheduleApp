@@ -155,7 +155,8 @@ fun buildCourseNotification(
     classStartMillis: Long,
     classEndMillis: Long,
     colorTheme: String,
-    islandEnabled: Boolean
+    islandEnabled: Boolean,
+    islandContentMode: Int = 0
 ): android.app.Notification {
     val CHANNEL_ID = "CourseAlarmChannel_v2"
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -174,7 +175,6 @@ fun buildCourseNotification(
         addCategory("android.intent.category.NAVIGATION") // 兼容 ColorOS 16 要求的标准场景类别
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
-    // ColorOS 16 强制要求 PendingIntent 必须是可变的 (FLAG_MUTABLE)
     val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
 
     val palette = try {
@@ -213,11 +213,15 @@ fun buildCourseNotification(
             builder.setChronometerCountDown(true)
         }
         if (islandEnabled) {
-            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortCourse = courseName.take(6)
-            val shortLocation = location.replace("楼", "").take(6)
+            builder.setColorized(false)
+            val displayLocation = location.replace("楼", "")
+            val capsuleText = when (islandContentMode) {
+                1 -> courseName.take(8)
+                2 -> displayLocation.take(8)
+                else -> "${courseName.take(6)} ${displayLocation.take(6)}"
+            }
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", capsuleText)
         } else {
             builder.setColorized(true)
         }
@@ -228,11 +232,15 @@ fun buildCourseNotification(
             builder.setChronometerCountDown(true)
         }
         if (islandEnabled) {
-            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortCourse = courseName.take(6)
-            val shortLocation = location.replace("楼", "").take(6)
+            builder.setColorized(false)
+            val displayLocation = location.replace("楼", "")
+            val capsuleText = when (islandContentMode) {
+                1 -> courseName.take(8)
+                2 -> displayLocation.take(8)
+                else -> "${courseName.take(6)} ${displayLocation.take(6)}"
+            }
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", capsuleText)
         } else {
             builder.setColorized(true)
         }
@@ -266,12 +274,13 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                        val prefs = context.dataStore.data.first()
+                        val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
+                        val islandContentMode = prefs[SettingsKeys.DYNAMIC_ISLAND_CONTENT_MODE] ?: 0
 
                         if (showNotify) {
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                showNotification(context, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
+                                showNotification(context, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled, islandContentMode)
                             }
                         }
 
@@ -294,8 +303,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                                         pendingResult.finish()
                                     }
                                 }
-                                
-                                // 8秒安全超时限制，确保广播接收器不挂起并防止ANR
+
                                 handler.postDelayed(timeoutRunnable, 8000)
 
                                 tts = TextToSpeech(context) { status ->
@@ -371,11 +379,12 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 LocalLogger.log(context, "Receiver", "上课开始 ACTION_CLASS_START: 课程=$courseName")
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                        val prefs = context.dataStore.data.first()
+                        val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
+                        val islandContentMode = prefs[SettingsKeys.DYNAMIC_ISLAND_CONTENT_MODE] ?: 0
 
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            updateNotificationState(context, NotificationState.IN_CLASS, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
+                            updateNotificationState(context, NotificationState.IN_CLASS, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled, islandContentMode)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -406,7 +415,8 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         classStartMillis: Long,
         classEndMillis: Long,
         colorTheme: String,
-        islandEnabled: Boolean
+        islandEnabled: Boolean,
+        islandContentMode: Int = 0
     ) {
         LocalLogger.log(context, "Receiver", "showNotification: 开启胶囊=$islandEnabled, 课程=$courseName")
         if (islandEnabled) {
@@ -418,6 +428,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 putExtra("CLASS_START_MILLIS", classStartMillis)
                 putExtra("CLASS_END_MILLIS", classEndMillis)
                 putExtra("COLOR_THEME", colorTheme)
+                putExtra("ISLAND_CONTENT_MODE", islandContentMode)
             }
             try {
                 androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
@@ -426,13 +437,13 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 LocalLogger.log(context, "Receiver", "前台服务启动崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
                 // 后台启动前台服务受限时（如 Android 12+ FGS 限制），直接在广播接收器内弹出标准通知兜底
-                val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
+                val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true, islandContentMode)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
                 LocalLogger.log(context, "Receiver", "已降级直接通过接收器展示标准通知")
             }
         } else {
-            val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
+            val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false, islandContentMode)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
             LocalLogger.log(context, "Receiver", "直接通过接收器展示普通标准通知")
@@ -449,7 +460,8 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         classStartMillis: Long,
         classEndMillis: Long,
         colorTheme: String,
-        islandEnabled: Boolean
+        islandEnabled: Boolean,
+        islandContentMode: Int = 0
     ) {
         LocalLogger.log(context, "Receiver", "updateNotificationState: 状态=$state, 开启胶囊=$islandEnabled")
         if (islandEnabled) {
@@ -461,6 +473,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 putExtra("CLASS_START_MILLIS", classStartMillis)
                 putExtra("CLASS_END_MILLIS", classEndMillis)
                 putExtra("COLOR_THEME", colorTheme)
+                putExtra("ISLAND_CONTENT_MODE", islandContentMode)
             }
             try {
                 androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
@@ -469,13 +482,13 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 LocalLogger.log(context, "Receiver", "更新前台服务崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
                 // 后台启动前台服务受限时，直接在广播接收器内更新通知兜底
-                val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
+                val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true, islandContentMode)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
                 LocalLogger.log(context, "Receiver", "已降级直接通过接收器更新标准通知")
             }
         } else {
-            val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
+            val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false, islandContentMode)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
             LocalLogger.log(context, "Receiver", "直接通过接收器更新普通标准通知")

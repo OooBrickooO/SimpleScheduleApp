@@ -170,7 +170,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        // 自动清理历史旧版本下载留下的沙盒文件以释放用户空间
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val oldApkFile = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "app-release.apk")
@@ -291,6 +290,7 @@ class MainActivity : ComponentActivity() {
             val isDarkSetting by viewModel.isDarkTheme.collectAsState()
             val isDark = isDarkSetting ?: isSystemDark
             val materialYou by viewModel.materialYou.collectAsState()
+            val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
 
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
@@ -331,7 +331,25 @@ class MainActivity : ComponentActivity() {
                 NavHost(
                     navController = navController,
                     startDestination = "main",
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    enterTransition = { 
+                        fadeIn(animationSpec = tween(300)) + 
+                        slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) +
+                        scaleIn(initialScale = 0.9f, animationSpec = tween(300))
+                    },
+                    exitTransition = { 
+                        fadeOut(animationSpec = tween(300)) + 
+                        scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
+                    },
+                    popEnterTransition = { 
+                        fadeIn(animationSpec = tween(300)) + 
+                        scaleIn(initialScale = 0.9f, animationSpec = tween(300)) 
+                    },
+                    popExitTransition = { 
+                        fadeOut(animationSpec = tween(300)) + 
+                        slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + 
+                        scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
+                    }
                 ) {
                     composable("main") {
                         val currentWeek by viewModel.currentWeek.collectAsState()
@@ -434,6 +452,7 @@ class MainActivity : ComponentActivity() {
                     composable("course_management") {
                         val displayCourses by viewModel.displayCourses.collectAsState()
                         CourseManagementScreen(
+                            viewModel = viewModel,
                             courses = displayCourses.map { it.course }.distinctBy { it.id },
                             isDark = isDark,
                             materialYou = materialYou,
@@ -450,6 +469,7 @@ class MainActivity : ComponentActivity() {
 
                         val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
                         TimetableListScreen(
+                            viewModel = viewModel,
                             timetables = timetableGroups,
                             currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
                             isDark = isDark,
@@ -520,7 +540,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("adjust_course") {
-                        AdjustCourseScreen(isDark = isDark, onBack = { navController.popBackStack() })
+                        AdjustCourseScreen(viewModel = viewModel, isDark = isDark, onBack = { navController.popBackStack() })
                     }
 
                     composable("webview_import") {
@@ -534,6 +554,7 @@ class MainActivity : ComponentActivity() {
                             activeTimeNodes = activeTimeNodes,
                             startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
                             hasCourses = displayCourses.isNotEmpty(),
+                            predictiveBackEnabled = predictiveBackEnabled,
                             onBack = { navController.popBackStack() },
                             onImport = { json ->
                                 viewModel.importFromJson(json) { success ->
