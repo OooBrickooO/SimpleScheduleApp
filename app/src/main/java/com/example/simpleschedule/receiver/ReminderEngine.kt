@@ -251,15 +251,40 @@ object ReminderEngine {
         }
         val showPending = PendingIntent.getBroadcast(context, REQUEST_CODE_REMIND, showIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+        val startIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
+            action = "ACTION_CLASS_START"
+            putExtra("COURSE_NAME", courseName)
+            putExtra("LOCATION", location)
+            putExtra("TIME_STR", timeStr)
+            putExtra("CLASS_START_MILLIS", classStartMillis)
+            putExtra("CLASS_END_MILLIS", classEndMillis)
+            putExtra("COLOR_THEME", colorTheme)
+        }
+        val startPending = PendingIntent.getBroadcast(context, 1004, startIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
         val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
         val cancelPending = PendingIntent.getBroadcast(context, REQUEST_CODE_CANCEL, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
 
-            val alarmClockInfo = android.app.AlarmManager.AlarmClockInfo(triggerMillis, showPending)
-            alarmManager.setAlarmClock(alarmClockInfo, showPending)
-            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classStartMillis, cancelPending)
+            val currentTime = System.currentTimeMillis()
+
+            // 1. 课前提醒闹钟
+            if (triggerMillis > currentTime) {
+                val alarmClockInfo = android.app.AlarmManager.AlarmClockInfo(triggerMillis, showPending)
+                alarmManager.setAlarmClock(alarmClockInfo, showPending)
+            }
+
+            // 2. 上课开始闹钟
+            if (classStartMillis > currentTime) {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classStartMillis, startPending)
+            }
+
+            // 3. 下课结束闹钟
+            if (classEndMillis > currentTime) {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, classEndMillis, cancelPending)
+            }
         } catch (e: SecurityException) { e.printStackTrace() }
     }
 
