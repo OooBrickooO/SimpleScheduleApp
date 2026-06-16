@@ -207,32 +207,48 @@ fun buildCourseNotification(
         )
 
     if (state == NotificationState.UPCOMING) {
-        if (classStartMillis > 0) {
+        if (classStartMillis > 0 && !islandEnabled) {
             builder.setWhen(classStartMillis)
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
         }
         if (islandEnabled) {
             builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortCourse = courseName.take(6)
-            val shortLocation = location.replace("楼", "").take(6)
+            val cleanLocation = location
+                .replace("上课地点：", "")
+                .replace("上课地点:", "")
+                .replace("地点：", "")
+                .replace("地点:", "")
+                .replace("教室：", "")
+                .replace("教室:", "")
+                .replace("楼", "")
+                .trim()
+            val shortLocation = cleanLocation.take(7)
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
         } else {
             builder.setColorized(true)
         }
     } else {
-        if (classEndMillis > 0) {
+        if (classEndMillis > 0 && !islandEnabled) {
             builder.setWhen(classEndMillis)
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
         }
         if (islandEnabled) {
             builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val shortCourse = courseName.take(6)
-            val shortLocation = location.replace("楼", "").take(6)
+            val cleanLocation = location
+                .replace("上课地点：", "")
+                .replace("上课地点:", "")
+                .replace("地点：", "")
+                .replace("地点:", "")
+                .replace("教室：", "")
+                .replace("教室:", "")
+                .replace("楼", "")
+                .trim()
+            val shortLocation = cleanLocation.take(7)
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", "$shortCourse  $shortLocation")
+            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
         } else {
             builder.setColorized(true)
         }
