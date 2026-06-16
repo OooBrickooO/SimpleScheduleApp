@@ -322,7 +322,28 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
             builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
 
-            notificationManager.notify(1001, builder.build())
+            val notification = builder.build()
+            val isOngoing = (notification.flags and android.app.Notification.FLAG_ONGOING_EVENT) != 0
+            val isColorized = notification.extras.getBoolean(android.app.Notification.EXTRA_COLORIZED, false)
+            val hasTitle = notification.extras.getCharSequence(android.app.Notification.EXTRA_TITLE) != null
+            val requestPromoted = notification.extras.getBoolean("android.requestPromotedOngoing", false)
+            val shortText = notification.extras.getCharSequence("android.shortCriticalText")
+
+            var canPostMsg = "SDK < 36"
+            if (Build.VERSION.SDK_INT >= 36) {
+                try {
+                    val canPost = notificationManager.canPostPromotedNotifications()
+                    canPostMsg = canPost.toString()
+                } catch (e: Exception) {
+                    canPostMsg = "Error: ${e.message}"
+                }
+            }
+
+            val logMsg = "CapsuleDebug: ongoing=$isOngoing, colorized=$isColorized, title=$hasTitle, requestPromoted=$requestPromoted, shortText=$shortText, canPostPromoted=$canPostMsg"
+            android.util.Log.d("CapsuleDebug", logMsg)
+            android.widget.Toast.makeText(context, logMsg, android.widget.Toast.LENGTH_LONG).show()
+
+            notificationManager.notify(1001, notification)
         } else {
             val remoteViews = RemoteViews(context.packageName, R.layout.notification_course)
             remoteViews.setTextViewText(R.id.tv_time, timeStr)
