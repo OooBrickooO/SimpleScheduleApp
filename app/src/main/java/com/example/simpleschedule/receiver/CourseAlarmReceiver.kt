@@ -300,6 +300,8 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 .setContentText("地点: ${location.replace("楼", "")}")
                 .setStyle(style)
                 .setColor(accentColor)
+                .setColorized(true)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setOngoing(true)
                 .setContentIntent(openPending)
@@ -316,8 +318,9 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
 
             // Android 15 Live Updates (Promoted Ongoing) Extras
+            val shortLocation = location.replace("楼", "").take(7)
             builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", location.replace("楼", ""))
+            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
 
             notificationManager.notify(1001, builder.build())
         } else {
