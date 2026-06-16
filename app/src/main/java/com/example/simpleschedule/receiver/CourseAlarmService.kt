@@ -1,6 +1,7 @@
 package com.example.simpleschedule.receiver
 
 import android.app.NotificationChannel
+import com.example.simpleschedule.utils.LocalLogger
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
@@ -38,6 +39,8 @@ class CourseAlarmService : Service() {
         val stateStr = intent.getStringExtra("STATE") ?: "UPCOMING"
         val state = if (stateStr == "IN_CLASS") NotificationState.IN_CLASS else NotificationState.UPCOMING
 
+        LocalLogger.log(this, "Service", "onStartCommand: 课程=$courseName, 地点=$location, 状态=$stateStr")
+
         // 使用 CourseAlarmReceiver 中的统一构建函数构建通知
         val notification = buildCourseNotification(
             this,
@@ -56,6 +59,7 @@ class CourseAlarmService : Service() {
         } else {
             startForeground(1001, notification)
         }
+        LocalLogger.log(this, "Service", "成功调用 startForeground 并启动前台通知")
 
         // 设置安全定时器：在下课 5 分钟后自动停止服务（兜底防止电池优化拦截 ACTION_DISMISS_REMINDER 导致服务常驻）
         handler?.let { h ->
@@ -76,11 +80,14 @@ class CourseAlarmService : Service() {
                 handler = Handler(Looper.getMainLooper())
             }
             val r = Runnable {
+                LocalLogger.log(this, "Service", "前台服务安全定时器触发：主动调用 stopSelf() 释放服务")
                 stopSelf()
             }
             stopRunnable = r
             handler?.postDelayed(r, delay)
+            LocalLogger.log(this, "Service", "已注册服务安全保护定时器：将于 ${delay / 1000} 秒后自动清理释放")
         } else {
+            LocalLogger.log(this, "Service", "安全保护延迟小于等于0，立即停止服务")
             stopSelf()
         }
 
@@ -88,6 +95,7 @@ class CourseAlarmService : Service() {
     }
 
     override fun onDestroy() {
+        LocalLogger.log(this, "Service", "onDestroy: 服务销毁并清理定时器")
         super.onDestroy()
         handler?.let { h ->
             stopRunnable?.let { r -> h.removeCallbacks(r) }

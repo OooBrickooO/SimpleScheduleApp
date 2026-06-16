@@ -6,6 +6,7 @@ import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.WidgetUpdateWorker
 import com.example.simpleschedule.MainActivity
+import com.example.simpleschedule.utils.LocalLogger
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -247,6 +248,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
+        LocalLogger.log(context, "Receiver", "onReceive 触发: action=${intent.action}")
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED, "ACTION_UPDATE_WIDGET" -> {
                 val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
@@ -262,6 +264,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
                 val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
+                LocalLogger.log(context, "Receiver", "课前提醒 ACTION_SHOW_REMINDER: 课程=$courseName, 通知=$showNotify, 语音=$playVoice")
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
@@ -367,6 +370,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
                 val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
+                LocalLogger.log(context, "Receiver", "上课开始 ACTION_CLASS_START: 课程=$courseName")
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
                         val prefs = context.dataStore.data.firstOrNull()
@@ -381,6 +385,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 }
             }
             "ACTION_DISMISS_REMINDER" -> {
+                LocalLogger.log(context, "Receiver", "下课清理 ACTION_DISMISS_REMINDER: 取消通知并停止前台服务")
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.cancel(1001)
                 try {
@@ -405,6 +410,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         colorTheme: String,
         islandEnabled: Boolean
     ) {
+        LocalLogger.log(context, "Receiver", "showNotification: 开启胶囊=$islandEnabled, 课程=$courseName")
         if (islandEnabled) {
             val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
                 putExtra("STATE", "UPCOMING")
@@ -417,19 +423,21 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
             try {
                 androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
-                android.util.Log.d("CapsuleDebug", "Started CourseAlarmService for promoted notification")
+                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 启动 CourseAlarmService")
             } catch (e: Exception) {
+                LocalLogger.log(context, "Receiver", "前台服务启动崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
-                android.util.Log.e("CapsuleDebug", "Failed to start CourseAlarmService: ${e.message}")
                 // 后台启动前台服务受限时（如 Android 12+ FGS 限制），直接在广播接收器内弹出标准通知兜底
                 val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
+                LocalLogger.log(context, "Receiver", "已降级直接通过接收器展示标准通知")
             }
         } else {
             val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
+            LocalLogger.log(context, "Receiver", "直接通过接收器展示普通标准通知")
         }
     }
 
@@ -445,6 +453,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         colorTheme: String,
         islandEnabled: Boolean
     ) {
+        LocalLogger.log(context, "Receiver", "updateNotificationState: 状态=$state, 开启胶囊=$islandEnabled")
         if (islandEnabled) {
             val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
                 putExtra("STATE", "IN_CLASS")
@@ -457,19 +466,21 @@ class CourseAlarmReceiver : BroadcastReceiver() {
             }
             try {
                 androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
-                android.util.Log.d("CapsuleDebug", "Updated CourseAlarmService for in-class state")
+                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 更新服务状态 (IN_CLASS)")
             } catch (e: Exception) {
+                LocalLogger.log(context, "Receiver", "更新前台服务崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
-                android.util.Log.e("CapsuleDebug", "Failed to update CourseAlarmService: ${e.message}")
                 // 后台启动前台服务受限时，直接在广播接收器内更新通知兜底
                 val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
+                LocalLogger.log(context, "Receiver", "已降级直接通过接收器更新标准通知")
             }
         } else {
             val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
+            LocalLogger.log(context, "Receiver", "直接通过接收器更新普通标准通知")
         }
     }
 }

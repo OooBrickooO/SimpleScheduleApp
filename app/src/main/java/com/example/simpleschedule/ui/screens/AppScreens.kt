@@ -824,6 +824,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     var hasExactAlarmPermission by remember { mutableStateOf(true) }
     var hasBatteryExemption by remember { mutableStateOf(true) }
     var hasPromotionPermission by remember { mutableStateOf(true) }
+    var showLogDialog by remember { mutableStateOf(false) }
 
     val checkAllPermissions = {
         hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1143,6 +1144,37 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 }
                             )
                         }
+
+                        // 5. 本地日志查看按钮
+                        Divider(color = borderColor, thickness = 0.5.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showLogDialog = true }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Rounded.Info,
+                                    contentDescription = null,
+                                    tint = textColor.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text("本地调试日志", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                                    Text("查看闹钟唤醒与前台服务运行记录", fontSize = 11.sp, color = textColor.copy(alpha = 0.5f))
+                                }
+                            }
+                            Text(
+                                text = "查看 >",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor.copy(alpha = 0.5f)
+                            )
+                        }
                     }
                 }
                 
@@ -1188,6 +1220,86 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                 Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
             }
         }
+    }
+
+    if (showLogDialog) {
+        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+        var logText by remember { mutableStateOf("") }
+        
+        LaunchedEffect(showLogDialog) {
+            logText = LocalLogger.readLogs(context)
+        }
+
+        AlertDialog(
+            onDismissRequest = { showLogDialog = false },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("本地调试日志", color = textColor, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    IconButton(onClick = { showLogDialog = false }) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Close", tint = textColor.copy(alpha = 0.5f))
+                    }
+                }
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(280.dp)
+                            .background(if (isDark) Color(0xFF1E1E1E) else Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                            .border(0.5.dp, borderColor, RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            item {
+                                Text(
+                                    text = logText,
+                                    color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B),
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    lineHeight = 14.sp
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "注：此日志仅记录App自身被唤起与逻辑流转，无法获取系统底层静默屏蔽/丢弃通知的日志喵。",
+                        fontSize = 9.sp,
+                        color = textColor.copy(alpha = 0.4f),
+                        lineHeight = 12.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(logText))
+                        Toast.makeText(context, "已成功复制到剪贴板喵！", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = surfaceColor)
+                ) {
+                    Text("复制全部")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        LocalLogger.clearLogs(context)
+                        logText = "日志已清空喵~"
+                        Toast.makeText(context, "本地日志已清空", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Text("清空日志", color = Color(0xFFDC2626))
+                }
+            },
+            containerColor = surfaceColor,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 }
 

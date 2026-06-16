@@ -4,6 +4,7 @@ import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.widget.CourseWidget
+import com.example.simpleschedule.utils.LocalLogger
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -144,7 +145,10 @@ object ReminderEngine {
     suspend fun calculateAndScheduleNext(context: Context, appDao: AppDao) {
         val prefs = context.dataStore.data.firstOrNull() ?: return
         val enabled = prefs[SettingsKeys.REMINDER_ENABLED] ?: false
-        if (!enabled) return
+        if (!enabled) {
+            LocalLogger.log(context, "ReminderEngine", "上课提醒开关未开启，不进行调度计算")
+            return
+        }
 
         val advanceMins = prefs[SettingsKeys.REMINDER_ADVANCE_MINS] ?: 20
         val isVoiceOn = prefs[SettingsKeys.REMINDER_VOICE_ENABLED] ?: true
@@ -228,6 +232,12 @@ object ReminderEngine {
                 val classEndMillis = endCal.timeInMillis
                 val classStartMillis = nextTriggerTimeMillis + advanceMins * 60000L
                 
+                try {
+                    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    LocalLogger.log(context, "ReminderEngine", "成功计算下一节课：${nextCourseToRemind.name}, 触发时间: ${sdf.format(Date(nextTriggerTimeMillis))}, 上课开始: ${sdf.format(Date(classStartMillis))}, 下课结束: ${sdf.format(Date(classEndMillis))}")
+                } catch (e: Exception) {
+                    LocalLogger.log(context, "ReminderEngine", "格式化下节课时间异常: ${e.message}")
+                }
                 scheduleAlarmByParams(context, nextCourseToRemind.name, nextCourseToRemind.location, "$nextCourseStartStr-$nextCourseEndStr", nextTriggerTimeMillis, classStartMillis, classEndMillis, isNotifyOn, isVoiceOn, nextCourseToRemind.colorTheme)
                 break
             }
@@ -266,7 +276,11 @@ object ReminderEngine {
         val cancelPending = PendingIntent.getBroadcast(context, REQUEST_CODE_CANCEL, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
+            LocalLogger.log(context, "ReminderEngine", "开始向系统注册精确闹钟事件：显示通知=$showNotify, 语音播报=$playVoice, 触发时间=$triggerMillis")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                LocalLogger.log(context, "ReminderEngine", "注册精确闹钟失败：缺少系统精确闹钟权限")
+                return
+            }
 
             val currentTime = System.currentTimeMillis()
 
