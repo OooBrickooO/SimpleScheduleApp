@@ -3181,6 +3181,7 @@ fun AnnouncementDialog(title: String, content: String, isDark: Boolean, onDismis
     val bgColor = if (isDark) Color(0xFF18181B) else Color.White
     val textColor = if (isDark) Color.White else Color.Black
     val borderColor = if (isDark) BorderDark else BorderLight
+    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -3246,7 +3247,10 @@ fun AnnouncementDialog(title: String, content: String, isDark: Boolean, onDismis
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
@@ -3254,9 +3258,27 @@ fun AnnouncementDialog(title: String, content: String, isDark: Boolean, onDismis
                             contentColor = textColor
                         ),
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(44.dp).fillMaxWidth()
+                        modifier = Modifier.height(44.dp).weight(1f)
                     ) {
                         Text("我知道了", fontWeight = FontWeight.Bold)
+                    }
+
+                    Button(
+                        onClick = {
+                            try {
+                                uriHandler.openUri("https://www.lingflame.cn")
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isDark) Color(0xFF90CDF4) else Color(0xFF3182CE),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.height(44.dp).weight(1f)
+                    ) {
+                        Text("前往官网", fontWeight = FontWeight.Bold)
                     }
                 }
             }
