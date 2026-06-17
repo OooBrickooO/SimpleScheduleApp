@@ -174,7 +174,6 @@ fun buildCourseNotification(
         addCategory("android.intent.category.NAVIGATION") // 兼容 ColorOS 16 要求的标准场景类别
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
-    // ColorOS 16 强制要求 PendingIntent 必须是可变的 (FLAG_MUTABLE)
     val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
 
     val palette = try {
@@ -282,8 +281,8 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val pendingResult = goAsync()
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                        val prefs = context.dataStore.data.first()
+                        val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
 
                         if (showNotify) {
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -310,8 +309,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                                         pendingResult.finish()
                                     }
                                 }
-                                
-                                // 8秒安全超时限制，确保广播接收器不挂起并防止ANR
+
                                 handler.postDelayed(timeoutRunnable, 8000)
 
                                 tts = TextToSpeech(context) { status ->
@@ -387,8 +385,8 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 LocalLogger.log(context, "Receiver", "上课开始 ACTION_CLASS_START: 课程=$courseName")
                 kotlinx.coroutines.GlobalScope.launch {
                     try {
-                        val prefs = context.dataStore.data.firstOrNull()
-                        val islandEnabled = prefs?.get(SettingsKeys.DYNAMIC_ISLAND_ENABLED) ?: false
+                        val prefs = context.dataStore.data.first()
+                        val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
 
                         android.os.Handler(android.os.Looper.getMainLooper()).post {
                             updateNotificationState(context, NotificationState.IN_CLASS, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)

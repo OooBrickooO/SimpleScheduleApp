@@ -39,7 +39,9 @@ import android.webkit.WebViewClient
 import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import android.window.BackEvent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -148,6 +150,51 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.roundToInt
+
+@Composable
+fun AppBackHandler(enabled: Boolean, onBack: () -> Unit): Modifier {
+    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        var scale by remember { mutableStateOf(1f) }
+        var translateX by remember { mutableStateOf(0f) }
+        var cornerRadius by remember { mutableStateOf(0.dp) }
+
+        PredictiveBackHandler { progress ->
+            try {
+                progress.collect { event ->
+                    scale = 1f - (event.progress * 0.08f)
+                    translateX = if (event.swipeEdge == BackEvent.EDGE_LEFT) {
+                        event.progress * 56f
+                    } else {
+                        -event.progress * 56f
+                    }
+                    cornerRadius = (event.progress * 24).dp
+                }
+                onBack()
+                scale = 1f
+                translateX = 0f
+                cornerRadius = 0.dp
+            } catch (e: Exception) {
+                scale = 1f
+                translateX = 0f
+                cornerRadius = 0.dp
+            }
+        }
+
+        return Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                translationX = translateX
+                if (cornerRadius > 0.dp) {
+                    clip = true
+                    shape = RoundedCornerShape(cornerRadius)
+                }
+            }
+    } else {
+        BackHandler(enabled = true, onBack = onBack)
+        return Modifier
+    }
+}
 
 @Composable
 fun DotMatrixBackground(isDark: Boolean) {
@@ -650,9 +697,10 @@ fun ScheduleSettingsScreen(
     val cellHeightDp by viewModel.cellHeight.collectAsState()
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
 
-    BackHandler { onBack() }
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -758,9 +806,10 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     val cellHeightDp by viewModel.cellHeight.collectAsState()
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
 
-    BackHandler { onBack() }
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -867,9 +916,10 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
         }
     }
 
-    BackHandler { onBack() }
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -888,7 +938,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                     Column {
                         SettingCheckboxItemWithSubtext(
                             title = "启用上课提醒",
-                            subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限。",
+                            subtext = "在系统后台自动计算下一节课的时间，并在上课前通过闹钟准时触发提醒。需确保已授予后台允许及精确闹钟权限",
                             checked = reminderEnabled,
                             onCheckedChange = { checked ->
                                 if (checked) {
@@ -927,7 +977,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报。",
+                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报",
                                     fontSize = 10.sp,
                                     color = textColor.copy(alpha = 0.6f),
                                     lineHeight = 14.sp
@@ -980,18 +1030,19 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                     modifier = Modifier
                                         .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
                                         .background(if (isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp)
                                 ) {
-                                    SettingCheckboxItemWithSubtext(
-                                        title = "开启课前灵动通知 (状态栏胶囊)",
-                                        subtext = "仅适用于安卓16+",
-                                        checked = dynamicIslandEnabled,
-                                        onCheckedChange = { viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, it) },
-                                        textColor = textColor,
-                                        borderColor = Color.Transparent,
-                                        isDark = isDark,
-                                        showBottomBorder = false
-                                    )
+                                    Column {
+                                        SettingCheckboxItemWithSubtext(
+                                            title = "使用实时通知",
+                                            subtext = "在支持的系统上显示实时通知，需要Android 16+",
+                                            checked = dynamicIslandEnabled,
+                                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, it) },
+                                            textColor = textColor,
+                                            borderColor = if (dynamicIslandEnabled) borderColor.copy(alpha = 0.2f) else Color.Transparent,
+                                            isDark = isDark,
+                                            showBottomBorder = false
+                                        )
+                                    }
                                 }
                             }
 
@@ -1125,7 +1176,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                         if (Build.VERSION.SDK_INT >= 36) {
                             PermissionCheckRow(
                                 title = "实况通知权限 (安卓16+)",
-                                description = "允许在状态栏展示实况胶囊/Live Update倒计时",
+                                description = "允许在状态栏展示实时通知/Live Update倒计时",
                                 granted = hasPromotionPermission,
                                 isDark = isDark,
                                 textColor = textColor,
@@ -1165,7 +1216,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                "后台兼容与流体云适配建议",
+                                "后台兼容与实时通知适配建议",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isDark) Color(0xFFFDBA74) else Color(0xFFC2410C)
@@ -1173,11 +1224,12 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "对于国产定制系统，为保证提醒准时与流体云胶囊正常显示：\n" +
-                            "1. 【ColorOS 16】流体云需要进入「设置-通知与控制中心-流体云」，拉到最下方为应用单独勾选「允许显示流体云」。\n" +
-                            "2. 【ColorOS 16】需要进入「设置-小布助手-小布建议」，开启通勤等对应的场景开关，否则胶囊会被静默丢弃喵。\n" +
+                            "对于国产定制系统，为保证提醒准时与实时通知正常显示：\n" +
+                            "1. ColorOS 16 流体云需要进入「设置-通知与控制中心-流体云」，拉到最下方为应用单独勾选「允许显示流体云」。\n" +
+                            "2. ColorOS 16 需要进入「设置-小布助手-小布建议」，开启通勤等对应的场景开关，否则胶囊会被静默丢弃喵。\n" +
                             "3. 通用设置：请开启应用的「自启动」或「允许后台启动」权限，并将省电策略设为「无限制」或「允许高耗电」。\n" +
-                            "4. 如有异常，可尝试在开发者选项中开启「流体云调试模式」排查拦截原因，或清除「智慧决策服务」等系统组件 of 缓存喵。",
+                            "4. 如有异常，可尝试在开发者选项中开启「流体云调试模式」排查拦截原因，或清除「智慧决策服务」等系统组件 of 缓存喵。\n" +
+                            "5. 小米系列设备发送实时通知需要 HyperOS 3.0.300 以上版本，并且需要运行APP在后台运行",
                             fontSize = 11.sp,
                             color = textColor.copy(alpha = 0.7f),
                             lineHeight = 16.sp
@@ -1260,10 +1312,9 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
     val autoUpdate by viewModel.autoUpdate.collectAsState()
     val widgetTranslucent by viewModel.widgetTranslucent.collectAsState()
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1848,6 +1899,7 @@ fun WebViewImportScreen(
     activeTimeNodes: List<TimeNode>,
     startDate: String,
     hasCourses: Boolean,
+    predictiveBackEnabled: Boolean,
     onBack: () -> Unit,
     onImport: (String) -> Unit
 ) {
@@ -1891,7 +1943,7 @@ fun WebViewImportScreen(
         }
     }
 
-    BackHandler {
+    val backModifier = AppBackHandler(predictiveBackEnabled) {
         if (stage != ImportStage.SELECT_MODE) {
             stage = ImportStage.SELECT_MODE
         } else if (selectedSystem != null) {
@@ -1940,7 +1992,7 @@ fun WebViewImportScreen(
 
     val alphabet = ('A'..'Z').toList()
 
-    Column(modifier = Modifier.fillMaxSize().imePadding()) {
+    Column(modifier = Modifier.fillMaxSize().imePadding().then(backModifier)) {
         when (stage) {
             ImportStage.SELECT_MODE -> {
                 Row(
@@ -2645,15 +2697,17 @@ fun parseQingGuoXls(inputStream: InputStream): String? {
 }
 
 @Composable
-fun TimetableListScreen(timetables: List<TimetableGroup>, currentLinkedId: String, isDark: Boolean, onBack: () -> Unit, onSelect: (String) -> Unit, onEdit: (String?) -> Unit, onDelete: (String) -> Unit) {
+fun TimetableListScreen(viewModel: ScheduleViewModel, timetables: List<TimetableGroup>, currentLinkedId: String, isDark: Boolean, onBack: () -> Unit, onSelect: (String) -> Unit, onEdit: (String?) -> Unit, onDelete: (String) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
 
-    BackHandler { onBack() }
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
+
     var timetableIdToDelete by remember { mutableStateOf<String?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier
@@ -2747,6 +2801,9 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color.White
     val context = LocalContext.current
 
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
+
     var name by remember { mutableStateOf("") }
     var isSameDuration by remember { mutableStateOf(true) }
     var classDuration by remember { mutableStateOf("45") }
@@ -2768,9 +2825,7 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
         }
     }
 
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -2869,13 +2924,16 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
 }
 
 @Composable
-fun CourseManagementScreen(courses: List<Course>, isDark: Boolean, materialYou: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
+fun CourseManagementScreen(viewModel: ScheduleViewModel, courses: List<Course>, isDark: Boolean, materialYou: Boolean, onBack: () -> Unit, onEditCourse: (Course) -> Unit, onDeleteCourse: (String) -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
-    BackHandler { onBack() }
+
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
+
     var courseIdToDelete by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -3732,14 +3790,15 @@ fun CourseEditDialog(
 }
 
 @Composable
-fun AdjustCourseScreen(isDark: Boolean, onBack: () -> Unit) {
+fun AdjustCourseScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: () -> Unit) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
 
-    BackHandler { onBack() }
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
