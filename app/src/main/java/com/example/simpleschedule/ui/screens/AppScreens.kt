@@ -1040,38 +1040,8 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                             textColor = textColor,
                                             borderColor = if (dynamicIslandEnabled) borderColor.copy(alpha = 0.2f) else Color.Transparent,
                                             isDark = isDark,
-                                            showBottomBorder = dynamicIslandEnabled
+                                            showBottomBorder = false
                                         )
-                                        
-                                        if (dynamicIslandEnabled) {
-                                            val dynamicIslandContentMode by viewModel.dynamicIslandContentMode.collectAsState()
-                                            var showContentDialog by remember { mutableStateOf(false) }
-                                            
-                                            SettingValueItem(
-                                                title = "胶囊显示内容自定义",
-                                                value = when(dynamicIslandContentMode) {
-                                                    1 -> "仅课程"
-                                                    2 -> "仅地点"
-                                                    else -> "课程 + 地点"
-                                                },
-                                                textColor = textColor,
-                                                borderColor = Color.Transparent,
-                                                showBottomBorder = false,
-                                                onClick = { showContentDialog = true }
-                                            )
-                                            
-                                            if (showContentDialog) {
-                                                CapsuleContentDialog(
-                                                    currentMode = dynamicIslandContentMode,
-                                                    isDark = isDark,
-                                                    onDismiss = { showContentDialog = false },
-                                                    onConfirm = { mode ->
-                                                        viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_CONTENT_MODE, mode)
-                                                        showContentDialog = false
-                                                    }
-                                                )
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -3405,55 +3375,6 @@ fun CreateScheduleDialog(isDark: Boolean, onDismiss: () -> Unit, onConfirm: (Str
                     Button(onClick = { if(name.isNotBlank()) onConfirm(name) }, colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = bgColor), shape = RoundedCornerShape(4.dp)) {
                         Text("创建")
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CapsuleContentDialog(currentMode: Int, isDark: Boolean, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
-    val bgColor = if (isDark) Color(0xFF18181B) else Color.White
-    val textColor = if (isDark) Color.White else Color.Black
-    val borderColor = if (isDark) BorderDark else BorderLight
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(12.dp), color = bgColor, modifier = Modifier.padding(16.dp)) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("胶囊内容自定义", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                val modes = listOf("课程 + 地点", "仅课程", "仅地点")
-                modes.forEachIndexed { index, mode ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onConfirm(index) }
-                            .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(mode, fontSize = 16.sp, color = textColor)
-                        RadioButton(
-                            selected = currentMode == index,
-                            onClick = { onConfirm(index) },
-                            colors = RadioButtonDefaults.colors(selectedColor = textColor, unselectedColor = textColor.copy(alpha = 0.4f))
-                        )
-                    }
-                    if (index < modes.size - 1) Divider(color = borderColor, thickness = 0.5.dp)
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "提示：标准大小下可显示约 12-14 个字符。选择「课程 + 地点」时各占 6 个字符喵。",
-                    fontSize = 11.sp,
-                    color = textColor.copy(alpha = 0.5f),
-                    lineHeight = 16.sp
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("关闭", color = textColor.copy(alpha = 0.6f)) }
                 }
             }
         }

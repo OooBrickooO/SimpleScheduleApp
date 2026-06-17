@@ -37,7 +37,6 @@ class CourseAlarmService : Service() {
         val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
         val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
         val stateStr = intent.getStringExtra("STATE") ?: "UPCOMING"
-        val islandContentMode = intent.getIntExtra("ISLAND_CONTENT_MODE", 0)
         val state = if (stateStr == "IN_CLASS") NotificationState.IN_CLASS else NotificationState.UPCOMING
 
         LocalLogger.log(this, "Service", "onStartCommand: 课程=$courseName, 地点=$location, 状态=$stateStr")
@@ -51,8 +50,7 @@ class CourseAlarmService : Service() {
             classStartMillis,
             classEndMillis,
             colorTheme,
-            true,
-            islandContentMode
+            true
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
