@@ -1,6 +1,6 @@
 {
   "versionCode": 14,
-  "versionName": "2.6.8.0616",
+  "versionName": "2.6.8.0617",
   "changelog": "1. 优化流体云胶囊文字排版，过滤地点文本前缀并仅显示精简地点关键字。\n2. 解决状态栏摄像头旁的无效倒计时占位与文本截断问题。",
   "apkUrl": "https://www.lingflame.cn/download.php",
   "forceUpdate": false
