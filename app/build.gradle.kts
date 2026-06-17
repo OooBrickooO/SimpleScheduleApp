@@ -13,7 +13,7 @@ android {
         applicationId = "com.seekai.simpleschedule"
         minSdk = 24
         targetSdk = 36
-        versionCode = 14
+        versionCode = 15
         versionName = "2.6.9.0617"
 
 
