@@ -1,7 +1,7 @@
 {
   "versionCode": 14,
   "versionName": "2.6.8.0617",
-  "changelog": "1. 优化流体云胶囊文字排版，过滤地点文本前缀并仅显示精简地点关键字。\n2. 解决状态栏摄像头旁的无效倒计时占位与文本截断问题。",
+  "changelog": "1. 修复了 Android 14+ 预测式返回手势（Predictive Back Gesture）不工作的相关问题。\n2. 进一步优化状态栏流体云胶囊文字排版，过滤冗余前缀并展示精简地点关键字。\n3. 解决状态栏摄像头旁的无效倒计时占位与文本截断问题。",
   "apkUrl": "https://www.lingflame.cn/download.php",
   "forceUpdate": false
 }
