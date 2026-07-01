@@ -1202,8 +1202,8 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(if (isDark) Color(0xFF1C1917) else Color(0xFFFBFBFB), RoundedCornerShape(12.dp))
-                        .border(0.5.dp, borderColor, RoundedCornerShape(12.dp))
+                        .background(if (isDark) Color(0xFF291E1A) else Color(0xFFFFF7ED), RoundedCornerShape(12.dp))
+                        .border(0.5.dp, if (isDark) Color(0xFF78350F) else Color(0xFFFED7AA), RoundedCornerShape(12.dp))
                         .padding(16.dp)
                 ) {
                     Column {
@@ -1211,7 +1211,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             Icon(
                                 Icons.Rounded.Info,
                                 contentDescription = "OEM Tips",
-                                tint = if (isDark) Color(0xFFFDBA74) else Color(0xFFC2410C),
+                                tint = if (isDark) Color(0xFFFDBA74) else Color(0xFFEA580C),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -1224,6 +1224,8 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
+                            "【重要提醒】\n" +
+                            "部分系统（如 ColorOS、OriginOS、HyperOS、HarmonyOS）在执行「一键清理/优化内存」时会强制注销本应用的所有后台提醒闹钟。若想保证提醒 100% 准时，请务必在「最近任务/多任务卡片」页面对本应用卡片下拉加锁，并确保开启「自启动」与电池「无限制」权限喵！\n\n" +
                             "对于国产定制系统，为保证提醒准时与实时通知正常显示：\n" +
                             "1. ColorOS 16 流体云需要进入「设置-通知与控制中心-流体云」，拉到最下方为应用单独勾选「允许显示流体云」。\n" +
                             "2. ColorOS 16 需要进入「设置-小布助手-小布建议」，开启通勤等对应的场景开关，否则胶囊会被静默丢弃喵。\n" +
@@ -1231,7 +1233,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             "4. 如有异常，可尝试在开发者选项中开启「流体云调试模式」排查拦截原因，或清除「智慧决策服务」等系统组件 of 缓存喵。\n" +
                             "5. 小米系列设备发送实时通知需要 HyperOS 3.0.300 以上版本，并且需要运行APP在后台运行",
                             fontSize = 11.sp,
-                            color = textColor.copy(alpha = 0.7f),
+                            color = textColor.copy(alpha = 0.85f),
                             lineHeight = 16.sp
                         )
                     }

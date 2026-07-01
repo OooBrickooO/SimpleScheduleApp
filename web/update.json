@@ -1,7 +1,7 @@
 {
-  "versionCode": 15,
-  "versionName": "2.6.9.0617",
-  "changelog": "1. 修复了 Android 14+ 预测式返回手势（Predictive Back Gesture）不工作的相关问题。\n2. 进一步优化状态栏流体云胶囊文字排版，过滤冗余前缀并展示精简地点关键字。\n3. 解决状态栏摄像头旁的无效倒计时占位与文本截断问题。",
-  "apkUrl": "https://www.lingflame.cn/download.php",
+  "versionCode": 16,
+  "versionName": "2.6.10.0702",
+  "changelog": "1. 优化课前提醒与流体云通知的准时性，解决部分定制系统下一门课上完后提醒不消失的问题。\n2. 增加针对国产定制系统的权限引导提示（包含自启动、电池无限制、流体云允许等）。\n3. 【注意】如果一键优化内存会导致提醒失效，请务必在多任务页面对应用加锁并确保开启自启动。",
+  "apkUrl": "https://www.lingflame.cn/download.php?from=app",
   "forceUpdate": false
 }

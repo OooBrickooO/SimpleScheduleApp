@@ -205,6 +205,13 @@ fun buildCourseNotification(
             cancelPending
         )
 
+    if (classEndMillis > 0) {
+        val duration = classEndMillis - System.currentTimeMillis()
+        if (duration > 0) {
+            builder.setTimeoutAfter(duration)
+        }
+    }
+
     if (state == NotificationState.UPCOMING) {
         if (classStartMillis > 0 && !islandEnabled) {
             builder.setWhen(classStartMillis)
