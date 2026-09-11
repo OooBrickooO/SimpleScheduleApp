@@ -166,5 +166,7 @@ object SettingsKeys {
     val DYNAMIC_ISLAND_ENABLED = booleanPreferencesKey("dynamic_island_enabled")
     val LAST_SEEN_ANNOUNCEMENT_ID = stringPreferencesKey("last_seen_announcement_id")
     val PREDICTIVE_BACK_ENABLED = booleanPreferencesKey("predictive_back_enabled")
+    val FLOATING_BOTTOM_BAR = booleanPreferencesKey("floating_bottom_bar")
+    val TAB_ANIMATION_TYPE = stringPreferencesKey("tab_animation_type")
 }
 

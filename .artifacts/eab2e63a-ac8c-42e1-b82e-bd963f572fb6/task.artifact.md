@@ -1,0 +1,7 @@
+- `[x]` 为 `BottomNavBar` 增加高亮聚焦背景（Indicator）
+- `[x]` 实现 Indicator 的滑动切换动画
+- `[x]` 优化 `NavBarItem` 的选中状态视觉对比度
+- `[x]` 验证在亮暗模式下的显示效果与动画流畅度
+- `[x]` 在 `ReminderSettingsScreen` 为一级提醒设置添加 `AnimatedVisibility`
+- `[x]` 为通知子项设置添加嵌套的 `AnimatedVisibility`
+- `[x]` 验证二级菜单展开/收起的丝滑程度

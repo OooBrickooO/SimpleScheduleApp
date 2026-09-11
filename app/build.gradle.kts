@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.example.simpleschedule"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.seekai.simpleschedule"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 16
-        versionName = "2.6.10.0702"
+        versionName = "2.7.2.0908"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

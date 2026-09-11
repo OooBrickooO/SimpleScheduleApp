@@ -38,6 +38,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -168,7 +169,13 @@ class MainActivity : ComponentActivity() {
     private var downloadedSizeLabel by mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         super.onCreate(savedInstanceState)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -325,50 +332,63 @@ class MainActivity : ComponentActivity() {
                     label = "bg"
                 )
 
-                Surface(modifier = Modifier.fillMaxSize(), color = animatedBgColor) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(animatedBgColor)
+                ) {
                     DotMatrixBackground(isDark = isDark)
 
-                NavHost(
-                    navController = navController,
-                    startDestination = "main",
-                    modifier = Modifier.fillMaxSize(),
-                    enterTransition = { 
-                        fadeIn(animationSpec = tween(300)) + 
-                        slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) +
-                        scaleIn(initialScale = 0.9f, animationSpec = tween(300))
-                    },
-                    exitTransition = { 
-                        fadeOut(animationSpec = tween(300)) + 
-                        scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
-                    },
-                    popEnterTransition = { 
-                        fadeIn(animationSpec = tween(300)) + 
-                        scaleIn(initialScale = 0.9f, animationSpec = tween(300)) 
-                    },
-                    popExitTransition = { 
-                        fadeOut(animationSpec = tween(300)) + 
-                        slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + 
-                        scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
-                    }
-                ) {
-                    composable("main") {
-                        val currentWeek by viewModel.currentWeek.collectAsState()
-                        val displayCourses by viewModel.displayCourses.collectAsState()
-                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
-                        val totalWeeks by viewModel.totalWeeks.collectAsState()
+                    NavHost(
+                            navController = navController,
+                            startDestination = "main",
+                            modifier = Modifier.fillMaxSize(),
+                            enterTransition = { 
+                                fadeIn(animationSpec = tween(300)) + 
+                                slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) +
+                                scaleIn(initialScale = 0.9f, animationSpec = tween(300))
+                            },
+                            exitTransition = { 
+                                fadeOut(animationSpec = tween(300)) + 
+                                scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
+                            },
+                            popEnterTransition = { 
+                                fadeIn(animationSpec = tween(300)) + 
+                                scaleIn(initialScale = 0.9f, animationSpec = tween(300)) 
+                            },
+                            popExitTransition = { 
+                                fadeOut(animationSpec = tween(300)) + 
+                                slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(300)) + 
+                                scaleOut(targetScale = 0.9f, animationSpec = tween(300)) 
+                            }
+                        ) {
+                            composable("main") {
+                                val currentWeek by viewModel.currentWeek.collectAsState()
+                                val displayCourses by viewModel.displayCourses.collectAsState()
+                                val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                                val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                                val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+                                val totalWeeks by viewModel.totalWeeks.collectAsState()
+                                val floatingBottomBar by viewModel.floatingBottomBar.collectAsState()
+                                val tabAnimationType by viewModel.tabAnimationType.collectAsState()
 
-                        Scaffold(
-                            containerColor = Color.Transparent,
-                            bottomBar = { BottomNavBar(isDark = isDark, currentTab = currentTab, onTabSelected = { currentTab = it }) }
-                        ) { paddingValues ->
-                            Crossfade(
-                                targetState = currentTab,
-                                label = "tab_anim",
-                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
-                            ) { tab ->
-                                Box(modifier = Modifier.padding(paddingValues)) {
+                                AnimatedContent(
+                                    targetState = currentTab,
+                                    label = "tab_anim",
+                                    transitionSpec = {
+                                        if (tabAnimationType == "Slide") {
+                                            if (targetState > initialState) {
+                                                // 向左滑动切入 (进入 '我的')
+                                                (slideInHorizontally { it } + fadeIn()).togetherWith(slideOutHorizontally { -it } + fadeOut())
+                                            } else {
+                                                // 向右滑动切入 (进入 '课表')
+                                                (slideInHorizontally { -it } + fadeIn()).togetherWith(slideOutHorizontally { it } + fadeOut())
+                                            }
+                                        } else {
+                                            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                                        }
+                                    }
+                                ) { tab ->
                                     if (tab == 0) {
                                         TimetableScreen(
                                             viewModel = viewModel,
@@ -446,131 +466,150 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
+
+                            composable("course_management") {
+                                val displayCourses by viewModel.displayCourses.collectAsState()
+                                CourseManagementScreen(
+                                    viewModel = viewModel,
+                                    courses = displayCourses.map { it.course }.distinctBy { it.id },
+                                    isDark = isDark,
+                                    materialYou = materialYou,
+                                    onBack = { navController.popBackStack() },
+                                    onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                    onDeleteCourse = { viewModel.deleteCourse(it) }
+                                )
+                            }
+
+                            composable("timetable_list") {
+                                val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                                val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                                val timetableGroups by viewModel.timetableGroups.collectAsState()
+
+                                val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
+                                TimetableListScreen(
+                                    viewModel = viewModel,
+                                    timetables = timetableGroups,
+                                    currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
+                                    onEdit = { id -> editingTimetableId = id; navController.navigate("timetable_edit") },
+                                    onDelete = { viewModel.deleteTimetable(it) }
+                                )
+                            }
+
+                            composable("timetable_edit") {
+                                val timetableGroups by viewModel.timetableGroups.collectAsState()
+
+                                TimetableEditScreen(
+                                    timetableId = editingTimetableId,
+                                    timetables = timetableGroups,
+                                    viewModel = viewModel,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onSave = { id, name, nodes ->
+                                        viewModel.saveTimetable(id, name, nodes)
+                                        navController.popBackStack()
+                                    }
+                                )
+                            }
+
+                            composable("schedule_settings") {
+                                val currentWeek by viewModel.currentWeek.collectAsState()
+                                val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                                val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                                val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+                                val totalWeeks by viewModel.totalWeeks.collectAsState()
+
+                                ScheduleSettingsScreen(
+                                    viewModel = viewModel,
+                                    scheduleGroups = scheduleGroups,
+                                    currentScheduleId = currentScheduleId,
+                                    currentWeek = currentWeek,
+                                    timeNodeCount = activeTimeNodes.size,
+                                    totalWeeks = totalWeeks,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
+                                    onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
+                                    onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
+                                    onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
+                                    onManageTimetableClick = { navController.navigate("timetable_list") },
+                                    onManageCoursesClick = { navController.navigate("course_management") },
+                                    onMoreAppearanceClick = { navController.navigate("appearance_settings") }
+                                )
+                            }
+
+                            composable("appearance_settings") {
+                                AppearanceSettingsScreen(
+                                    viewModel = viewModel,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+
+                            composable("global_settings") {
+                                GlobalSettingsScreen(
+                                    viewModel = viewModel,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onAdjustCourseClick = { navController.navigate("adjust_course") }
+                                )
+                            }
+
+                            composable("adjust_course") {
+                                AdjustCourseScreen(viewModel = viewModel, isDark = isDark, onBack = { navController.popBackStack() })
+                            }
+
+                            composable("webview_import") {
+                                val displayCourses by viewModel.displayCourses.collectAsState()
+                                val scheduleGroups by viewModel.scheduleGroups.collectAsState()
+                                val currentScheduleId by viewModel.currentScheduleId.collectAsState()
+                                val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+
+                                WebViewImportScreen(
+                                    isDark = isDark,
+                                    activeTimeNodes = activeTimeNodes,
+                                    startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
+                                    hasCourses = displayCourses.isNotEmpty(),
+                                    predictiveBackEnabled = predictiveBackEnabled,
+                                    onBack = { navController.popBackStack() },
+                                    onImport = { json ->
+                                        viewModel.importFromJson(json) { success ->
+                                            Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
+                                            if (success) navController.popBackStack("main", inclusive = false)
+                                        }
+                                    }
+                                )
+                            }
+
+                            composable("reminder_settings") {
+                                ReminderSettingsScreen(
+                                    viewModel = viewModel,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
                         }
-                    }
 
-                    composable("course_management") {
-                        val displayCourses by viewModel.displayCourses.collectAsState()
-                        CourseManagementScreen(
-                            viewModel = viewModel,
-                            courses = displayCourses.map { it.course }.distinctBy { it.id },
-                            isDark = isDark,
-                            materialYou = materialYou,
-                            onBack = { navController.popBackStack() },
-                            onEditCourse = { courseToEdit = it; showAddDialog = true },
-                            onDeleteCourse = { viewModel.deleteCourse(it) }
-                        )
-                    }
-
-                    composable("timetable_list") {
-                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-                        val timetableGroups by viewModel.timetableGroups.collectAsState()
-
-                        val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
-                        TimetableListScreen(
-                            viewModel = viewModel,
-                            timetables = timetableGroups,
-                            currentLinkedId = currentSchedule?.timetableId ?: "tt_cjlu",
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() },
-                            onSelect = { viewModel.linkTimetableToCurrentSchedule(it) },
-                            onEdit = { id -> editingTimetableId = id; navController.navigate("timetable_edit") },
-                            onDelete = { viewModel.deleteTimetable(it) }
-                        )
-                    }
-
-                    composable("timetable_edit") {
-                        val timetableGroups by viewModel.timetableGroups.collectAsState()
-
-                        TimetableEditScreen(
-                            timetableId = editingTimetableId,
-                            timetables = timetableGroups,
-                            viewModel = viewModel,
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() },
-                            onSave = { id, name, nodes ->
-                                viewModel.saveTimetable(id, name, nodes)
-                                navController.popBackStack()
+                        // 将底栏放置在 NavHost 同级的 Box 中，作为顶层 Overlay
+                        // 只在 "main" 路由下显示（简单起见，这里演示主逻辑）
+                        val floatingBottomBar by viewModel.floatingBottomBar.collectAsState()
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        if (navBackStackEntry?.destination?.route == "main") {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .background(Color.Transparent)
+                            ) {
+                                BottomNavBar(
+                                    isDark = isDark,
+                                    isFloating = floatingBottomBar,
+                                    currentTab = currentTab,
+                                    onTabSelected = { currentTab = it }
+                                )
                             }
-                        )
-                    }
-
-                    composable("schedule_settings") {
-                        val currentWeek by viewModel.currentWeek.collectAsState()
-                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
-                        val totalWeeks by viewModel.totalWeeks.collectAsState()
-
-                        ScheduleSettingsScreen(
-                            viewModel = viewModel,
-                            scheduleGroups = scheduleGroups,
-                            currentScheduleId = currentScheduleId,
-                            currentWeek = currentWeek,
-                            timeNodeCount = activeTimeNodes.size,
-                            totalWeeks = totalWeeks,
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() },
-                            onRenameSchedule = { id, newName -> viewModel.renameSchedule(id, newName) },
-                            onWeekChange = { viewModel.updateWeekAndReverseCalculateStartDate(currentScheduleId, it) },
-                            onStartDateChange = { viewModel.updateScheduleStartDate(currentScheduleId, it) },
-                            onTotalWeeksChange = { viewModel.updateSetting(SettingsKeys.TOTAL_WEEKS, it) },
-                            onManageTimetableClick = { navController.navigate("timetable_list") },
-                            onManageCoursesClick = { navController.navigate("course_management") },
-                            onMoreAppearanceClick = { navController.navigate("appearance_settings") }
-                        )
-                    }
-
-                    composable("appearance_settings") {
-                        AppearanceSettingsScreen(
-                            viewModel = viewModel,
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() }
-                        )
-                    }
-
-                    composable("global_settings") {
-                        GlobalSettingsScreen(
-                            viewModel = viewModel,
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() },
-                            onAdjustCourseClick = { navController.navigate("adjust_course") }
-                        )
-                    }
-
-                    composable("adjust_course") {
-                        AdjustCourseScreen(viewModel = viewModel, isDark = isDark, onBack = { navController.popBackStack() })
-                    }
-
-                    composable("webview_import") {
-                        val displayCourses by viewModel.displayCourses.collectAsState()
-                        val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-                        val currentScheduleId by viewModel.currentScheduleId.collectAsState()
-                        val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
-
-                        WebViewImportScreen(
-                            isDark = isDark,
-                            activeTimeNodes = activeTimeNodes,
-                            startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
-                            hasCourses = displayCourses.isNotEmpty(),
-                            predictiveBackEnabled = predictiveBackEnabled,
-                            onBack = { navController.popBackStack() },
-                            onImport = { json ->
-                                viewModel.importFromJson(json) { success ->
-                                    Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
-                                    if (success) navController.popBackStack("main", inclusive = false)
-                                }
-                            }
-                        )
-                    }
-
-                    composable("reminder_settings") {
-                        ReminderSettingsScreen(
-                            viewModel = viewModel,
-                            isDark = isDark,
-                            onBack = { navController.popBackStack() }
-                        )
+                        }
                     }
                 }
 
@@ -660,8 +699,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
 
     override fun onDestroy() {
         super.onDestroy()
@@ -792,7 +829,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     cursor.close()
-} else {
+                } else {
                     downloading = false
                 }
                 delay(300)
@@ -1124,5 +1161,3 @@ fun DownloadProgressDialog(
         }
     }
 }
-
-// --- 组件部分 ---

@@ -49,6 +49,7 @@ import androidx.activity.viewModels
 import androidx.compose.animation.*
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -215,34 +216,137 @@ fun DotMatrixBackground(isDark: Boolean) {
 }
 
 @Composable
-fun BottomNavBar(isDark: Boolean, currentTab: Int, onTabSelected: (Int) -> Unit) {
+fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, onTabSelected: (Int) -> Unit) {
     val borderColor = if (isDark) BorderDark else BorderLight
     val activeColor = if (isDark) Color.White else Color.Black
     val inactiveColor = if (isDark) Color.White.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.4f)
+    
+    // 指示器背景色
+    val indicatorColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(if (isDark) BgDark.copy(alpha = 0.9f) else BgLight.copy(alpha = 0.9f))
-            .border(0.5.dp, borderColor)
-            .navigationBarsPadding()
-            .padding(vertical = 12.dp, horizontal = 32.dp),
-        horizontalArrangement = Arrangement.SpaceAround
-    ) {
-        NavBarItem(icon = Icons.Rounded.DateRange, label = "TIMETABLE", isActive = currentTab == 0, color = if (currentTab == 0) activeColor else inactiveColor, onClick = { onTabSelected(0) })
-        NavBarItem(icon = Icons.Rounded.Person, label = "PROFILE", isActive = currentTab == 1, color = if (currentTab == 1) activeColor else inactiveColor, onClick = { onTabSelected(1) })
+    if (isFloating) {
+        Box(
+            modifier = Modifier
+                .wrapContentSize()
+                .padding(bottom = 20.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Surface(
+                color = if (isDark) Color.Black.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(32.dp),
+                border = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.3f)),
+                shadowElevation = 10.dp,
+                tonalElevation = 0.dp,
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Box(modifier = Modifier.padding(6.dp)) {
+                    // 计算平滑滑动的偏移量
+                    val itemWidth = 100.dp
+                    val indicatorOffset by animateDpAsState(
+                        targetValue = if (currentTab == 0) 0.dp else itemWidth,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
+                        label = "nav_indicator"
+                    )
+
+                    // 高亮聚焦背景（Indicator Pill）
+                    Box(
+                        modifier = Modifier
+                            .offset(x = indicatorOffset)
+                            .size(width = itemWidth, height = 48.dp)
+                            .background(indicatorColor, RoundedCornerShape(24.dp))
+                    )
+
+                    // 图标按钮行
+                    Row(
+                        modifier = Modifier.width(itemWidth * 2),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
+                            NavBarItem(
+                                icon = Icons.Rounded.DateRange,
+                                label = "TIMETABLE",
+                                isActive = currentTab == 0,
+                                color = if (currentTab == 0) activeColor else inactiveColor,
+                                onClick = { onTabSelected(0) }
+                            )
+                        }
+                        Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
+                            NavBarItem(
+                                icon = Icons.Rounded.Person,
+                                label = "PROFILE",
+                                isActive = currentTab == 1,
+                                color = if (currentTab == 1) activeColor else inactiveColor,
+                                onClick = { onTabSelected(1) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // 非悬浮模式样式优化
+        Surface(
+            color = if (isDark) BgDark.copy(alpha = 0.85f) else BgLight.copy(alpha = 0.85f),
+            border = BorderStroke(0.5.dp, borderColor),
+            tonalElevation = 0.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(vertical = 12.dp, horizontal = 32.dp),
+                horizontalArrangement = Arrangement.SpaceAround
+            ) {
+                NavBarItem(
+                    icon = Icons.Rounded.DateRange,
+                    label = "TIMETABLE",
+                    isActive = currentTab == 0,
+                    color = if (currentTab == 0) activeColor else inactiveColor,
+                    onClick = { onTabSelected(0) }
+                )
+                NavBarItem(
+                    icon = Icons.Rounded.Person,
+                    label = "PROFILE",
+                    isActive = currentTab == 1,
+                    color = if (currentTab == 1) activeColor else inactiveColor,
+                    onClick = { onTabSelected(1) }
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun NavBarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, isActive: Boolean, color: Color, onClick: () -> Unit) {
+    val animatedColor by animateColorAsState(targetValue = color, label = "nav_item_color")
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
+        modifier = Modifier
+            .background(Color.Transparent)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
     ) {
-        Icon(imageVector = icon, contentDescription = label, tint = color, modifier = Modifier.size(24.dp))
+        Icon(
+            imageVector = icon, 
+            contentDescription = label, 
+            tint = animatedColor, 
+            modifier = Modifier.size(24.dp)
+        )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = label, fontSize = 10.sp, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal, color = color, letterSpacing = 1.sp)
+        Text(
+            text = label, 
+            fontSize = 10.sp, 
+            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal, 
+            color = animatedColor, 
+            letterSpacing = 1.sp
+        )
     }
 }
 
@@ -278,6 +382,7 @@ fun TimetableScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -529,147 +634,153 @@ fun TimetableGrid(
         val totalHeight = cellHeightDp.dp * maxRow + if (bottomBlank) 150.dp else 0.dp
 
         Box(modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(scrollState)) {
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(totalHeight).padding(end = 12.dp)) {
-                val colWidthDp = (maxWidth - timeColWidthDp) / daysCount
-                val cellHeightPx = with(LocalDensity.current) { cellHeightDp.dp.toPx() }
-                val colWidthPx = with(LocalDensity.current) { colWidthDp.toPx() }
+            Column {
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(totalHeight).padding(end = 12.dp)) {
+                    val colWidthDp = (maxWidth - timeColWidthDp) / daysCount
+                    val cellHeightPx = with(LocalDensity.current) { cellHeightDp.dp.toPx() }
+                    val colWidthPx = with(LocalDensity.current) { colWidthDp.toPx() }
 
-                for (i in 1..maxRow) {
-                    Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).offset(y = cellHeightDp.dp * i).background(borderColor))
-                }
-                for (i in 1..daysCount) {
-                    Box(modifier = Modifier.fillMaxHeight().width(0.5.dp).offset(x = timeColWidthDp + colWidthDp * i).background(borderColor))
-                }
+                    for (i in 1..maxRow) {
+                        Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).offset(y = cellHeightDp.dp * i).background(borderColor))
+                    }
+                    for (i in 1..daysCount) {
+                        Box(modifier = Modifier.fillMaxHeight().width(0.5.dp).offset(x = timeColWidthDp + colWidthDp * i).background(borderColor))
+                    }
 
-                timeNodes.forEachIndexed { index, node ->
-                    Column(
-                        modifier = Modifier.width(timeColWidthDp).height(cellHeightDp.dp).offset(y = cellHeightDp.dp * index).padding(top = 8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("${node.nodeIndex}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f))
-                        if (!hideTime) {
-                            Text("${node.startTime}\n${node.endTime}", fontSize = 8.sp, color = textColor.copy(alpha = 0.4f), textAlign = TextAlign.Center, lineHeight = 10.sp)
+                    timeNodes.forEachIndexed { index, node ->
+                        Column(
+                            modifier = Modifier.width(timeColWidthDp).height(cellHeightDp.dp).offset(y = cellHeightDp.dp * index).padding(top = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("${node.nodeIndex}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f))
+                            if (!hideTime) {
+                                Text("${node.startTime}\n${node.endTime}", fontSize = 8.sp, color = textColor.copy(alpha = 0.4f), textAlign = TextAlign.Center, lineHeight = 10.sp)
+                            }
                         }
                     }
-                }
 
-                coursesForThisPage.forEach { (displayCourse, isFuture) ->
-                    val mappedCol = visualColMap[displayCourse.displayDay]
-                    if (mappedCol != null) {
-                        val course = displayCourse.course
-                        val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
-                        var dragOffset by remember { mutableStateOf(Offset.Zero) }
-                        var isDragging by remember { mutableStateOf(false) }
+                    coursesForThisPage.forEach { (displayCourse, isFuture) ->
+                        val mappedCol = visualColMap[displayCourse.displayDay]
+                        if (mappedCol != null) {
+                            val course = displayCourse.course
+                            val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
+                            var dragOffset by remember { mutableStateOf(Offset.Zero) }
+                            var isDragging by remember { mutableStateOf(false) }
 
-                        val baseOffsetX = timeColWidthDp + colWidthDp * mappedCol
-                        val baseOffsetY = cellHeightDp.dp * (displayCourse.displayStartNode - 1)
-                        val cardHeight = cellHeightDp.dp * (displayCourse.displayEndNode - displayCourse.displayStartNode + 1)
+                            val baseOffsetX = timeColWidthDp + colWidthDp * mappedCol
+                            val baseOffsetY = cellHeightDp.dp * (displayCourse.displayStartNode - 1)
+                            val cardHeight = cellHeightDp.dp * (displayCourse.displayEndNode - displayCourse.displayStartNode + 1)
 
-                        var isVisible by remember { mutableStateOf(false) }
-                        LaunchedEffect(displayCourse.course.id) { isVisible = true }
-                        val alphaAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0f, animationSpec = tween(400), label = "alpha")
-                        val scaleAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0.8f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "scale")
+                            var isVisible by remember { mutableStateOf(false) }
+                            LaunchedEffect(displayCourse.course.id) { isVisible = true }
+                            val alphaAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0f, animationSpec = tween(400), label = "alpha")
+                            val scaleAnim by animateFloatAsState(targetValue = if (isVisible) 1f else 0.8f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "scale")
 
-                        Box(
-                            modifier = Modifier
-                                .offset {
-                                    if (isDragging) {
-                                        IntOffset((baseOffsetX.toPx() + dragOffset.x).roundToInt(), (baseOffsetY.toPx() + dragOffset.y).roundToInt())
-                                    } else {
-                                        IntOffset(baseOffsetX.toPx().roundToInt(), baseOffsetY.toPx().roundToInt())
-                                    }
-                                }
-                                .size(width = colWidthDp, height = cardHeight)
-                                .graphicsLayer {
-                                    alpha = alphaAnim
-                                    scaleX = scaleAnim
-                                    scaleY = scaleAnim
-                                }
-                                .padding(2.5.dp)
-                                .let { if (isDragging) it.shadow(12.dp, RoundedCornerShape(cornerRadiusDp.dp)) else it }
-                                .pointerInput(course.id) {
-                                    detectDragGesturesAfterLongPress(
-                                        onDragStart = {
-                                            isDragging = true
-                                            if (vibration && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
-                                            }
-                                        },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            dragOffset += dragAmount
-                                        },
-                                        onDragEnd = {
-                                            isDragging = false
-                                            val deltaCols = (dragOffset.x / colWidthPx).roundToInt()
-                                            val deltaRows = (dragOffset.y / cellHeightPx).roundToInt()
-                                            if (deltaCols != 0 || deltaRows != 0) {
-                                                val targetCol = (mappedCol + deltaCols).coerceIn(0, daysCount - 1)
-                                                val newDay = visualColMap.entries.find { it.value == targetCol }?.key ?: course.dayOfWeek
-                                                viewModel.updateCoursePosition(course.id, newDay - course.dayOfWeek, deltaRows, course)
-                                            }
-                                            dragOffset = Offset.Zero
-                                        },
-                                        onDragCancel = {
-                                            isDragging = false
-                                            dragOffset = Offset.Zero
-                                        }
-                                    )
-                                }
-                                .clickable { if (!isDragging) onCourseClick(displayCourse, isFuture) }
-                        ) {
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(cornerRadiusDp.dp))
-                                    .background(if (isFuture) Color.Transparent else palette.bg)
-                                    .border(
-                                        width = if (isFuture) 1.dp else 0.5.dp,
-                                        color = palette.border,
-                                        shape = RoundedCornerShape(cornerRadiusDp.dp)
-                                    )
-                            ) {
-                                if (!isFuture) {
-                                    Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(palette.accent))
-                                }
-                                Column(modifier = Modifier.fillMaxSize().padding(start = 6.dp, top = 4.dp, end = 4.dp, bottom = 4.dp)) {
-                                    val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                                    if (isFuture) {
-                                        val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
-                                        val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
-                                        val badgeText = if (isOddOnly) "[非本周(单)]" else if (isEvenOnly) "[非本周(双)]" else "[非本周]"
-                                        Text(badgeText, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
+                                    .offset {
+                                        if (isDragging) {
+                                            IntOffset((baseOffsetX.toPx() + dragOffset.x).roundToInt(), (baseOffsetY.toPx() + dragOffset.y).roundToInt())
+                                        } else {
+                                            IntOffset(baseOffsetX.toPx().roundToInt(), baseOffsetY.toPx().roundToInt())
+                                        }
                                     }
-                                    Text(
-                                        text = course.name,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (isFuture) textColor.copy(alpha = 0.5f) else palette.text,
-                                        lineHeight = 14.sp,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.weight(1f, fill = false)
-                                    )
-                                    Row(
-                                        verticalAlignment = Alignment.Top,
-                                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).heightIn(max = cardHeight * 0.5f)
-                                    ) {
-                                        Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = if (isFuture) textColor.copy(alpha = 0.4f) else palette.text.copy(alpha = 0.7f), modifier = Modifier.size(10.dp).padding(top = 1.dp))
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                        Text(
-                                            text = course.location.replace("楼", ""),
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = if (isFuture) textColor.copy(alpha = 0.4f) else palette.text.copy(alpha = 0.7f),
-                                            lineHeight = 11.sp,
-                                            maxLines = 4,
-                                            overflow = TextOverflow.Ellipsis
+                                    .size(width = colWidthDp, height = cardHeight)
+                                    .graphicsLayer {
+                                        alpha = alphaAnim
+                                        scaleX = scaleAnim
+                                        scaleY = scaleAnim
+                                    }
+                                    .padding(2.5.dp)
+                                    .let { if (isDragging) it.shadow(12.dp, RoundedCornerShape(cornerRadiusDp.dp)) else it }
+                                    .pointerInput(course.id) {
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = {
+                                                isDragging = true
+                                                if (vibration && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
+                                                }
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffset += dragAmount
+                                            },
+                                            onDragEnd = {
+                                                isDragging = false
+                                                val deltaCols = (dragOffset.x / colWidthPx).roundToInt()
+                                                val deltaRows = (dragOffset.y / cellHeightPx).roundToInt()
+                                                if (deltaCols != 0 || deltaRows != 0) {
+                                                    val targetCol = (mappedCol + deltaCols).coerceIn(0, daysCount - 1)
+                                                    val newDay = visualColMap.entries.find { it.value == targetCol }?.key ?: course.dayOfWeek
+                                                    viewModel.updateCoursePosition(course.id, newDay - course.dayOfWeek, deltaRows, course)
+                                                }
+                                                dragOffset = Offset.Zero
+                                            },
+                                            onDragCancel = {
+                                                isDragging = false
+                                                dragOffset = Offset.Zero
+                                            }
                                         )
+                                    }
+                                    .clickable { if (!isDragging) onCourseClick(displayCourse, isFuture) }
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(cornerRadiusDp.dp))
+                                        .background(if (isFuture) Color.Transparent else palette.bg)
+                                        .border(
+                                            width = if (isFuture) 1.dp else 0.5.dp,
+                                            color = palette.border,
+                                            shape = RoundedCornerShape(cornerRadiusDp.dp)
+                                        )
+                                ) {
+                                    if (!isFuture) {
+                                        Box(modifier = Modifier.width(4.dp).fillMaxHeight().background(palette.accent))
+                                    }
+                                    Column(modifier = Modifier.fillMaxSize().padding(start = 6.dp, top = 4.dp, end = 4.dp, bottom = 4.dp)) {
+                                        val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                                        if (isFuture) {
+                                            val isOddOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 != 0 } && weeksList.size > 1
+                                            val isEvenOnly = weeksList.isNotEmpty() && weeksList.all { it % 2 == 0 } && weeksList.size > 1
+                                            val badgeText = if (isOddOnly) "[非本周(单)]" else if (isEvenOnly) "[非本周(双)]" else "[非本周]"
+                                            Text(badgeText, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.5f), modifier = Modifier.padding(bottom = 2.dp))
+                                        }
+                                        Text(
+                                            text = course.name,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isFuture) textColor.copy(alpha = 0.5f) else palette.text,
+                                            lineHeight = 14.sp,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.Top,
+                                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).heightIn(max = cardHeight * 0.5f)
+                                        ) {
+                                            Icon(Icons.Rounded.LocationOn, contentDescription = "Loc", tint = if (isFuture) textColor.copy(alpha = 0.4f) else palette.text.copy(alpha = 0.7f), modifier = Modifier.size(10.dp).padding(top = 1.dp))
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Text(
+                                                text = course.location.replace("楼", ""),
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (isFuture) textColor.copy(alpha = 0.4f) else palette.text.copy(alpha = 0.7f),
+                                                lineHeight = 11.sp,
+                                                maxLines = 4,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                // 为网格底部增加手势条沉浸留白
+                val bottomNavHeight = 96.dp 
+                Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+                Spacer(modifier = Modifier.height(bottomNavHeight))
             }
         }
     }
@@ -965,125 +1076,135 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             showBottomBorder = reminderEnabled
                         )
 
-                        if (reminderEnabled) {
-                            Column(modifier = Modifier.padding(16.dp).background(if(isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp)).padding(16.dp)) {
-                                Text("提前提醒时间: $reminderAdvanceMins 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                                Slider(
-                                    value = reminderAdvanceMins.toFloat(),
-                                    onValueChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ADVANCE_MINS, it.roundToInt()) },
-                                    valueRange = 1f..30f,
-                                    steps = 28,
-                                    colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报",
-                                    fontSize = 10.sp,
-                                    color = textColor.copy(alpha = 0.6f),
-                                    lineHeight = 14.sp
-                                )
-                            }
+                        AnimatedVisibility(
+                            visible = reminderEnabled,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            Column {
+                                Column(modifier = Modifier.padding(16.dp).background(if(isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp)).padding(16.dp)) {
+                                    Text("提前提醒时间: $reminderAdvanceMins 分钟", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                                    Slider(
+                                        value = reminderAdvanceMins.toFloat(),
+                                        onValueChange = { viewModel.updateSetting(SettingsKeys.REMINDER_ADVANCE_MINS, it.roundToInt()) },
+                                        valueRange = 1f..30f,
+                                        steps = 28,
+                                        colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "提示：如果遇到上一门课上完了而接下来还有课，且课间休息短于您设置的提前时间，系统将在上节课刚下课时立刻为您播报",
+                                        fontSize = 10.sp,
+                                        color = textColor.copy(alpha = 0.6f),
+                                        lineHeight = 14.sp
+                                    )
+                                }
 
-                            SettingCheckboxItem(
-                                title = "显示通知栏提醒",
-                                checked = reminderNotifyEnabled,
-                                onCheckedChange = { checked ->
-                                    if (checked) {
-                                        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-                                        val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                        } else {
-                                            notificationManager.areNotificationsEnabled()
-                                        }
-                                        
-                                        if (!isGranted) {
-                                            try {
-                                                val intent = Intent().apply {
-                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                        action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
-                                                        putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                                    } else {
-                                                        action = "android.settings.APP_NOTIFICATION_SETTINGS"
-                                                        putExtra("app_package", context.packageName)
-                                                        putExtra("app_uid", context.applicationInfo.uid)
-                                                    }
-                                                }
-                                                context.startActivity(intent)
-                                                Toast.makeText(context, "请先授予通知权限喵！", Toast.LENGTH_SHORT).show()
-                                            } catch (e: Exception) {
-                                                val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
-                                                context.startActivity(intent)
+                                SettingCheckboxItem(
+                                    title = "显示通知栏提醒",
+                                    checked = reminderNotifyEnabled,
+                                    onCheckedChange = { checked ->
+                                        if (checked) {
+                                            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                                            val isGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                            } else {
+                                                notificationManager.areNotificationsEnabled()
                                             }
-                                            return@SettingCheckboxItem
+                                            
+                                            if (!isGranted) {
+                                                try {
+                                                    val intent = Intent().apply {
+                                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                            action = android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                                            putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                        } else {
+                                                            action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                                                            putExtra("app_package", context.packageName)
+                                                            putExtra("app_uid", context.applicationInfo.uid)
+                                                        }
+                                                    }
+                                                    context.startActivity(intent)
+                                                    Toast.makeText(context, "请先授予通知权限喵！", Toast.LENGTH_SHORT).show()
+                                                } catch (e: Exception) {
+                                                    val intent = Intent(android.provider.Settings.ACTION_SETTINGS)
+                                                    context.startActivity(intent)
+                                                }
+                                                return@SettingCheckboxItem
+                                            }
+                                        }
+                                        viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, checked)
+                                    },
+                                    textColor = textColor,
+                                    borderColor = borderColor,
+                                    isDark = isDark,
+                                    showBottomBorder = true
+                                )
+
+                                AnimatedVisibility(
+                                    visible = reminderNotifyEnabled,
+                                    enter = expandVertically() + fadeIn(),
+                                    exit = shrinkVertically() + fadeOut()
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
+                                            .background(if (isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp))
+                                    ) {
+                                        Column {
+                                            SettingCheckboxItemWithSubtext(
+                                                title = "使用实时通知",
+                                                subtext = "在支持的系统上显示实时通知，需要Android 16+",
+                                                checked = dynamicIslandEnabled,
+                                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, it) },
+                                                textColor = textColor,
+                                                borderColor = if (dynamicIslandEnabled) borderColor.copy(alpha = 0.2f) else Color.Transparent,
+                                                isDark = isDark,
+                                                showBottomBorder = false
+                                            )
                                         }
                                     }
-                                    viewModel.updateSetting(SettingsKeys.REMINDER_NOTIFY_ENABLED, checked)
-                                },
-                                textColor = textColor,
-                                borderColor = borderColor,
-                                isDark = isDark,
-                                showBottomBorder = true
-                            )
-
-                            if (reminderNotifyEnabled) {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp)
-                                        .background(if (isDark) Color(0xFF27272A) else Color(0xFFE4E4E7), RoundedCornerShape(8.dp))
-                                ) {
-                                    Column {
-                                        SettingCheckboxItemWithSubtext(
-                                            title = "使用实时通知",
-                                            subtext = "在支持的系统上显示实时通知，需要Android 16+",
-                                            checked = dynamicIslandEnabled,
-                                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.DYNAMIC_ISLAND_ENABLED, it) },
-                                            textColor = textColor,
-                                            borderColor = if (dynamicIslandEnabled) borderColor.copy(alpha = 0.2f) else Color.Transparent,
-                                            isDark = isDark,
-                                            showBottomBorder = false
-                                        )
-                                    }
-                                }
-                            }
-
-                            SettingCheckboxItem(
-                                title = "开启语音播报",
-                                checked = reminderVoiceEnabled,
-                                onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_VOICE_ENABLED, it) },
-                                textColor = textColor,
-                                borderColor = borderColor,
-                                isDark = isDark,
-                                showBottomBorder = true
-                            )
-
-                            SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
-                                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                                
-                                // 1. 检测精确闹钟权限
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                                    context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
-                                    Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
-                                    return@SettingValueItem
                                 }
 
-                                // 3. 设置测试提醒 (5秒后触发 即将上课，25秒后切换为 正在上课，60秒后下课自动清理)
-                                val triggerTime = System.currentTimeMillis() + 5000
-                                val classStartTime = triggerTime + 20000
-                                val classEndTime = classStartTime + 35000
-                                ReminderEngine.scheduleAlarmByParams(
-                                    context,
-                                    "【测试】课A",
-                                    "地球",
-                                    "测试",
-                                    triggerTime,
-                                    classStartTime,
-                                    classEndTime,
-                                    reminderNotifyEnabled,
-                                    reminderVoiceEnabled,
-                                    "slate"
+                                SettingCheckboxItem(
+                                    title = "开启语音播报",
+                                    checked = reminderVoiceEnabled,
+                                    onCheckedChange = { viewModel.updateSetting(SettingsKeys.REMINDER_VOICE_ENABLED, it) },
+                                    textColor = textColor,
+                                    borderColor = borderColor,
+                                    isDark = isDark,
+                                    showBottomBorder = true
                                 )
-                                Toast.makeText(context, "已设置测试提醒：5秒后触发，25秒后上课，60秒后下课。请锁定屏幕或退回桌面测试喵！", Toast.LENGTH_LONG).show()
-                            })
+
+                                SettingValueItem(title = "发送一条测试提醒", value = "10秒后触发", showBottomBorder = false, textColor = textColor, borderColor = borderColor, onClick = {
+                                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                                    
+                                    // 1. 检测精确闹钟权限
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                                        context.startActivity(Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                                        Toast.makeText(context, "请先允许精确闹钟权限喵", Toast.LENGTH_SHORT).show()
+                                        return@SettingValueItem
+                                    }
+
+                                    // 3. 设置测试提醒 (5秒后触发 即将上课，25秒后切换为 正在上课，60秒后下课自动清理)
+                                    val triggerTime = System.currentTimeMillis() + 5000
+                                    val classStartTime = triggerTime + 20000
+                                    val classEndTime = classStartTime + 35000
+                                    ReminderEngine.scheduleAlarmByParams(
+                                        context,
+                                        "【测试】课A",
+                                        "地球",
+                                        "测试",
+                                        triggerTime,
+                                        classStartTime,
+                                        classEndTime,
+                                        reminderNotifyEnabled,
+                                        reminderVoiceEnabled,
+                                        "slate"
+                                    )
+                                    Toast.makeText(context, "已设置测试提醒：5秒后触发，25秒后上课，60秒后下课。请锁定屏幕或退回桌面测试喵！", Toast.LENGTH_LONG).show()
+                                })
+                            }
                         }
                     }
                 }
@@ -1231,7 +1352,7 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                             "2. ColorOS 16 需要进入「设置-小布助手-小布建议」，开启通勤等对应的场景开关，否则胶囊会被静默丢弃喵。\n" +
                             "3. 通用设置：请开启应用的「自启动」或「允许后台启动」权限，并将省电策略设为「无限制」或「允许高耗电」。\n" +
                             "4. 如有异常，可尝试在开发者选项中开启「流体云调试模式」排查拦截原因，或清除「智慧决策服务」等系统组件 of 缓存喵。\n" +
-                            "5. 小米系列设备发送实时通知需要 HyperOS 3.0.300 以上版本，并且需要运行APP在后台运行",
+                            "5. 小米系列设备发送实时通知需要 HyperOS 3.0.300 以上版本，并且需要运行APP在后台运行喵。",
                             fontSize = 11.sp,
                             color = textColor.copy(alpha = 0.85f),
                             lineHeight = 16.sp
@@ -1313,6 +1434,8 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
     val warnTimetableError by viewModel.warnTimetableError.collectAsState()
     val autoUpdate by viewModel.autoUpdate.collectAsState()
     val widgetTranslucent by viewModel.widgetTranslucent.collectAsState()
+    val floatingBottomBar by viewModel.floatingBottomBar.collectAsState()
+    val tabAnimationType by viewModel.tabAnimationType.collectAsState()
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
     val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
@@ -1353,6 +1476,49 @@ fun GlobalSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: 
                             onCheckedChange = { viewModel.updateSetting(SettingsKeys.PREDICTIVE_BACK_ENABLED, it) },
                             textColor = textColor, borderColor = borderColor, isDark = isDark
                         )
+                        SettingCheckboxItemWithSubtext(
+                            title = "悬浮底栏样式",
+                            subtext = "开启后底栏将变为圆角悬浮样式",
+                            checked = floatingBottomBar,
+                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.FLOATING_BOTTOM_BAR, it) },
+                            textColor = textColor, borderColor = borderColor, isDark = isDark
+                        )
+
+                        // 页面切换动画选择框
+                        var showAnimMenu by remember { mutableStateOf(false) }
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            SettingValueItem(
+                                title = "页面切换动画",
+                                value = if (tabAnimationType == "Slide") "左右滑动" else "淡入淡出",
+                                textColor = textColor,
+                                borderColor = borderColor,
+                                onClick = { showAnimMenu = true }
+                            )
+                            // 将 DropdownMenu 锚定在右侧
+                            Box(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp)) {
+                                DropdownMenu(
+                                    expanded = showAnimMenu,
+                                    onDismissRequest = { showAnimMenu = false },
+                                    modifier = Modifier.background(if (isDark) Color(0xFF18181B) else Color.White).border(0.5.dp, borderColor)
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("左右滑动", color = textColor, fontWeight = FontWeight.Bold) },
+                                        onClick = {
+                                            viewModel.updateSetting(SettingsKeys.TAB_ANIMATION_TYPE, "Slide")
+                                            showAnimMenu = false
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("淡入淡出", color = textColor, fontWeight = FontWeight.Bold) },
+                                        onClick = {
+                                            viewModel.updateSetting(SettingsKeys.TAB_ANIMATION_TYPE, "Fade")
+                                            showAnimMenu = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
                         SettingCheckboxItemWithSubtext(title = "课表下方增加留白区域", subtext = "开启后，课表下方会多出一段空白区域，便于将底部的课程滑动至屏幕中间查看", checked = bottomBlank, onCheckedChange = { viewModel.updateSetting(SettingsKeys.BOTTOM_BLANK, it) }, showBottomBorder = false, textColor = textColor, borderColor = borderColor, isDark = isDark)
                     }
                 }
@@ -3999,7 +4165,8 @@ fun ProfileScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 24.dp)
+            .statusBarsPadding()
+            .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 120.dp)
     ) {
         Text("管理", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
         Spacer(modifier = Modifier.height(32.dp))
