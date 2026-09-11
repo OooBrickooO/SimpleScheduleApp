@@ -588,7 +588,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                             startNode = obj.optInt("startNode", 1),
                             endNode = obj.optInt("endNode", 2),
                             weeks = weeksStr,
-                            colorTheme = obj.optString("colorTheme", "blue")
+                            colorTheme = obj.optString("colorTheme", "blue"),
+                            credits = obj.optString("credits").takeIf { it.isNotBlank() }
                         )
                     )
                 }

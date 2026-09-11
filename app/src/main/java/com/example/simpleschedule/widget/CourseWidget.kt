@@ -264,7 +264,8 @@ fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, 
                     .glancePadding(12.dp)
                     .glanceClickable(actionStartActivity(intent))
             ) {
-                GlanceText(course.name, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
+                val displayName = course.name + if (!course.credits.isNullOrBlank()) "（${course.credits}）" else ""
+                GlanceText(displayName, style = TextStyle(color = ColorProvider(palette.text), fontSize = 14.sp, fontWeight = GlanceFontWeight.Bold))
                 GlanceSpacer(modifier = GlanceModifier.glanceHeight(4.dp))
                 GlanceText("$timeStr ${course.location}", style = TextStyle(color = ColorProvider(palette.text.copy(alpha = 0.8f)), fontSize = 11.sp))
             }
@@ -339,7 +340,7 @@ fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse
                     .glanceClickable(actionStartActivity(intent))
             ) {
                 GlanceText(
-                    text = course.name,
+                    text = course.name + if (!course.credits.isNullOrBlank()) "（${course.credits}）" else "",
                     maxLines = 1,
                     style = TextStyle(color = ColorProvider(palette.text), fontSize = 11.sp, fontWeight = GlanceFontWeight.Bold)
                 )

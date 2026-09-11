@@ -43,11 +43,13 @@ fun parseZhengfangExamHtml(
             val timeCell = row.selectFirst("td[aria-describedby$=tabGrid_kssj]")
             val locCell = row.selectFirst("td[aria-describedby$=tabGrid_cdmc]")
             val seatCell = row.selectFirst("td[aria-describedby$=tabGrid_zwh]")
+            val creditsCell = row.selectFirst("td[aria-describedby$=tabGrid_xf]") ?: row.selectFirst("td[aria-describedby$=tabGrid_credits]")
 
             val kcmc = nameCell?.text()?.trim() ?: ""
             val kssj = timeCell?.text()?.trim() ?: ""
             val cdmc = locCell?.text()?.trim() ?: ""
             val zwh = seatCell?.text()?.trim() ?: ""
+            val credits = creditsCell?.text()?.trim() ?: ""
 
             if (kcmc.isEmpty() || kssj.isEmpty()) {
                 continue
@@ -106,6 +108,9 @@ fun parseZhengfangExamHtml(
                 put("endNode", endNode)
                 put("weeks", "[$week]")
                 put("colorTheme", colorTheme)
+                if (credits.isNotEmpty()) {
+                    put("credits", credits)
+                }
             }
             coursesJsonArray.put(courseObj)
         }
