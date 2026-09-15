@@ -3342,6 +3342,8 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
     var isSameDuration by remember { mutableStateOf(true) }
     var classDuration by remember { mutableStateOf("45") }
     var nodes by remember { mutableStateOf<List<TimeNode>>(emptyList()) }
+    var showDeleteNodeDialog by remember { mutableStateOf(false) }
+    var selectedNodeIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     LaunchedEffect(timetableId) {
         if (timetableId != null) {
@@ -3371,6 +3373,21 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
             Spacer(modifier = Modifier.width(8.dp))
             Text(if (timetableId == null) "新建时间表" else "编辑时间表", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
             Spacer(modifier = Modifier.weight(1f))
+            IconButton(
+                onClick = {
+                    if (nodes.size > 1) {
+                        selectedNodeIds = emptySet()
+                        showDeleteNodeDialog = true
+                    }
+                },
+                enabled = nodes.size > 1
+            ) {
+                Icon(
+                    Icons.Rounded.Delete,
+                    contentDescription = "删除时间节点",
+                    tint = if (nodes.size > 1) Color(0xFFDC2626) else textColor.copy(alpha = 0.25f)
+                )
+            }
             Text("保存", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor, modifier = Modifier.clickable { onSave(timetableId, name, nodes) }.padding(8.dp))
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
@@ -3454,6 +3471,103 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
                 }
             }
         }
+    }
+
+    if (showDeleteNodeDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteNodeDialog = false },
+            title = { Text("删除时间节点", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 460.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text("可批量选择要删除的节次，删除后后面的节次会自动前移。", color = textColor.copy(alpha = 0.7f))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val selectableNodeIds = nodes.drop(1).map { it.id }.toSet()
+                    val allSelected = selectableNodeIds.isNotEmpty() && selectedNodeIds.containsAll(selectableNodeIds)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedNodeIds = if (allSelected) emptySet() else selectableNodeIds
+                            }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = allSelected,
+                            onCheckedChange = {
+                                selectedNodeIds = if (it) selectableNodeIds else emptySet()
+                            }
+                        )
+                        Text("全选（保留第 1 节）", color = textColor, fontWeight = FontWeight.Bold)
+                    }
+                    nodes.forEach { node ->
+                        val isFirstNode = node.id == nodes.firstOrNull()?.id
+                        val isSelected = selectedNodeIds.contains(node.id)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = !isFirstNode) {
+                                    selectedNodeIds = if (isSelected) {
+                                        selectedNodeIds - node.id
+                                    } else {
+                                        selectedNodeIds + node.id
+                                    }
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(
+                                    checked = isSelected,
+                                    enabled = !isFirstNode,
+                                    onCheckedChange = { checked ->
+                                        selectedNodeIds = if (checked) {
+                                            selectedNodeIds + node.id
+                                        } else {
+                                            selectedNodeIds - node.id
+                                        }
+                                    }
+                                )
+                                Column {
+                                    Text("第 ${node.nodeIndex} 节", color = if (isFirstNode) textColor.copy(alpha = 0.45f) else textColor, fontWeight = FontWeight.Bold)
+                                    Text("${node.startTime} - ${node.endTime}", color = textColor.copy(alpha = 0.6f))
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = selectedNodeIds.isNotEmpty() && selectedNodeIds.size < nodes.size,
+                    onClick = {
+                        nodes = nodes
+                            .filterNot { selectedNodeIds.contains(it.id) }
+                            .mapIndexed { index, remaining -> remaining.copy(nodeIndex = index + 1) }
+                        selectedNodeIds = emptySet()
+                        showDeleteNodeDialog = false
+                    }
+                ) {
+                    Text("删除所选", color = if (selectedNodeIds.isNotEmpty() && selectedNodeIds.size < nodes.size) Color(0xFFDC2626) else textColor.copy(alpha = 0.35f))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    selectedNodeIds = emptySet()
+                    showDeleteNodeDialog = false
+                }) {
+                    Text("取消", color = textColor.copy(alpha = 0.6f))
+                }
+            },
+            containerColor = if (isDark) Color(0xFF18181B) else Color.White,
+            titleContentColor = textColor,
+            textContentColor = textColor.copy(alpha = 0.8f)
+        )
     }
 }
 
