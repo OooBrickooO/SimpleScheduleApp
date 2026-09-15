@@ -355,7 +355,7 @@ fun NavBarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Str
 fun TimetableScreen(
     viewModel: ScheduleViewModel, courses: List<DisplayCourse>, timeNodes: List<TimeNode>, currentWeek: Int, totalWeeks: Int, scheduleGroups: List<ScheduleGroup>, currentScheduleId: String, isDark: Boolean,
     onAddClick: () -> Unit, onManageCoursesClick: () -> Unit, onManageTimetablesClick: () -> Unit, onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit,
-    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onReminderSettingsClick: () -> Unit
+    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onCsvImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onReminderSettingsClick: () -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -405,6 +405,10 @@ fun TimetableScreen(
                         DropdownMenuItem(text = { Text("从教务导入课表/考试", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.School, contentDescription = null, tint = textColor) }, onClick = {
                             showAddMenu = false
                             onWebViewImportClick()
+                        })
+                        DropdownMenuItem(text = { Text("从 CSV 文件导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.FileUpload, contentDescription = null, tint = textColor) }, onClick = {
+                            showAddMenu = false
+                            onCsvImportClick()
                         })
                         DropdownMenuItem(text = { Text("分享口令导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onShareCodeClick() })
                     }
@@ -490,7 +494,16 @@ fun TimetableScreen(
             viewModel = viewModel,
             onDismiss = { selectedCourseWithWeek = null },
             onDelete = { viewModel.deleteCourse(course.course.id); selectedCourseWithWeek = null },
-            onEdit = { onEditCourse(course.course); selectedCourseWithWeek = null }
+            onEdit = {
+                selectedCourseWithWeek = null
+                onEditCourse(
+                    course.course.copy(
+                        dayOfWeek = course.displayDay,
+                        startNode = course.displayStartNode,
+                        endNode = course.displayEndNode
+                    )
+                )
+            }
         )
     }
 
@@ -580,6 +593,7 @@ fun TimetableGrid(
     val timeColWidthDp = 45.dp
     val maxRow = timeNodes.size.coerceAtLeast(1)
     val scrollState = rememberScrollState()
+    var draggingCourseId by remember { mutableStateOf<String?>(null) }
 
     val (dateList, currentMonth) = remember(startDate, displayedWeek) {
         val dates = mutableListOf<Int>()
@@ -633,7 +647,12 @@ fun TimetableGrid(
 
         val totalHeight = cellHeightDp.dp * maxRow + if (bottomBlank) 150.dp else 0.dp
 
-        Box(modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(scrollState)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(scrollState, enabled = draggingCourseId == null)
+        ) {
             Column {
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(totalHeight).padding(end = 12.dp)) {
                     val colWidthDp = (maxWidth - timeColWidthDp) / daysCount
@@ -697,6 +716,7 @@ fun TimetableGrid(
                                         detectDragGesturesAfterLongPress(
                                             onDragStart = {
                                                 isDragging = true
+                                                draggingCourseId = course.id
                                                 if (vibration && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                                     try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
                                                 }
@@ -707,17 +727,19 @@ fun TimetableGrid(
                                             },
                                             onDragEnd = {
                                                 isDragging = false
+                                                draggingCourseId = null
                                                 val deltaCols = (dragOffset.x / colWidthPx).roundToInt()
                                                 val deltaRows = (dragOffset.y / cellHeightPx).roundToInt()
                                                 if (deltaCols != 0 || deltaRows != 0) {
                                                     val targetCol = (mappedCol + deltaCols).coerceIn(0, daysCount - 1)
                                                     val newDay = visualColMap.entries.find { it.value == targetCol }?.key ?: course.dayOfWeek
-                                                    viewModel.updateCoursePosition(course.id, newDay - course.dayOfWeek, deltaRows, course)
+                                                    viewModel.updateCoursePosition(course.id, newDay - displayCourse.displayDay, deltaRows, course)
                                                 }
                                                 dragOffset = Offset.Zero
                                             },
                                             onDragCancel = {
                                                 isDragging = false
+                                                draggingCourseId = null
                                                 dragOffset = Offset.Zero
                                             }
                                         )
@@ -1711,8 +1733,11 @@ fun loadSchoolsFromAssets(context: Context): List<School> {
 enum class ImportStage {
     SELECT_MODE,
     WEB_IMPORT,
-    XLS_IMPORT
+    XLS_IMPORT,
+    CSV_IMPORT
 }
+
+private const val CSV_TEMPLATE_URL = "https://github.com/OooBrickooO/SimpleScheduleApp/raw/refs/heads/main/%E8%AF%BE%E8%A1%A8%E6%A8%A1%E6%9D%BF.CSV"
 
 @Composable
 fun SystemCard(
@@ -2089,15 +2114,18 @@ fun WebViewImportScreen(
     startDate: String,
     hasCourses: Boolean,
     predictiveBackEnabled: Boolean,
+    initialStage: ImportStage = ImportStage.SELECT_MODE,
     onBack: () -> Unit,
-    onImport: (String) -> Unit
+    onImport: (String) -> Unit,
+    onCsvImportCurrent: (String) -> Unit,
+    onCreateScheduleAndImport: (String) -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var stage by remember { mutableStateOf(ImportStage.SELECT_MODE) }
+    var stage by remember { mutableStateOf(initialStage) }
     var selectedSchool by remember { mutableStateOf<School?>(null) }
     var selectedSystem by remember { mutableStateOf<String?>(null) }
     var activeTab by remember { mutableIntStateOf(0) } // 0: 按教务分类, 1: 按学校
@@ -2110,6 +2138,7 @@ fun WebViewImportScreen(
     var showBlockDialog by remember { mutableStateOf(false) }
     var showSyncCreditsDialog by remember { mutableStateOf(false) }
     var showConfirmExamDialog by remember { mutableStateOf(false) }
+    var pendingCsvJson by remember { mutableStateOf<String?>(null) }
 
     val schools = remember { loadSchoolsFromAssets(context) }
     val listState = rememberLazyListState()
@@ -2133,8 +2162,27 @@ fun WebViewImportScreen(
         }
     }
 
-    val backModifier = AppBackHandler(predictiveBackEnabled) {
-        if (stage != ImportStage.SELECT_MODE) {
+    val csvPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val jsonData = parseCourseCsv(inputStream)
+                    if (jsonData != null) {
+                        pendingCsvJson = jsonData
+                    } else {
+                        Toast.makeText(context, "未提取到课程，请检查 CSV 是否符合模板格式", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "读取或解析 CSV 失败: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val navigateBack = {
+        if (stage == ImportStage.CSV_IMPORT && initialStage == ImportStage.CSV_IMPORT) {
+            onBack()
+        } else if (stage != ImportStage.SELECT_MODE) {
             stage = ImportStage.SELECT_MODE
         } else if (selectedSystem != null) {
             selectedSystem = null
@@ -2142,6 +2190,8 @@ fun WebViewImportScreen(
             onBack()
         }
     }
+
+    val backModifier = AppBackHandler(predictiveBackEnabled, navigateBack)
 
     val filteredSchools = remember(schools, searchQuery, activeTab, selectedSystem) {
         val filtered = schools.filter { school ->
@@ -2512,7 +2562,7 @@ fun WebViewImportScreen(
                         contentDescription = "Back",
                         tint = textColor,
                         modifier = Modifier
-                            .clickable { stage = ImportStage.SELECT_MODE }
+                            .clickable { navigateBack() }
                             .padding(8.dp)
                     )
                     OutlinedTextField(
@@ -2797,7 +2847,7 @@ fun WebViewImportScreen(
                         contentDescription = "Back",
                         tint = textColor,
                         modifier = Modifier
-                            .clickable { stage = ImportStage.SELECT_MODE }
+                            .clickable { navigateBack() }
                             .padding(8.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -2846,6 +2896,102 @@ fun WebViewImportScreen(
                     }
                 }
             }
+
+            ImportStage.CSV_IMPORT -> {
+                val uriHandler = LocalUriHandler.current
+                var hasReadCsvInstructions by remember { mutableStateOf(false) }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.ArrowBack,
+                        contentDescription = "Back",
+                        tint = textColor,
+                        modifier = Modifier
+                            .clickable { navigateBack() }
+                            .padding(8.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("从 CSV 文件导入", color = textColor, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 48.dp, vertical = 40.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Text(
+                        "请直接在模板的基础上修改，不要自己新建。应填的内容一定不能为空，如果没有该字段的内容，则填“无”。",
+                        color = Color(0xFF9A5264),
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp
+                    )
+                    Text(
+                        "为了增加导入的成功率，现在要求选择的是 CSV 文件，在电脑上把 Excel 转 CSV 也十分简单，只需要另存为 -> 选择 CSV 格式，保存即可。关于周数可能会变为日期的问题已经特殊处理过了，可以正常导入的。",
+                        color = Color(0xFF9A5264),
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp
+                    )
+                    Text(
+                        "有任何问题请先点击下方的获取模板按钮。",
+                        color = Color(0xFF9A5264),
+                        fontSize = 16.sp,
+                        lineHeight = 28.sp
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { hasReadCsvInstructions = !hasReadCsvInstructions },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Checkbox(
+                            checked = hasReadCsvInstructions,
+                            onCheckedChange = { hasReadCsvInstructions = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFF9A5264),
+                                checkmarkColor = Color.White
+                            )
+                        )
+                        Text("我已经仔细阅读过上面的说明", color = textColor, fontSize = 16.sp)
+                    }
+                    Button(
+                        onClick = { uriHandler.openUri(CSV_TEMPLATE_URL) },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF9A5264),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text("点击此处获取模板", fontSize = 16.sp)
+                    }
+                    Button(
+                        onClick = {
+                            csvPickerLauncher.launch("*/*")
+                        },
+                        enabled = hasReadCsvInstructions,
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF9A5264),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFF9A5264).copy(alpha = 0.35f),
+                            disabledContentColor = Color.White.copy(alpha = 0.75f)
+                        )
+                    ) {
+                        Text("选择 CSV 文件", fontSize = 16.sp)
+                    }
+                }
+            }
         }
 
         if (showBlockDialog) {
@@ -2856,6 +3002,51 @@ fun WebViewImportScreen(
                 confirmButton = {
                     TextButton(onClick = { showBlockDialog = false }) {
                         Text("知道啦", color = textColor, fontWeight = FontWeight.Bold)
+                    }
+                },
+                containerColor = if (isDark) Color(0xFF18181B) else Color.White,
+                titleContentColor = textColor,
+                textContentColor = textColor.copy(alpha = 0.8f)
+            )
+        }
+
+        if (pendingCsvJson != null) {
+            AlertDialog(
+                onDismissRequest = { pendingCsvJson = null },
+                title = {
+                    Text(
+                        "请选择导入课表的方式",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text("新建再导入，点击首页“...”找到新导入的课表")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val json = pendingCsvJson ?: return@TextButton
+                            pendingCsvJson = null
+                            onCsvImportCurrent(json)
+                        }
+                    ) {
+                        Text("覆盖当前课表", color = textColor)
+                    }
+                },
+                dismissButton = {
+                    Row {
+                        TextButton(
+                            onClick = {
+                                val json = pendingCsvJson ?: return@TextButton
+                                pendingCsvJson = null
+                                onCreateScheduleAndImport(json)
+                            }
+                        ) {
+                            Text("新建课表再导入", color = textColor)
+                        }
+                        TextButton(onClick = { pendingCsvJson = null }) {
+                            Text("取消导入", color = Color(0xFFDC2626))
+                        }
                     }
                 },
                 containerColor = if (isDark) Color(0xFF18181B) else Color.White,
