@@ -225,6 +225,9 @@ interface AppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllCourses(courses: List<Course>)
 
+    @Query("DELETE FROM courses WHERE scheduleId = :scheduleId")
+    suspend fun deleteCoursesBySchedule(scheduleId: String)
+
     @Query("DELETE FROM courses WHERE id = :courseId")
     suspend fun deleteCourse(courseId: String)
 

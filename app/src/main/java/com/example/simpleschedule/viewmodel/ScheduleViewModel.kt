@@ -423,11 +423,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun createNewSchedule(name: String) {
+    fun createNewSchedule(name: String, onCreated: (() -> Unit)? = null) {
         viewModelScope.launch {
             val newId = UUID.randomUUID().toString()
             appDao.insertScheduleGroup(ScheduleGroup(newId, name, "tt_cjlu", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())))
             switchSchedule(newId)
+            onCreated?.invoke()
         }
     }
 
@@ -516,7 +517,47 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
 
     fun updateCustomCourse(id: String, name: String, location: String, teacher: String, day: Int, start: Int, end: Int, color: String, weeks: String, credits: String? = null) {
         viewModelScope.launch {
-            appDao.updateCourse(Course(id, _currentScheduleId.value, name, location, teacher, day, start, end, weeks, color, credits))
+            val existingCourse = appDao.getCoursesBySchedule(_currentScheduleId.value)
+                .firstOrNull()
+                ?.firstOrNull { it.id == id }
+            val existingOverride = appDao.getAllOverrides()
+                .firstOrNull()
+                ?.firstOrNull { it.courseId == id }
+            val originalCourse = existingCourse ?: Course(
+                id = id,
+                scheduleId = _currentScheduleId.value,
+                name = name,
+                location = location,
+                teacher = teacher,
+                dayOfWeek = day,
+                startNode = start,
+                endNode = end,
+                weeks = weeks,
+                colorTheme = color,
+                credits = credits
+            )
+            appDao.updateCourse(
+                originalCourse.copy(
+                    name = name,
+                    location = location,
+                    teacher = teacher,
+                    dayOfWeek = day,
+                    startNode = start,
+                    endNode = end,
+                    weeks = weeks,
+                    colorTheme = color,
+                    credits = credits
+                )
+            )
+            if (existingOverride != null) {
+                appDao.insertOverride(
+                    existingOverride.copy(
+                        newDayOfWeek = day,
+                        newStartNode = start,
+                        newEndNode = end
+                    )
+                )
+            }
             notifyWidgetUpdate()
             scheduleNextAlarm()
         }
@@ -558,11 +599,14 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun importFromJson(jsonString: String, onResult: (Boolean) -> Unit) {
+    fun importFromJson(jsonString: String, replaceCurrent: Boolean = false, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             try {
                 val array = JSONArray(jsonString)
                 val targetScheduleId = _currentScheduleId.value
+                if (replaceCurrent) {
+                    appDao.deleteCoursesBySchedule(targetScheduleId)
+                }
                 var maxWeekInImport = totalWeeks.value
                 for (i in 0 until array.length()) {
                     val obj = array.getJSONObject(i)
@@ -608,7 +652,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun importFromShareCode(code: String, onResult: (Boolean) -> Unit) {
         try {
             val jsonString = String(Base64.decode(code, Base64.DEFAULT), Charsets.UTF_8)
-            importFromJson(jsonString, onResult)
+            importFromJson(jsonString, onResult = onResult)
         } catch (e: Exception) {
             onResult(false)
         }

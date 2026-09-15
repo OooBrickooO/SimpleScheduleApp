@@ -35,3 +35,7 @@ Thumbs.db
 /web/
 /AI_INSTRUCTIONS.md
 .kotlin/
+*.csv
+*.xlsx
+*.CSV
+*.XLSX

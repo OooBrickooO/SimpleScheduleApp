@@ -39,6 +39,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -406,6 +408,7 @@ class MainActivity : ComponentActivity() {
                                             onGlobalSettingsClick = { navController.navigate("global_settings") },
                                             onEditCourse = { courseToEdit = it; showAddDialog = true },
                                             onWebViewImportClick = { navController.navigate("webview_import") },
+                                            onCsvImportClick = { navController.navigate("webview_import?stage=csv") },
                                             onShareCodeClick = { showShareCodeDialog = true },
                                             onCreateScheduleClick = { showCreateScheduleDialog = true },
                                             onReminderSettingsClick = { navController.navigate("reminder_settings") }
@@ -561,11 +564,22 @@ class MainActivity : ComponentActivity() {
                                 AdjustCourseScreen(viewModel = viewModel, isDark = isDark, onBack = { navController.popBackStack() })
                             }
 
-                            composable("webview_import") {
+                            composable(
+                                route = "webview_import?stage={stage}",
+                                arguments = listOf(navArgument("stage") {
+                                    type = NavType.StringType
+                                    defaultValue = "select"
+                                })
+                            ) {
                                 val displayCourses by viewModel.displayCourses.collectAsState()
                                 val scheduleGroups by viewModel.scheduleGroups.collectAsState()
                                 val currentScheduleId by viewModel.currentScheduleId.collectAsState()
                                 val activeTimeNodes by viewModel.activeTimeNodes.collectAsState()
+                                val importStage = if (it.arguments?.getString("stage") == "csv") {
+                                    ImportStage.CSV_IMPORT
+                                } else {
+                                    ImportStage.SELECT_MODE
+                                }
 
                                 WebViewImportScreen(
                                     isDark = isDark,
@@ -573,7 +587,22 @@ class MainActivity : ComponentActivity() {
                                     startDate = scheduleGroups.find { it.id == currentScheduleId }?.startDate ?: "",
                                     hasCourses = displayCourses.isNotEmpty(),
                                     predictiveBackEnabled = predictiveBackEnabled,
+                                    initialStage = importStage,
                                     onBack = { navController.popBackStack() },
+                                    onCsvImportCurrent = { json ->
+                                        viewModel.importFromJson(json, replaceCurrent = true) { success ->
+                                            Toast.makeText(context, if (success) "已覆盖当前课表并导入" else "导入失败", Toast.LENGTH_SHORT).show()
+                                            if (success) navController.popBackStack("main", inclusive = false)
+                                        }
+                                    },
+                                    onCreateScheduleAndImport = { json ->
+                                        viewModel.createNewSchedule("CSV导入课表") {
+                                            viewModel.importFromJson(json) { success ->
+                                                Toast.makeText(context, if (success) "已新建课表并导入" else "导入失败", Toast.LENGTH_SHORT).show()
+                                                if (success) navController.popBackStack("main", inclusive = false)
+                                            }
+                                        }
+                                    },
                                     onImport = { json ->
                                         viewModel.importFromJson(json) { success ->
                                             Toast.makeText(context, if (success) "导入成功" else "解析失败", Toast.LENGTH_SHORT).show()
@@ -614,22 +643,24 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (showAddDialog) {
-                    CourseEditDialog(
-                        isDark = isDark,
-                        initialCourse = courseToEdit,
-                        viewModel = viewModel,
-                        onDismiss = { showAddDialog = false; courseToEdit = null },
-                        onConfirm = { id, name, loc, t, d, s, e, c, w, credits, abs, call ->
-                            if (id == null) {
-                                viewModel.addCustomCourse(name, loc, t, d, s, e, c, credits)
-                            } else {
-                                viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w, credits)
+                    key(courseToEdit?.id ?: "new-course") {
+                        CourseEditDialog(
+                            isDark = isDark,
+                            initialCourse = courseToEdit,
+                            viewModel = viewModel,
+                            onDismiss = { showAddDialog = false; courseToEdit = null },
+                            onConfirm = { id, name, loc, t, d, s, e, c, w, credits, abs, call ->
+                                if (id == null) {
+                                    viewModel.addCustomCourse(name, loc, t, d, s, e, c, credits)
+                                } else {
+                                    viewModel.updateCustomCourse(id, name, loc, t, d, s, e, c, w, credits)
+                                }
+                                viewModel.updateCourseStatistic(name, abs, call)
+                                showAddDialog = false
+                                courseToEdit = null
                             }
-                            viewModel.updateCourseStatistic(name, abs, call)
-                            showAddDialog = false
-                            courseToEdit = null
-                        }
-                    )
+                        )
+                    }
                 }
 
                 if (showShareCodeDialog) {
