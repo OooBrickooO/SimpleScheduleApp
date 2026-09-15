@@ -1737,7 +1737,7 @@ enum class ImportStage {
     CSV_IMPORT
 }
 
-private const val CSV_TEMPLATE_URL = "https://github.com/OooBrickooO/SimpleScheduleApp/raw/refs/heads/main/%E8%AF%BE%E8%A1%A8%E6%A8%A1%E6%9D%BF.CSV"
+private const val CSV_TEMPLATE_URL = "https://github.com/amaneyunomi/SimpleScheduleApp/releases/download/publish/default.CSV"
 
 @Composable
 fun SystemCard(
