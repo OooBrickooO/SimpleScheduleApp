@@ -301,6 +301,7 @@ class MainActivity : ComponentActivity() {
             val materialYou by viewModel.materialYou.collectAsState()
             val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
             val accentColor by viewModel.accentColor.collectAsState()
+            val parsedAccent = if (accentColor != -1L) Color(accentColor) else null
 
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
@@ -326,7 +327,8 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = materialYou,
                 accentColor = accentColor
             ) {
-                val animatedBgColor by animateColorAsState(
+                CompositionLocalProvider(com.example.simpleschedule.ui.theme.LocalAccentColor provides parsedAccent) {
+                    val animatedBgColor by animateColorAsState(
                     targetValue = if (isDark) {
                         if (materialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.background else BgDark
                     } else {
@@ -741,6 +743,7 @@ class MainActivity : ComponentActivity() {
                         onCancel = { cancelDownload(context) }
                     )
                 }
+            }
             }
         }
 

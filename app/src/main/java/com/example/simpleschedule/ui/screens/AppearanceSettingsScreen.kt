@@ -45,6 +45,7 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
     val accentColor by viewModel.accentColor.collectAsState()
     val courseColorPoolString by viewModel.courseColorPool.collectAsState()
+    var showCustomAccent by remember { mutableStateOf(false) }
 
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
     val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
@@ -67,30 +68,55 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
             item {
                 Text("全局主色调 (Accent Color)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        val presetColors = listOf(
-                            -1L to Color.Transparent, // Default
-                            0xFFE63946 to Color(0xFFE63946), // Red
-                            0xFF457B9D to Color(0xFF457B9D), // Blue
-                            0xFF2A9D8F to Color(0xFF2A9D8F), // Green
-                            0xFF9B5DE5 to Color(0xFF9B5DE5)  // Purple
-                        )
-                        presetColors.forEach { (value, color) ->
-                            val isSelected = accentColor == value
+                    Column {
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            val presetColors = listOf(
+                                -1L to Color.Transparent, // Default
+                                0xFFE63946 to Color(0xFFE63946), // Red
+                                0xFF457B9D to Color(0xFF457B9D), // Blue
+                                0xFF2A9D8F to Color(0xFF2A9D8F), // Green
+                                0xFF9B5DE5 to Color(0xFF9B5DE5)  // Purple
+                            )
+                            presetColors.forEach { (value, color) ->
+                                val isSelected = accentColor == value
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(if (value == -1L) (if(isDark) Color.DarkGray else Color.LightGray) else color)
+                                        .border(if (isSelected) 2.dp else 0.dp, if (isSelected) textColor else Color.Transparent, CircleShape)
+                                        .clickable { viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, value) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (value == -1L) {
+                                        Text("默认", fontSize = 10.sp, color = if(isDark) Color.White else Color.Black)
+                                    }
+                                }
+                            }
+                            
+                            // Custom color toggle button
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .background(if (value == -1L) (if(isDark) Color.DarkGray else Color.LightGray) else color)
-                                    .border(if (isSelected) 2.dp else 0.dp, if (isSelected) textColor else Color.Transparent, CircleShape)
-                                    .clickable { viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, value) },
+                                    .background(surfaceColor)
+                                    .border(1.dp, textColor, CircleShape)
+                                    .clickable { showCustomAccent = !showCustomAccent },
                                 contentAlignment = Alignment.Center
                             ) {
-                                if (value == -1L) {
-                                    Text("默认", fontSize = 10.sp, color = if(isDark) Color.White else Color.Black)
-                                }
+                                Text("自定义", fontSize = 9.sp, color = textColor)
                             }
                         }
+                    if (showCustomAccent) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("拖动以自定义颜色", fontSize = 12.sp, color = textColor.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SingleColorGamutSelector(isDark = isDark) { customColor ->
+                            // Convert Android Color to ARGB Long
+                            val argb = (customColor.value.toLong() shr 32)
+                            viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, argb)
+                        }
+                    }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
@@ -255,6 +281,53 @@ fun ColorGamutSelector(isDark: Boolean, onColorsGenerated: (List<Color>) -> Unit
                 center = cursorPosition,
                 style = Stroke(width = 1.dp.toPx())
             )
+        }
+    }
+}
+
+@Composable
+fun SingleColorGamutSelector(isDark: Boolean, onColorGenerated: (Color) -> Unit) {
+    val borderColor = if (isDark) BorderDark else BorderLight
+    var cursorPosition by remember { mutableStateOf(Offset(100f, 100f)) }
+    var canvasSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+    val cursorRadius = 16f
+
+    val hueColors = listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
+    
+    fun extractColorAtCursor() {
+        if (canvasSize.width == 0f || canvasSize.height == 0f) return
+        val px = cursorPosition.x.coerceIn(0f, canvasSize.width)
+        val py = cursorPosition.y.coerceIn(0f, canvasSize.height)
+        val hue = (px / canvasSize.width) * 360f
+        val saturation = 1f - (py / canvasSize.height)
+        val value = if (isDark) 0.8f else 0.95f
+        
+        val androidColor = AndroidColor.HSVToColor(floatArrayOf(hue, saturation, value))
+        onColorGenerated(Color(androidColor))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragEnd = { extractColorAtCursor() }
+                ) { change, dragAmount ->
+                    change.consume()
+                    val newX = (cursorPosition.x + dragAmount.x).coerceIn(0f, size.width.toFloat())
+                    val newY = (cursorPosition.y + dragAmount.y).coerceIn(0f, size.height.toFloat())
+                    cursorPosition = Offset(newX, newY)
+                }
+            }
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            canvasSize = size
+            drawRect(brush = Brush.horizontalGradient(hueColors), size = size)
+            drawRect(brush = Brush.verticalGradient(colors = listOf(Color.White, Color.Transparent)), size = size)
+            drawCircle(color = Color.White, radius = cursorRadius, center = cursorPosition, style = Stroke(width = 3.dp.toPx()))
         }
     }
 }

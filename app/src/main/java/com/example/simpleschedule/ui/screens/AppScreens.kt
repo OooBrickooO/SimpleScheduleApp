@@ -222,11 +222,12 @@ fun DotMatrixBackground(isDark: Boolean) {
 @Composable
 fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, onTabSelected: (Int) -> Unit) {
     val borderColor = if (isDark) BorderDark else BorderLight
-    val activeColor = if (isDark) Color.White else Color.Black
+    val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current
+    val activeColor = accent ?: if (isDark) Color.White else Color.Black
     val inactiveColor = if (isDark) Color.White.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.4f)
     
     // 指示器背景色
-    val indicatorColor = if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
+    val indicatorColor = accent?.copy(alpha = 0.12f) ?: (if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f))
 
     if (isFloating) {
         Box(
@@ -1760,7 +1761,8 @@ fun SettingValueItem(title: String, value: String, showBottomBorder: Boolean = t
 fun SettingCheckboxItem(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, showBottomBorder: Boolean = true, textColor: Color, borderColor: Color, isDark: Boolean) {
     Row(modifier = Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }.padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = CheckboxDefaults.colors(checkedColor = textColor, uncheckedColor = textColor.copy(alpha = 0.4f), checkmarkColor = if (isDark) BgDark else BgLight))
+        val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current ?: textColor
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = CheckboxDefaults.colors(checkedColor = accent, uncheckedColor = textColor.copy(alpha = 0.4f), checkmarkColor = if (isDark) BgDark else BgLight))
     }
     if (showBottomBorder) Divider(color = borderColor, thickness = 0.5.dp)
 }
@@ -1785,7 +1787,8 @@ fun SettingCheckboxItemWithSubtext(title: String, subtext: String, checked: Bool
             Spacer(modifier = Modifier.height(4.dp))
             Text(subtext, fontSize = 10.sp, color = textColor.copy(alpha = 0.5f), lineHeight = 14.sp)
         }
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = CheckboxDefaults.colors(checkedColor = textColor, uncheckedColor = textColor.copy(alpha = 0.4f), checkmarkColor = if (isDark) BgDark else BgLight))
+        val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current ?: textColor
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange, colors = CheckboxDefaults.colors(checkedColor = accent, uncheckedColor = textColor.copy(alpha = 0.4f), checkmarkColor = if (isDark) BgDark else BgLight))
     }
     if (showBottomBorder) Divider(color = borderColor, thickness = 0.5.dp)
 }
@@ -3134,7 +3137,7 @@ fun WebViewImportScreen(
                             checked = hasReadCsvInstructions,
                             onCheckedChange = { hasReadCsvInstructions = it },
                             colors = CheckboxDefaults.colors(
-                                checkedColor = Color(0xFF9A5264),
+                                checkedColor = com.example.simpleschedule.ui.theme.LocalAccentColor.current ?: Color(0xFF9A5264),
                                 checkmarkColor = Color.White
                             )
                         )
@@ -3598,11 +3601,12 @@ fun TimetableListScreen(viewModel: ScheduleViewModel, timetables: List<Timetable
             )
         }
 
+        val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current
         FloatingActionButton(
             onClick = { onEdit(null) },
             modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(24.dp),
-            containerColor = textColor,
-            contentColor = if (isDark) BgDark else BgLight,
+            containerColor = accent ?: textColor,
+            contentColor = if (accent != null) (if (isDark) Color.Black else Color.White) else (if (isDark) BgDark else BgLight),
             shape = RoundedCornerShape(16.dp)
         ) {
             Icon(Icons.Rounded.Add, "Add Timetable")
@@ -3689,7 +3693,8 @@ fun TimetableEditScreen(timetableId: String?, timetables: List<TimetableGroup>, 
                 )
                 Row(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("每节课时长相同", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                    Switch(checked = isSameDuration, onCheckedChange = { isSameDuration = it }, colors = SwitchDefaults.colors(checkedThumbColor = if (isDark) BgDark else BgLight, checkedTrackColor = textColor))
+                    val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current ?: textColor
+                    Switch(checked = isSameDuration, onCheckedChange = { isSameDuration = it }, colors = SwitchDefaults.colors(checkedThumbColor = if (isDark) BgDark else BgLight, checkedTrackColor = accent))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (isSameDuration) {
