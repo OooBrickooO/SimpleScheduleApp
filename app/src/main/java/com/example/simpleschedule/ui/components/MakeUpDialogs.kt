@@ -906,8 +906,10 @@ private fun GuideItemCard(
                         text = title,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = textColor
+                        color = textColor,
+                        modifier = Modifier.weight(1f)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Surface(
                         color = iconTint.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp)

@@ -775,6 +775,14 @@ fun TimetableGrid(
                                 detectTapGestures(
                                     onLongPress = {
                                         if (dayDateStr.isNotEmpty()) {
+                                            if (vibration) {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
+                                                } else {
+                                                    @Suppress("DEPRECATION")
+                                                    try { vibrator.vibrate(50) } catch (e: Exception) {}
+                                                }
+                                            }
                                             onDayLongPress(day, dayDateStr)
                                         }
                                     }
