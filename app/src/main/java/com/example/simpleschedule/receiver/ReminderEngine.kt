@@ -178,6 +178,7 @@ object ReminderEngine {
         val overrideMap = overrides.associateBy { it.courseId }
         val timeNodes = appDao.getTimeNodes(currentSchedule.timetableId)
         val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+        val makeUpRules = appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList()
 
         val currentTimeMillis = System.currentTimeMillis()
         var nextTriggerTimeMillis = Long.MAX_VALUE
@@ -187,7 +188,23 @@ object ReminderEngine {
 
         for (dayOffset in 0..3) {
             val evalCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, dayOffset) }
-            val evalDayOfWeek = if (evalCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else evalCal.get(Calendar.DAY_OF_WEEK) - 1
+            val evalDateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(evalCal.time)
+            val targetRule = makeUpRules.find { it.targetDate == evalDateStr }
+            val holidayRule = makeUpRules.find { it.sourceDate == evalDateStr }
+
+            if (holidayRule != null) continue
+
+            val (evalDayOfWeek, evalWeek) = if (targetRule != null) {
+                val srcInfo = com.example.simpleschedule.utils.getWeekAndDay(targetRule.sourceDate, currentSchedule.startDate)
+                if (srcInfo != null) Pair(srcInfo.second, srcInfo.first)
+                else {
+                    val calDay = if (evalCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else evalCal.get(Calendar.DAY_OF_WEEK) - 1
+                    Pair(calDay, currentWeek)
+                }
+            } else {
+                val calDay = if (evalCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else evalCal.get(Calendar.DAY_OF_WEEK) - 1
+                Pair(calDay, currentWeek)
+            }
 
             val validCourses = rawCourses.mapNotNull { course ->
                 val over = overrideMap[course.id]
@@ -197,7 +214,7 @@ object ReminderEngine {
                 if (effectiveDay != evalDayOfWeek) return@mapNotNull null
 
                 val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                if (!weeksList.contains(currentWeek)) return@mapNotNull null
+                if (!weeksList.contains(evalWeek)) return@mapNotNull null
 
                 val startNodeInfo = timeNodeMap[effectiveStart] ?: return@mapNotNull null
                 val endNodeInfo = timeNodeMap[effectiveEnd] ?: return@mapNotNull null
@@ -330,14 +347,27 @@ object ReminderEngine {
         val overrideMap = overrides.associateBy { it.courseId }
         val timeNodes = appDao.getTimeNodes(currentSchedule.timetableId)
         val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
+        val makeUpRules = appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList()
+
+        val todayDateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
+        val targetRule = makeUpRules.find { it.targetDate == todayDateStr }
+        val holidayRule = makeUpRules.find { it.sourceDate == todayDateStr }
+
+        if (holidayRule != null) return
+
+        val (evalDayOfWeek, evalWeek) = if (targetRule != null) {
+            val srcInfo = com.example.simpleschedule.utils.getWeekAndDay(targetRule.sourceDate, currentSchedule.startDate)
+            if (srcInfo != null) Pair(srcInfo.second, srcInfo.first)
+            else Pair(todayDayOfWeek, currentWeek)
+        } else Pair(todayDayOfWeek, currentWeek)
 
         val todayCoursesEndMillis = rawCourses.mapNotNull { course ->
             val over = overrideMap[course.id]
             val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-            if (effectiveDay != todayDayOfWeek) return@mapNotNull null
+            if (effectiveDay != evalDayOfWeek) return@mapNotNull null
 
             val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-            if (!weeksList.contains(currentWeek)) return@mapNotNull null
+            if (!weeksList.contains(evalWeek)) return@mapNotNull null
 
             val effectiveEnd = over?.newEndNode ?: course.endNode
             val endNodeInfo = timeNodeMap[effectiveEnd] ?: return@mapNotNull null

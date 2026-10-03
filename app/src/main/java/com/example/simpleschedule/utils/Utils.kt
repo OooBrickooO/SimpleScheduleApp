@@ -178,4 +178,71 @@ fun formatDateForDisplay(dateStr: String): String {
     }
 }
 
+fun formatShortDate(dateStr: String): String {
+    if (dateStr.isEmpty()) return ""
+    return try {
+        val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr) ?: return dateStr
+        SimpleDateFormat("M/d (E)", Locale.CHINESE).format(parsedDate)
+    } catch (e: Exception) {
+        dateStr
+    }
+}
+
+fun getWeekAndDay(dateStr: String, startDateStr: String): Pair<Int, Int>? {
+    if (startDateStr.isEmpty() || dateStr.isEmpty()) return null
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val startCal = Calendar.getInstance().apply {
+            time = sdf.parse(startDateStr) ?: Date()
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val targetCal = Calendar.getInstance().apply {
+            time = sdf.parse(dateStr) ?: Date()
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+            startCal.add(Calendar.DAY_OF_YEAR, -1)
+        }
+
+        val calDay = targetCal.get(Calendar.DAY_OF_WEEK)
+        val dayOfWeek = if (calDay == Calendar.SUNDAY) 7 else calDay - 1
+
+        val diffMillis = targetCal.timeInMillis - startCal.timeInMillis
+        val diffDays = diffMillis / (1000 * 60 * 60 * 24)
+        val week = (diffDays / 7).toInt() + 1
+
+        Pair(week, dayOfWeek)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+fun getDateByWeekAndDay(week: Int, dayOfWeek: Int, startDateStr: String): String? {
+    if (startDateStr.isEmpty()) return null
+    return try {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val startCal = Calendar.getInstance().apply {
+            time = sdf.parse(startDateStr) ?: Date()
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+            startCal.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        startCal.add(Calendar.DAY_OF_YEAR, (week - 1) * 7 + (dayOfWeek - 1))
+        sdf.format(startCal.time)
+    } catch (e: Exception) {
+        null
+    }
+}
+
 // --- 3. UI 主题与调色板 (Theme & Palette) ---

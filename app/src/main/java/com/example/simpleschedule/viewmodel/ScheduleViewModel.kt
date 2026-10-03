@@ -215,6 +215,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
+    val makeUpRules = _currentScheduleId.flatMapLatest { sId ->
+        appDao.getMakeUpRulesBySchedule(sId)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
     init {
         viewModelScope.launch {
             ensureBuiltInTimetablesExist()
@@ -566,6 +570,28 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun deleteCourse(courseId: String) {
         viewModelScope.launch {
             appDao.deleteCourse(courseId)
+            notifyWidgetUpdate()
+            scheduleNextAlarm()
+        }
+    }
+
+    fun addMakeUpRule(sourceDate: String, targetDate: String) {
+        viewModelScope.launch {
+            appDao.insertMakeUpRule(
+                MakeUpRule(
+                    scheduleId = _currentScheduleId.value,
+                    sourceDate = sourceDate,
+                    targetDate = targetDate
+                )
+            )
+            notifyWidgetUpdate()
+            scheduleNextAlarm()
+        }
+    }
+
+    fun deleteMakeUpRule(id: String) {
+        viewModelScope.launch {
+            appDao.deleteMakeUpRule(id)
             notifyWidgetUpdate()
             scheduleNextAlarm()
         }

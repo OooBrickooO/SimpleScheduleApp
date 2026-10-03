@@ -106,6 +106,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import com.example.simpleschedule.ui.components.*
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -369,7 +371,9 @@ fun TimetableScreen(
     var showMoreSheet by remember { mutableStateOf(false) }
     var scheduleIdToDelete by remember { mutableStateOf<String?>(null) }
     var scheduleNameToDelete by remember { mutableStateOf<String?>(null) }
-
+    val makeUpRules by viewModel.makeUpRules.collectAsState()
+    var showMakeUpManagerSheet by remember { mutableStateOf(false) }
+    var quickMakeUpTargetDate by remember { mutableStateOf<String?>(null) }
 
     val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
     val currentScheduleName = currentSchedule?.name ?: "课表"
@@ -413,6 +417,15 @@ fun TimetableScreen(
                             onCsvImportClick()
                         })
                         DropdownMenuItem(text = { Text("分享口令导入", fontWeight = FontWeight.Bold, color = textColor) }, leadingIcon = { Icon(Icons.Rounded.Share, contentDescription = null, tint = textColor) }, onClick = { showAddMenu = false; onShareCodeClick() })
+                        Divider(color = borderColor, thickness = 0.5.dp)
+                        DropdownMenuItem(
+                            text = { Text("调休快捷换课", fontWeight = FontWeight.Bold, color = textColor) },
+                            leadingIcon = { Icon(Icons.Rounded.SwapHoriz, contentDescription = null, tint = textColor) },
+                            onClick = {
+                                showAddMenu = false
+                                showMakeUpManagerSheet = true
+                            }
+                        )
                     }
                 }
                 Icon(Icons.Rounded.MoreVert, contentDescription = "More", tint = textColor, modifier = Modifier.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { showMoreSheet = true })
@@ -426,17 +439,47 @@ fun TimetableScreen(
 
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
             val weekForThisPage = page + 1
-            val coursesForThisPage = remember(courses, weekForThisPage, showNotThisWeek) {
+            val coursesForThisPage = remember(courses, weekForThisPage, showNotThisWeek, makeUpRules, startDate) {
                 val occupiedSlots = mutableSetOf<String>()
 
-                val currentCourses = courses.filter { dc ->
-                    val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                    weeksList.contains(weekForThisPage)
-                }.map { dc ->
-                    for (node in dc.displayStartNode..dc.displayEndNode) {
-                        occupiedSlots.add("${dc.displayDay}_$node")
+                val currentCourses = mutableListOf<Pair<DisplayCourse, Boolean>>()
+                for (day in 1..7) {
+                    val dayDate = getDateByWeekAndDay(weekForThisPage, day, startDate) ?: ""
+                    val targetRule = makeUpRules.find { it.targetDate.isNotEmpty() && it.targetDate == dayDate }
+                    val holidayRule = makeUpRules.find { it.sourceDate.isNotEmpty() && it.sourceDate == dayDate }
+
+                    if (targetRule != null) {
+                        // 目标上课日：显示从 sourceDate 调过来的课
+                        val srcInfo = getWeekAndDay(targetRule.sourceDate, startDate)
+                        if (srcInfo != null) {
+                            val (srcWeek, srcDay) = srcInfo
+                            val sourceCourses = courses.filter { dc ->
+                                val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                                weeksList.contains(srcWeek) && dc.displayDay == srcDay
+                            }
+                            sourceCourses.forEach { sc ->
+                                val mapped = sc.copy(displayDay = day)
+                                for (node in mapped.displayStartNode..mapped.displayEndNode) {
+                                    occupiedSlots.add("${mapped.displayDay}_$node")
+                                }
+                                currentCourses.add(Pair(mapped, false))
+                            }
+                        }
+                    } else if (holidayRule != null) {
+                        // 被调走的放假日：原课已被移走，不显示排课
+                    } else {
+                        // 正常日：正常排本周当天的课
+                        val normalCourses = courses.filter { dc ->
+                            val weeksList = dc.course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                            weeksList.contains(weekForThisPage) && dc.displayDay == day
+                        }
+                        normalCourses.forEach { nc ->
+                            for (node in nc.displayStartNode..nc.displayEndNode) {
+                                occupiedSlots.add("${nc.displayDay}_$node")
+                            }
+                            currentCourses.add(Pair(nc, false))
+                        }
                     }
-                    Pair(dc, false)
                 }
 
                 val futureCourses = mutableListOf<Pair<DisplayCourse, Boolean>>()
@@ -470,6 +513,27 @@ fun TimetableScreen(
                 }
                 currentCourses + futureCourses
             }
+
+            val makeUpDayMap = remember(makeUpRules, weekForThisPage, startDate) {
+                val map = mutableMapOf<Int, MakeUpRule>()
+                for (day in 1..7) {
+                    val dayDate = getDateByWeekAndDay(weekForThisPage, day, startDate) ?: ""
+                    val rule = makeUpRules.find { it.targetDate.isNotEmpty() && it.targetDate == dayDate }
+                    if (rule != null) map[day] = rule
+                }
+                map
+            }
+
+            val holidayDayMap = remember(makeUpRules, weekForThisPage, startDate) {
+                val map = mutableMapOf<Int, MakeUpRule>()
+                for (day in 1..7) {
+                    val dayDate = getDateByWeekAndDay(weekForThisPage, day, startDate) ?: ""
+                    val rule = makeUpRules.find { it.sourceDate.isNotEmpty() && it.sourceDate == dayDate }
+                    if (rule != null) map[day] = rule
+                }
+                map
+            }
+
             TimetableGrid(
                 viewModel = viewModel,
                 coursesForThisPage = coursesForThisPage,
@@ -479,12 +543,13 @@ fun TimetableScreen(
                 startDate = startDate,
                 displayedWeek = weekForThisPage,
                 materialYou = materialYou,
+                makeUpDayMap = makeUpDayMap,
+                holidayDayMap = holidayDayMap,
+                onDayLongPress = { _, dateStr -> quickMakeUpTargetDate = dateStr },
                 onCourseClick = { course, isFuture -> selectedCourseWithWeek = Pair(course, if (isFuture) 0 else weekForThisPage) }
             )
         }
     }
-
-
 
     if (selectedCourseWithWeek != null) {
         val (course, clickedWeek) = selectedCourseWithWeek!!
@@ -526,6 +591,45 @@ fun TimetableScreen(
         )
     }
 
+    if (quickMakeUpTargetDate != null) {
+        val targetDate = quickMakeUpTargetDate!!
+        val existingTargetRule = makeUpRules.find { it.targetDate == targetDate }
+        val existingSourceRule = makeUpRules.find { it.sourceDate == targetDate }
+
+        QuickMakeUpDialog(
+            isDark = isDark,
+            dateStr = targetDate,
+            existingTargetRule = existingTargetRule,
+            existingSourceRule = existingSourceRule,
+            onDismiss = { quickMakeUpTargetDate = null },
+            onSaveRule = { sourceDate, tDate ->
+                viewModel.addMakeUpRule(sourceDate, tDate)
+                quickMakeUpTargetDate = null
+            },
+            onDeleteRule = { ruleId ->
+                viewModel.deleteMakeUpRule(ruleId)
+                quickMakeUpTargetDate = null
+            },
+            onOpenFullManager = {
+                showMakeUpManagerSheet = true
+            }
+        )
+    }
+
+    if (showMakeUpManagerSheet) {
+        MakeUpManagerBottomSheet(
+            isDark = isDark,
+            makeUpRules = makeUpRules,
+            onDismiss = { showMakeUpManagerSheet = false },
+            onAddRule = { sourceDate, targetDate ->
+                viewModel.addMakeUpRule(sourceDate, targetDate)
+            },
+            onDeleteRule = { ruleId ->
+                viewModel.deleteMakeUpRule(ruleId)
+            }
+        )
+    }
+
     if (showMoreSheet) {
         MoreMenuBottomSheet(
             isDark = isDark,
@@ -558,6 +662,9 @@ fun TimetableGrid(
     startDate: String,
     displayedWeek: Int,
     materialYou: Boolean,
+    makeUpDayMap: Map<Int, MakeUpRule> = emptyMap(),
+    holidayDayMap: Map<Int, MakeUpRule> = emptyMap(),
+    onDayLongPress: (Int, String) -> Unit = { _, _ -> },
     onCourseClick: (DisplayCourse, Boolean) -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
@@ -636,11 +743,59 @@ fun TimetableGrid(
 
             for (day in 1..7) {
                 if (visualColMap.containsKey(day)) {
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val isMakeUp = makeUpDayMap.containsKey(day)
+                    val isHoliday = holidayDayMap.containsKey(day)
+                    val dayDateStr = getDateByWeekAndDay(displayedWeek, day, startDate) ?: ""
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .pointerInput(day, dayDateStr) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        if (dayDateStr.isNotEmpty()) {
+                                            onDayLongPress(day, dayDateStr)
+                                        }
+                                    }
+                                )
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(allDays[day-1], fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f))
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         val displayDate = if (dateList.size == 7) dateList[day-1].toString() else "-"
                         Text(displayDate, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.8f))
+                        if (isMakeUp) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Surface(
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text(
+                                    text = "调休",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        } else if (isHoliday) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Surface(
+                                color = (if (isDark) Color(0xFFEF4444) else Color(0xFFDC2626)).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp),
+                                border = BorderStroke(0.5.dp, if (isDark) Color(0xFFEF4444) else Color(0xFFDC2626))
+                            ) {
+                                Text(
+                                    text = "放假",
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (isDark) Color(0xFFF87171) else Color(0xFFDC2626),
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -666,6 +821,25 @@ fun TimetableGrid(
                     }
                     for (i in 1..daysCount) {
                         Box(modifier = Modifier.fillMaxHeight().width(0.5.dp).offset(x = timeColWidthDp + colWidthDp * i).background(borderColor))
+                    }
+
+                    // 调休高亮细线框住整天及淡底色强调
+                    makeUpDayMap.keys.forEach { makeUpDay ->
+                        val mappedCol = visualColMap[makeUpDay]
+                        if (mappedCol != null) {
+                            val colX = timeColWidthDp + colWidthDp * mappedCol
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = colX, y = 0.dp)
+                                    .size(width = colWidthDp, height = cellHeightDp.dp * maxRow)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.04f), RoundedCornerShape(cornerRadiusDp.dp))
+                                    .border(
+                                        width = 1.dp,
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                                        shape = RoundedCornerShape(cornerRadiusDp.dp)
+                                    )
+                            )
+                        }
                     }
 
                     timeNodes.forEachIndexed { index, node ->
