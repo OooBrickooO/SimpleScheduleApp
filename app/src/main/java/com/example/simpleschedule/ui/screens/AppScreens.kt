@@ -5022,20 +5022,20 @@ fun ProfileScreen(
             Column {
                 SettingValueItem(title = "版本", value = versionName, textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
                 SettingItemWithSubtext(
-                    title = "功能查找与使用帮助",
-                    subtext = "探索应用内的所有功能、快速跳转与完整使用指南",
-                    showBottomBorder = true,
-                    textColor = textColor,
-                    borderColor = borderColor,
-                    onClick = onHelpSearchClick
-                )
-                SettingItemWithSubtext(
                     title = "更新说明",
                     subtext = "点击查看最近版本的更新公告说明",
                     showBottomBorder = true,
                     textColor = textColor,
                     borderColor = borderColor,
                     onClick = onShowAnnouncementClick
+                )
+                SettingItemWithSubtext(
+                    title = "功能查找与使用帮助",
+                    subtext = "探索应用内的所有功能、快速跳转与完整使用指南",
+                    showBottomBorder = true,
+                    textColor = textColor,
+                    borderColor = borderColor,
+                    onClick = onHelpSearchClick
                 )
                 SettingItemWithSubtext(
                     title = "开源与反馈",
