@@ -378,7 +378,7 @@ fun TimetableScreen(
     var showMakeUpGuideDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(hasSeenMakeUpGuide) {
-        if (!hasSeenMakeUpGuide) {
+        if (hasSeenMakeUpGuide == false) {
             showMakeUpGuideDialog = true
         }
     }
