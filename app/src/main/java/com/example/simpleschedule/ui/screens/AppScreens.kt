@@ -672,6 +672,7 @@ fun TimetableScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("MissingPermission")
 @Composable
 fun TimetableGrid(
@@ -771,23 +772,24 @@ fun TimetableGrid(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .pointerInput(day, dayDateStr) {
-                                detectTapGestures(
-                                    onLongPress = {
-                                        if (dayDateStr.isNotEmpty()) {
-                                            if (vibration) {
-                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                    try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
-                                                } else {
-                                                    @Suppress("DEPRECATION")
-                                                    try { vibrator.vibrate(50) } catch (e: Exception) {}
-                                                }
+                            .clip(RoundedCornerShape(8.dp))
+                            .combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    if (dayDateStr.isNotEmpty()) {
+                                        if (vibration) {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                try { vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)) } catch (e: Exception) {}
+                                            } else {
+                                                @Suppress("DEPRECATION")
+                                                try { vibrator.vibrate(50) } catch (e: Exception) {}
                                             }
-                                            onDayLongPress(day, dayDateStr)
                                         }
+                                        onDayLongPress(day, dayDateStr)
                                     }
-                                )
-                            },
+                                }
+                            )
+                            .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(allDays[day-1], fontSize = 10.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.4f))
