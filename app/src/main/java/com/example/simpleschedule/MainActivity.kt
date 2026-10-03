@@ -435,6 +435,7 @@ class MainActivity : ComponentActivity() {
                                                      }
                                                  }
                                              },
+                                            onHelpSearchClick = { navController.navigate("help_search") },
                                             onCheckUpdateClick = {
                                                 if (!isCheckingManualUpdate) {
                                                     isCheckingManualUpdate = true
@@ -609,6 +610,15 @@ class MainActivity : ComponentActivity() {
                                             if (success) navController.popBackStack("main", inclusive = false)
                                         }
                                     }
+                                )
+                            }
+
+                            composable("help_search") {
+                                HelpSearchScreen(
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onNavigateToReminderSettings = { navController.navigate("reminder_settings") },
+                                    onNavigateToGlobalSettings = { navController.navigate("global_settings") }
                                 )
                             }
 

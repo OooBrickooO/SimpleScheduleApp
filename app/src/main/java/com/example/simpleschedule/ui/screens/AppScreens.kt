@@ -4960,7 +4960,8 @@ fun ProfileScreen(
     isDark: Boolean,
     onThemeToggle: (Boolean) -> Unit,
     onCheckUpdateClick: () -> Unit = {},
-    onShowAnnouncementClick: () -> Unit = {}
+    onShowAnnouncementClick: () -> Unit = {},
+    onHelpSearchClick: () -> Unit = {}
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -5020,6 +5021,14 @@ fun ProfileScreen(
         Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
             Column {
                 SettingValueItem(title = "版本", value = versionName, textColor = textColor, borderColor = borderColor, onClick = onCheckUpdateClick)
+                SettingItemWithSubtext(
+                    title = "功能查找与使用帮助",
+                    subtext = "探索应用内的所有功能、快速跳转与完整使用指南",
+                    showBottomBorder = true,
+                    textColor = textColor,
+                    borderColor = borderColor,
+                    onClick = onHelpSearchClick
+                )
                 SettingItemWithSubtext(
                     title = "更新说明",
                     subtext = "点击查看最近版本的更新公告说明",
