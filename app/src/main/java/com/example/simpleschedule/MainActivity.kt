@@ -300,6 +300,7 @@ class MainActivity : ComponentActivity() {
             val isDark = isDarkSetting ?: isSystemDark
             val materialYou by viewModel.materialYou.collectAsState()
             val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+            val accentColor by viewModel.accentColor.collectAsState()
 
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
@@ -322,7 +323,8 @@ class MainActivity : ComponentActivity() {
 
             SimpleScheduleTheme(
                 darkTheme = isDark,
-                dynamicColor = materialYou
+                dynamicColor = materialYou,
+                accentColor = accentColor
             ) {
                 val animatedBgColor by animateColorAsState(
                     targetValue = if (isDark) {
@@ -436,6 +438,7 @@ class MainActivity : ComponentActivity() {
                                                  }
                                              },
                                             onHelpSearchClick = { navController.navigate("help_search") },
+                                            onAppearanceSettingsClick = { navController.navigate("appearance_settings") },
                                             onCheckUpdateClick = {
                                                 if (!isCheckingManualUpdate) {
                                                     isCheckingManualUpdate = true

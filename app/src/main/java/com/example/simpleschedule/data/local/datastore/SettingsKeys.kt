@@ -169,5 +169,7 @@ object SettingsKeys {
     val FLOATING_BOTTOM_BAR = booleanPreferencesKey("floating_bottom_bar")
     val TAB_ANIMATION_TYPE = stringPreferencesKey("tab_animation_type")
     val HAS_SEEN_MAKEUP_GUIDE = booleanPreferencesKey("has_seen_makeup_guide")
+    val ACCENT_COLOR = longPreferencesKey("accent_color")
+    val COURSE_COLOR_POOL = stringPreferencesKey("course_color_pool")
 }
 

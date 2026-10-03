@@ -707,6 +707,7 @@ fun TimetableGrid(
     val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
     val hideTime by viewModel.hideTime.collectAsState()
     val vibration by viewModel.vibration.collectAsState()
+    val courseColorPool by viewModel.courseColorPool.collectAsState()
 
     val allDays = remember { listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN") }
 
@@ -889,7 +890,7 @@ fun TimetableGrid(
                         val mappedCol = visualColMap[displayCourse.displayDay]
                         if (mappedCol != null) {
                             val course = displayCourse.course
-                            val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
+                            val palette = getCoursePalette(course.colorTheme, isDark, materialYou, course.name, courseColorPool)
                             var dragOffset by remember { mutableStateOf(Offset.Zero) }
                             var isDragging by remember { mutableStateOf(false) }
 
@@ -1133,65 +1134,6 @@ fun ScheduleSettingsScreen(
     }
     if (showTotalWeeksDialog) {
         ChangeWeekDialog(isDark = isDark, title = "设置学期周数", currentValue = totalWeeks, maxValue = 30, onDismiss = { showTotalWeeksDialog = false }, onConfirm = { onTotalWeeksChange(it); showTotalWeeksDialog = false })
-    }
-}
-
-@Composable
-fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: () -> Unit) {
-    val textColor = if (isDark) TextDark else TextLight
-    val borderColor = if (isDark) BorderDark else BorderLight
-    val surfaceColor = if (isDark) Color(0xFF18181B) else Color(0xFFF4F4F5)
-
-    val hideTime by viewModel.hideTime.collectAsState()
-    val cellHeightDp by viewModel.cellHeight.collectAsState()
-    val cornerRadiusDp by viewModel.cornerRadius.collectAsState()
-
-    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
-    val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize().then(backModifier)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Rounded.ArrowBack, contentDescription = "Back", tint = textColor, modifier = Modifier.clickable { onBack() }.padding(8.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("更多外观设置", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
-        }
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
-                    Column {
-                        SettingValueItem(title = "纯色背景颜色", value = "默认偏好", textColor = textColor, borderColor = borderColor)
-                        SettingCheckboxItem(title = "隐藏格子内的时间显示", checked = hideTime, onCheckedChange = { viewModel.updateSetting(SettingsKeys.HIDE_TIME, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
-
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("课程格子高度 (${cellHeightDp.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                            Slider(
-                                value = cellHeightDp,
-                                onValueChange = { viewModel.updateSetting(SettingsKeys.CELL_HEIGHT, it) },
-                                valueRange = 40f..100f,
-                                colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
-                            )
-                        }
-                        Divider(color = borderColor, thickness = 0.5.dp)
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("格子圆角半径 (${cornerRadiusDp.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
-                            Slider(
-                                value = cornerRadiusDp,
-                                onValueChange = { viewModel.updateSetting(SettingsKeys.CORNER_RADIUS, it) },
-                                valueRange = 0f..24f,
-                                colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
-            }
-        }
     }
 }
 
@@ -3917,6 +3859,7 @@ fun CourseManagementScreen(viewModel: ScheduleViewModel, courses: List<Course>, 
     val borderColor = if (isDark) BorderDark else BorderLight
 
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+    val courseColorPool by viewModel.courseColorPool.collectAsState()
     val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
     var courseIdToDelete by remember { mutableStateOf<String?>(null) }
@@ -3943,7 +3886,7 @@ fun CourseManagementScreen(viewModel: ScheduleViewModel, courses: List<Course>, 
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(courses) { course ->
-                val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
+                val palette = getCoursePalette(course.colorTheme, isDark, materialYou, course.name, courseColorPool)
                 Box(
                     modifier = Modifier.fillMaxWidth().aspectRatio(1.5f).animateContentSize().clip(RoundedCornerShape(8.dp)).background(palette.bg).border(0.5.dp, palette.border, RoundedCornerShape(8.dp)).pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
@@ -4027,7 +3970,8 @@ fun CourseDetailDialog(
     val textColor = if (isDark) Color.White else Color.Black
     val borderColor = if (isDark) BorderDark else BorderLight
     val course = displayCourse.course
-    val palette = getCoursePalette(course.colorTheme, isDark, materialYou)
+    val courseColorPool by viewModel.courseColorPool.collectAsState()
+    val palette = getCoursePalette(course.colorTheme, isDark, materialYou, course.name, courseColorPool)
     val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
 
     val statistic by viewModel.getCourseStatistic(course.name).collectAsState(initial = null)
@@ -4961,7 +4905,8 @@ fun ProfileScreen(
     onThemeToggle: (Boolean) -> Unit,
     onCheckUpdateClick: () -> Unit = {},
     onShowAnnouncementClick: () -> Unit = {},
-    onHelpSearchClick: () -> Unit = {}
+    onHelpSearchClick: () -> Unit = {},
+    onAppearanceSettingsClick: () -> Unit = {}
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -5013,6 +4958,9 @@ fun ProfileScreen(
             }
             Row(modifier = Modifier.weight(1f).clickable { onThemeToggle(true) }.background(if (isDark) textColor else Color.Transparent).border(0.5.dp, if (isDark) Color.Transparent else borderColor).padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Text("Dark", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (isDark) BgDark else textColor)
+            }
+            Row(modifier = Modifier.weight(1f).clickable { onAppearanceSettingsClick() }.background(Color.Transparent).border(0.5.dp, borderColor).padding(16.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text("自定义", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor)
             }
         }
 

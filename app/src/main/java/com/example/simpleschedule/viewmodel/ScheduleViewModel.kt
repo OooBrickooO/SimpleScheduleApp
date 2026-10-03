@@ -184,6 +184,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         seen
     }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
+    val accentColor = application.dataStore.data.map { it[SettingsKeys.ACCENT_COLOR] ?: -1L }.stateIn(viewModelScope, SharingStarted.Lazily, -1L)
+    val courseColorPool = application.dataStore.data.map { it[SettingsKeys.COURSE_COLOR_POOL] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+
     fun markMakeUpGuideSeen() {
         viewModelScope.launch {
             getApplication<Application>().dataStore.edit { it[SettingsKeys.HAS_SEEN_MAKEUP_GUIDE] = true }
@@ -206,6 +209,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
     fun updateSetting(key: Preferences.Key<String>, value: String) = viewModelScope.launch {
+        getApplication<Application>().dataStore.edit { it[key] = value }
+    }
+    fun updateSetting(key: Preferences.Key<Long>, value: Long) = viewModelScope.launch {
         getApplication<Application>().dataStore.edit { it[key] = value }
     }
 

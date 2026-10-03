@@ -158,7 +158,36 @@ fun getPalette(theme: String, isDark: Boolean): CoursePalette {
 }
 
 @Composable
-fun getCoursePalette(theme: String, isDark: Boolean, useMaterialYou: Boolean): CoursePalette {
+fun getCoursePalette(
+    theme: String, 
+    isDark: Boolean, 
+    useMaterialYou: Boolean,
+    courseName: String = "",
+    customPoolString: String = ""
+): CoursePalette {
+    if (customPoolString.isNotBlank() && courseName.isNotBlank()) {
+        val pool = customPoolString.split(",").mapNotNull { it.toULongOrNull()?.let { v -> Color(v) } }
+        if (pool.isNotEmpty()) {
+            val nameHash = kotlin.math.abs(courseName.hashCode())
+            val baseColor = pool[nameHash % pool.size]
+            return if (isDark) {
+                CoursePalette(
+                    bg = baseColor.copy(alpha = 0.2f),
+                    border = baseColor.copy(alpha = 0.5f),
+                    text = baseColor.copy(alpha = 0.9f),
+                    accent = baseColor
+                )
+            } else {
+                CoursePalette(
+                    bg = baseColor.copy(alpha = 0.2f),
+                    border = baseColor.copy(alpha = 0.4f),
+                    text = Color(baseColor.red * 0.6f, baseColor.green * 0.6f, baseColor.blue * 0.6f, 1f),
+                    accent = baseColor
+                )
+            }
+        }
+    }
+
     if (useMaterialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         val scheme = MaterialTheme.colorScheme
         return when (theme) {
