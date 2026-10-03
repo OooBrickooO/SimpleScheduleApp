@@ -179,6 +179,13 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val predictiveBackEnabled = application.dataStore.data.map { it[SettingsKeys.PREDICTIVE_BACK_ENABLED] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val floatingBottomBar = application.dataStore.data.map { it[SettingsKeys.FLOATING_BOTTOM_BAR] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val tabAnimationType = application.dataStore.data.map { it[SettingsKeys.TAB_ANIMATION_TYPE] ?: "Slide" }.stateIn(viewModelScope, SharingStarted.Lazily, "Slide")
+    val hasSeenMakeUpGuide = application.dataStore.data.map { it[SettingsKeys.HAS_SEEN_MAKEUP_GUIDE] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    fun markMakeUpGuideSeen() {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[SettingsKeys.HAS_SEEN_MAKEUP_GUIDE] = true }
+        }
+    }
 
     fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) {
         viewModelScope.launch {

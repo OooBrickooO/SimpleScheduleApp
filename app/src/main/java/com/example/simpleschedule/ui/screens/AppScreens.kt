@@ -374,6 +374,14 @@ fun TimetableScreen(
     val makeUpRules by viewModel.makeUpRules.collectAsState()
     var showMakeUpManagerSheet by remember { mutableStateOf(false) }
     var quickMakeUpTargetDate by remember { mutableStateOf<String?>(null) }
+    val hasSeenMakeUpGuide by viewModel.hasSeenMakeUpGuide.collectAsState()
+    var showMakeUpGuideDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(hasSeenMakeUpGuide) {
+        if (!hasSeenMakeUpGuide) {
+            showMakeUpGuideDialog = true
+        }
+    }
 
     val currentSchedule = scheduleGroups.find { it.id == currentScheduleId }
     val currentScheduleName = currentSchedule?.name ?: "课表"
@@ -626,6 +634,19 @@ fun TimetableScreen(
             },
             onDeleteRule = { ruleId ->
                 viewModel.deleteMakeUpRule(ruleId)
+            },
+            onShowGuide = {
+                showMakeUpGuideDialog = true
+            }
+        )
+    }
+
+    if (showMakeUpGuideDialog) {
+        MakeUpFeatureGuideDialog(
+            isDark = isDark,
+            onDismiss = {
+                viewModel.markMakeUpGuideSeen()
+                showMakeUpGuideDialog = false
             }
         )
     }

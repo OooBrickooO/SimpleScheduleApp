@@ -9,7 +9,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -43,7 +45,8 @@ fun MakeUpManagerBottomSheet(
     makeUpRules: List<MakeUpRule>,
     onDismiss: () -> Unit,
     onAddRule: (sourceDate: String, targetDate: String) -> Unit,
-    onDeleteRule: (ruleId: String) -> Unit
+    onDeleteRule: (ruleId: String) -> Unit,
+    onShowGuide: (() -> Unit)? = null
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -73,19 +76,32 @@ fun MakeUpManagerBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Text(
-                        text = "节假日调休管理",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = textColor
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "临时移动课表，并高亮框选调休上课日",
-                        fontSize = 12.sp,
-                        color = textColor.copy(alpha = 0.5f)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column {
+                        Text(
+                            text = "节假日调休管理",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = textColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "临时移动课表，并高亮框选调休上课日",
+                            fontSize = 12.sp,
+                            color = textColor.copy(alpha = 0.5f)
+                        )
+                    }
+                    if (onShowGuide != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        IconButton(onClick = onShowGuide, modifier = Modifier.size(32.dp)) {
+                            Icon(
+                                imageVector = Icons.Rounded.HelpOutline,
+                                contentDescription = "使用指南",
+                                tint = primaryColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
 
                 Surface(
@@ -134,6 +150,34 @@ fun MakeUpManagerBottomSheet(
                             fontSize = 12.sp,
                             color = textColor.copy(alpha = 0.4f)
                         )
+                        if (onShowGuide != null) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Surface(
+                                color = primaryColor.copy(alpha = 0.08f),
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(0.5.dp, primaryColor.copy(alpha = 0.2f)),
+                                modifier = Modifier.clickable { onShowGuide() }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.HelpOutline,
+                                        contentDescription = null,
+                                        tint = primaryColor,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "查看调休换课使用指南",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = primaryColor
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -653,3 +697,241 @@ fun QuickMakeUpDialog(
         }
     }
 }
+
+@Composable
+fun MakeUpFeatureGuideDialog(
+    isDark: Boolean,
+    onDismiss: () -> Unit
+) {
+    val textColor = if (isDark) TextDark else TextLight
+    val borderColor = if (isDark) BorderDark else BorderLight
+    val primaryColor = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color(0xFF18181B) else Color.White,
+            border = BorderStroke(0.5.dp, borderColor),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                // 顶部标题区
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Surface(
+                        color = primaryColor.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(0.5.dp, primaryColor.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.AutoAwesome,
+                                contentDescription = null,
+                                tint = primaryColor,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "新功能上线",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = primaryColor
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Close,
+                            contentDescription = "关闭",
+                            tint = textColor.copy(alpha = 0.5f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "调休快捷换课 · 使用指南",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = textColor
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "法定节假日遇上调休补课？课表随心对调，闹钟小组件全自动同步！",
+                    fontSize = 12.sp,
+                    color = textColor.copy(alpha = 0.6f),
+                    lineHeight = 17.sp
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 功能卡片列表
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    GuideItemCard(
+                        isDark = isDark,
+                        icon = Icons.Rounded.TouchApp,
+                        iconTint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
+                        title = "1. 长按表头，极速设调休",
+                        desc = "在课表主界面长按任何一天（例如调为上课的周日），即可直接唤起快捷弹窗，选择需要补上的原课程日期。",
+                        tag = "快捷操作"
+                    )
+
+                    GuideItemCard(
+                        isDark = isDark,
+                        icon = Icons.Rounded.Tune,
+                        iconTint = if (isDark) Color(0xFFA78BFA) else Color(0xFF7C3AED),
+                        title = "2. 顶部「+」菜单集中管理",
+                        desc = "点击主界面顶部右上角「+」菜单选择「调休快捷换课」，可一览当前所有的调休安排，并支持随时删除与恢复。",
+                        tag = "全面管理"
+                    )
+
+                    GuideItemCard(
+                        isDark = isDark,
+                        icon = Icons.Rounded.CropFree,
+                        iconTint = if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706),
+                        title = "3. 醒目细边框高亮提醒",
+                        desc = "调休补课日整列将以专属高亮细边框与柔和底色强调，表头附有「调休」角标；被调放假日则自动清空并标注「放假」。",
+                        tag = "界面强调"
+                    )
+
+                    GuideItemCard(
+                        isDark = isDark,
+                        icon = Icons.Rounded.Widgets,
+                        iconTint = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
+                        title = "4. 小组件与闹钟提醒全联动",
+                        desc = "桌面日小组件、周小组件及后台上课闹钟、TTS 语音播报均会自动识别调休，补课日准时提醒！",
+                        tag = "系统联动"
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = primaryColor,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(
+                        text = "我知道啦，去试试",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideItemCard(
+    isDark: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    title: String,
+    desc: String,
+    tag: String
+) {
+    val textColor = if (isDark) TextDark else TextLight
+    val borderColor = if (isDark) BorderDark else BorderLight
+    val surfaceColor = if (isDark) Color(0xFF222227) else Color(0xFFF8FAFC)
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = surfaceColor,
+        border = BorderStroke(0.5.dp, borderColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Surface(
+                color = iconTint.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                    Surface(
+                        color = iconTint.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = tag,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = iconTint,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = desc,
+                    fontSize = 11.sp,
+                    color = textColor.copy(alpha = 0.65f),
+                    lineHeight = 16.sp
+                )
+            }
+        }
+    }
+}
+

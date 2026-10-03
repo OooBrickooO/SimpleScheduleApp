@@ -168,5 +168,6 @@ object SettingsKeys {
     val PREDICTIVE_BACK_ENABLED = booleanPreferencesKey("predictive_back_enabled")
     val FLOATING_BOTTOM_BAR = booleanPreferencesKey("floating_bottom_bar")
     val TAB_ANIMATION_TYPE = stringPreferencesKey("tab_animation_type")
+    val HAS_SEEN_MAKEUP_GUIDE = booleanPreferencesKey("has_seen_makeup_guide")
 }
 
