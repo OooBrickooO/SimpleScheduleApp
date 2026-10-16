@@ -248,9 +248,9 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
             ) {
                 Box(modifier = Modifier.padding(6.dp)) {
                     // 计算平滑滑动的偏移量
-                    val itemWidth = 100.dp
+                    val itemWidth = 90.dp
                     val indicatorOffset by animateDpAsState(
-                        targetValue = if (currentTab == 0) 0.dp else itemWidth,
+                        targetValue = itemWidth * currentTab,
                         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
                         label = "nav_indicator"
                     )
@@ -265,7 +265,7 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
 
                     // 图标按钮行
                     Row(
-                        modifier = Modifier.width(itemWidth * 2),
+                        modifier = Modifier.width(itemWidth * 3),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
@@ -279,11 +279,20 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
                         }
                         Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
                             NavBarItem(
-                                icon = Icons.Rounded.Person,
-                                label = "PROFILE",
+                                icon = Icons.Rounded.FolderSpecial,
+                                label = "DATA",
                                 isActive = currentTab == 1,
                                 color = if (currentTab == 1) activeColor else inactiveColor,
                                 onClick = { onTabSelected(1) }
+                            )
+                        }
+                        Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
+                            NavBarItem(
+                                icon = Icons.Rounded.Person,
+                                label = "PROFILE",
+                                isActive = currentTab == 2,
+                                color = if (currentTab == 2) activeColor else inactiveColor,
+                                onClick = { onTabSelected(2) }
                             )
                         }
                     }
@@ -302,7 +311,7 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(vertical = 12.dp, horizontal = 32.dp),
+                    .padding(vertical = 12.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 NavBarItem(
@@ -313,11 +322,18 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
                     onClick = { onTabSelected(0) }
                 )
                 NavBarItem(
-                    icon = Icons.Rounded.Person,
-                    label = "PROFILE",
+                    icon = Icons.Rounded.FolderSpecial,
+                    label = "DATA",
                     isActive = currentTab == 1,
                     color = if (currentTab == 1) activeColor else inactiveColor,
                     onClick = { onTabSelected(1) }
+                )
+                NavBarItem(
+                    icon = Icons.Rounded.Person,
+                    label = "PROFILE",
+                    isActive = currentTab == 2,
+                    color = if (currentTab == 2) activeColor else inactiveColor,
+                    onClick = { onTabSelected(2) }
                 )
             }
         }

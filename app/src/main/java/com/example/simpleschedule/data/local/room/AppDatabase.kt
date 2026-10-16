@@ -286,6 +286,64 @@ interface AppDao {
 
     @Query("DELETE FROM makeup_rules WHERE id = :id")
     suspend fun deleteMakeUpRule(id: String)
+
+    // --- 导出与全量备份相关 ---
+    @Query("SELECT * FROM schedule_groups")
+    suspend fun getAllScheduleGroupsDirect(): List<ScheduleGroup>
+
+    @Query("SELECT * FROM timetable_groups")
+    suspend fun getAllTimetableGroupsDirect(): List<TimetableGroup>
+
+    @Query("SELECT * FROM time_nodes")
+    suspend fun getAllTimeNodesDirect(): List<TimeNode>
+
+    @Query("SELECT * FROM courses")
+    suspend fun getAllCoursesDirect(): List<Course>
+
+    @Query("SELECT * FROM course_overrides")
+    suspend fun getAllOverridesDirect(): List<CourseOverride>
+
+    @Query("SELECT * FROM course_statistics")
+    suspend fun getAllStatisticsDirect(): List<CourseStatistic>
+
+    @Query("SELECT * FROM makeup_rules")
+    suspend fun getAllMakeUpRulesDirect(): List<MakeUpRule>
+
+    @Query("DELETE FROM schedule_groups")
+    suspend fun deleteAllScheduleGroups()
+
+    @Query("DELETE FROM timetable_groups")
+    suspend fun deleteAllTimetableGroups()
+
+    @Query("DELETE FROM time_nodes")
+    suspend fun deleteAllTimeNodes()
+
+    @Query("DELETE FROM courses")
+    suspend fun deleteAllCourses()
+
+    @Query("DELETE FROM course_overrides")
+    suspend fun deleteAllOverrides()
+
+    @Query("DELETE FROM course_statistics")
+    suspend fun deleteAllStatistics()
+
+    @Query("DELETE FROM makeup_rules")
+    suspend fun deleteAllMakeUpRules()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllScheduleGroups(groups: List<ScheduleGroup>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllTimetableGroups(groups: List<TimetableGroup>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllOverrides(overrides: List<CourseOverride>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllStatistics(statistics: List<CourseStatistic>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllMakeUpRules(rules: List<MakeUpRule>)
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {

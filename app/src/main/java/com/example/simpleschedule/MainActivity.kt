@@ -395,83 +395,92 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 ) { tab ->
-                                    if (tab == 0) {
-                                        TimetableScreen(
-                                            viewModel = viewModel,
-                                            courses = displayCourses,
-                                            timeNodes = activeTimeNodes,
-                                            currentWeek = currentWeek,
-                                            totalWeeks = totalWeeks,
-                                            scheduleGroups = scheduleGroups,
-                                            currentScheduleId = currentScheduleId,
-                                            isDark = isDark,
-                                            onAddClick = { courseToEdit = null; showAddDialog = true },
-                                            onManageCoursesClick = { navController.navigate("course_management") },
-                                            onManageTimetablesClick = { navController.navigate("timetable_list") },
-                                            onScheduleSettingsClick = { navController.navigate("schedule_settings") },
-                                            onGlobalSettingsClick = { navController.navigate("global_settings") },
-                                            onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                            onWebViewImportClick = { navController.navigate("webview_import") },
-                                            onCsvImportClick = { navController.navigate("webview_import?stage=csv") },
-                                            onShareCodeClick = { showShareCodeDialog = true },
-                                            onCreateScheduleClick = { showCreateScheduleDialog = true },
-                                            onReminderSettingsClick = { navController.navigate("reminder_settings") }
-                                        )
-                                    } else {
-                                        ProfileScreen(
-                                            isDark = isDark,
-                                            onThemeToggle = { viewModel.toggleTheme(it) },
-                                            onShowAnnouncementClick = {
-                                                 if (announcementDialogTitle.isNotEmpty()) {
-                                                     showAnnouncementDialog = true
-                                                 } else {
-                                                     Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
-                                                     coroutineScope.launch {
-                                                         val result = fetchAnnouncement()
-                                                         if (result != null) {
-                                                             val (id, title, content) = result
-                                                             announcementDialogTitle = title
-                                                             announcementDialogContent = content
-                                                             showAnnouncementDialog = true
-                                                         } else {
-                                                             Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
+                                    when (tab) {
+                                        0 -> {
+                                            TimetableScreen(
+                                                viewModel = viewModel,
+                                                courses = displayCourses,
+                                                timeNodes = activeTimeNodes,
+                                                currentWeek = currentWeek,
+                                                totalWeeks = totalWeeks,
+                                                scheduleGroups = scheduleGroups,
+                                                currentScheduleId = currentScheduleId,
+                                                isDark = isDark,
+                                                onAddClick = { courseToEdit = null; showAddDialog = true },
+                                                onManageCoursesClick = { navController.navigate("course_management") },
+                                                onManageTimetablesClick = { navController.navigate("timetable_list") },
+                                                onScheduleSettingsClick = { navController.navigate("schedule_settings") },
+                                                onGlobalSettingsClick = { navController.navigate("global_settings") },
+                                                onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                                onWebViewImportClick = { navController.navigate("webview_import") },
+                                                onCsvImportClick = { navController.navigate("webview_import?stage=csv") },
+                                                onShareCodeClick = { showShareCodeDialog = true },
+                                                onCreateScheduleClick = { showCreateScheduleDialog = true },
+                                                onReminderSettingsClick = { navController.navigate("reminder_settings") }
+                                            )
+                                        }
+                                        1 -> {
+                                            DataManagementScreen(
+                                                viewModel = viewModel,
+                                                isDark = isDark
+                                            )
+                                        }
+                                        else -> {
+                                            ProfileScreen(
+                                                isDark = isDark,
+                                                onThemeToggle = { viewModel.toggleTheme(it) },
+                                                onShowAnnouncementClick = {
+                                                     if (announcementDialogTitle.isNotEmpty()) {
+                                                         showAnnouncementDialog = true
+                                                     } else {
+                                                         Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
+                                                         coroutineScope.launch {
+                                                             val result = fetchAnnouncement()
+                                                             if (result != null) {
+                                                                 val (id, title, content) = result
+                                                                 announcementDialogTitle = title
+                                                                 announcementDialogContent = content
+                                                                 showAnnouncementDialog = true
+                                                             } else {
+                                                                 Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
+                                                             }
                                                          }
                                                      }
-                                                 }
-                                             },
-                                            onHelpSearchClick = { navController.navigate("help_search") },
-                                            onAppearanceSettingsClick = { navController.navigate("appearance_settings") },
-                                            onCheckUpdateClick = {
-                                                if (!isCheckingManualUpdate) {
-                                                    isCheckingManualUpdate = true
-                                                    Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
-                                                    coroutineScope.launch {
-                                                        val update = checkUpdate(UPDATE_URL)
-                                                        isCheckingManualUpdate = false
-                                                        if (update != null) {
-                                                            val currentVersionCode = try {
-                                                                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                                    packageInfo.longVersionCode.toInt()
-                                                                } else {
-                                                                    @Suppress("DEPRECATION")
-                                                                    packageInfo.versionCode
+                                                 },
+                                                onHelpSearchClick = { navController.navigate("help_search") },
+                                                onAppearanceSettingsClick = { navController.navigate("appearance_settings") },
+                                                onCheckUpdateClick = {
+                                                    if (!isCheckingManualUpdate) {
+                                                        isCheckingManualUpdate = true
+                                                        Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
+                                                        coroutineScope.launch {
+                                                            val update = checkUpdate(UPDATE_URL)
+                                                            isCheckingManualUpdate = false
+                                                            if (update != null) {
+                                                                val currentVersionCode = try {
+                                                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                                        packageInfo.longVersionCode.toInt()
+                                                                    } else {
+                                                                        @Suppress("DEPRECATION")
+                                                                        packageInfo.versionCode
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    1
                                                                 }
-                                                            } catch (e: Exception) {
-                                                                1
-                                                            }
-                                                            if (update.versionCode > currentVersionCode) {
-                                                                updateInfoToShow = update
+                                                                if (update.versionCode > currentVersionCode) {
+                                                                    updateInfoToShow = update
+                                                                } else {
+                                                                    Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                }
                                                             } else {
-                                                                Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
                                                             }
-                                                        } else {
-                                                            Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
                                                         }
                                                     }
                                                 }
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
                                 }
                             }
