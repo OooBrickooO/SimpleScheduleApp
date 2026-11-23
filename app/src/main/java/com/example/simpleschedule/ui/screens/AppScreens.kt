@@ -2302,6 +2302,15 @@ fun WebViewImportScreen(
     var url by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var loadUrl by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+
+    fun normalizeWebUrl(rawUrl: String): String {
+        val trimmed = rawUrl.trim()
+        return when {
+            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+            trimmed.isEmpty() -> "https://jwxt.cjlu.edu.cn/"
+            else -> "https://$trimmed"
+        }
+    }
     
     var showBlockDialog by remember { mutableStateOf(false) }
     var showSyncCreditsDialog by remember { mutableStateOf(false) }
@@ -2581,7 +2590,9 @@ fun WebViewImportScreen(
                                         )
                                         Button(
                                             onClick = {
-                                                loadUrl = url
+                                                val targetUrl = normalizeWebUrl(url)
+                                                url = targetUrl
+                                                loadUrl = targetUrl
                                                 selectedSchool = null
                                                 stage = ImportStage.WEB_IMPORT
                                             },
@@ -2655,8 +2666,8 @@ fun WebViewImportScreen(
                                                     stage = ImportStage.XLS_IMPORT
                                                 } else {
                                                     if (item.url.isNotEmpty()) {
-                                                        url = item.url
-                                                        loadUrl = item.url
+                                                        url = normalizeWebUrl(item.url)
+                                                        loadUrl = normalizeWebUrl(item.url)
                                                     } else {
                                                         val query = android.net.Uri.encode("${item.name}教务系统")
                                                         val searchUrl = "https://m.baidu.com/s?word=$query"
@@ -2747,7 +2758,11 @@ fun WebViewImportScreen(
                             cursorColor = textColor
                         )
                     )
-                    TextButton(onClick = { loadUrl = url }) {
+                    TextButton(onClick = {
+                        val targetUrl = normalizeWebUrl(url)
+                        url = targetUrl
+                        loadUrl = targetUrl
+                    }) {
                         Text("访问", color = textColor, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -2795,14 +2810,24 @@ fun WebViewImportScreen(
                             WebView(ctx).apply {
                                 settings.javaScriptEnabled = true
                                 settings.domStorageEnabled = true
+                                settings.databaseEnabled = true
                                 settings.useWideViewPort = true
                                 settings.loadWithOverviewMode = true
                                 settings.setSupportZoom(true)
                                 settings.builtInZoomControls = true
                                 settings.displayZoomControls = false
+                                settings.allowContentAccess = true
+                                settings.allowFileAccess = false
+                                // 学校系统仍可能从 HTTPS 页面加载 HTTP 资源，允许兼容混合内容。
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                 }
+                                // 部分正方站点会根据 UA 返回不兼容的移动版页面；使用常规 Chrome UA。
+                                settings.userAgentString = settings.userAgentString
+                                    .replace("; wv", "")
+                                    .replace(Regex(" Version/[0-9.]+"), "")
+                                android.webkit.CookieManager.getInstance().setAcceptCookie(true)
+                                android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
                                 val injectUniversalFixJs = """
                                     javascript:(function() {
                                         function applyUniversalFixes() {
@@ -2908,17 +2933,68 @@ fun WebViewImportScreen(
                                 webViewClient = object : WebViewClient() {
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                                         super.onPageStarted(view, url, favicon)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                        android.util.Log.d("SimpleScheduleWebView", "onPageStarted: $url")
                                     }
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                        android.util.Log.d("SimpleScheduleWebView", "onPageFinished: $url")
                                     }
 
-                                    override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
-                                        super.doUpdateVisitedHistory(view, url, isReload)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                    override fun shouldOverrideUrlLoading(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?
+                                    ): Boolean {
+                                        return false
+                                    }
+
+                                    @Deprecated("Deprecated in Java")
+                                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                        return false
+                                    }
+
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?,
+                                        error: android.webkit.WebResourceError?
+                                    ) {
+                                        super.onReceivedError(view, request, error)
+                                        if (request?.isForMainFrame == true) {
+                                            android.util.Log.e(
+                                                "SimpleScheduleWebView",
+                                                "main frame error: url=${request.url}, code=${error?.errorCode}, description=${error?.description}"
+                                            )
+                                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                                Toast.makeText(
+                                                    ctx,
+                                                    "教务系统加载失败：${error?.description ?: "未知错误"}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        }
+                                    }
+
+                                    override fun onReceivedHttpError(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?,
+                                        errorResponse: android.webkit.WebResourceResponse?
+                                    ) {
+                                        super.onReceivedHttpError(view, request, errorResponse)
+                                        if (request?.isForMainFrame == true) {
+                                            android.util.Log.e(
+                                                "SimpleScheduleWebView",
+                                                "main frame HTTP error: url=${request.url}, status=${errorResponse?.statusCode}, reason=${errorResponse?.reasonPhrase}"
+                                            )
+                                        }
+                                    }
+                                }
+                                webChromeClient = object : android.webkit.WebChromeClient() {
+                                    override fun onConsoleMessage(message: android.webkit.ConsoleMessage?): Boolean {
+                                        android.util.Log.d(
+                                            "SimpleScheduleWebView",
+                                            "console: ${message?.message()} @ ${message?.sourceId()}:${message?.lineNumber()}"
+                                        )
+                                        return true
                                     }
                                 }
                                 addJavascriptInterface(object : Any() {
@@ -2952,9 +3028,15 @@ fun WebViewImportScreen(
                                     }
                                 }, "Android")
                                 webViewRef = this
+                                loadUrl(loadUrl)
                             }
                         },
-                        update = { it.loadUrl(loadUrl) },
+                        update = { webView ->
+                            val currentUrl = webView.url.orEmpty()
+                            if (currentUrl != loadUrl) {
+                                webView.loadUrl(loadUrl)
+                            }
+                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
