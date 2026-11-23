@@ -66,24 +66,53 @@ suspend fun loadWeekWidgetData(context: Context): WeekWidgetData {
     val rawCourses = if (currentSchedule != null) appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
     val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
     val overrideMap = overrides.associateBy { it.courseId }
+    val makeUpRules = if (currentSchedule != null) appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
 
     val timeNodes = if (currentSchedule != null) appDao.getTimeNodes(currentSchedule.timetableId) else emptyList()
     val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
 
     val coursesByDay = (1..7).associateWith { day ->
-        rawCourses.mapNotNull { course ->
-            val over = overrideMap[course.id]
-            val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-            val effectiveStart = over?.newStartNode ?: course.startNode
-            val effectiveEnd = over?.newEndNode ?: course.endNode
+        val dayDateStr = if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
+            com.example.simpleschedule.utils.getDateByWeekAndDay(currentWeek, day, currentSchedule.startDate) ?: ""
+        } else ""
 
-            if (effectiveDay != day) return@mapNotNull null
+        val targetRule = makeUpRules.find { it.targetDate.isNotEmpty() && it.targetDate == dayDateStr }
+        val holidayRule = makeUpRules.find { it.sourceDate.isNotEmpty() && it.sourceDate == dayDateStr }
 
-            val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-            if (!weeksList.contains(currentWeek)) return@mapNotNull null
+        if (holidayRule != null) {
+            emptyList()
+        } else if (targetRule != null && currentSchedule != null) {
+            val srcInfo = com.example.simpleschedule.utils.getWeekAndDay(targetRule.sourceDate, currentSchedule.startDate)
+            if (srcInfo != null) {
+                rawCourses.mapNotNull { course ->
+                    val over = overrideMap[course.id]
+                    val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
+                    val effectiveStart = over?.newStartNode ?: course.startNode
+                    val effectiveEnd = over?.newEndNode ?: course.endNode
 
-            DisplayCourse(course, effectiveDay, effectiveStart, effectiveEnd)
-        }.sortedBy { it.displayStartNode }
+                    if (effectiveDay != srcInfo.second) return@mapNotNull null
+
+                    val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                    if (!weeksList.contains(srcInfo.first)) return@mapNotNull null
+
+                    DisplayCourse(course, day, effectiveStart, effectiveEnd)
+                }.sortedBy { it.displayStartNode }
+            } else emptyList()
+        } else {
+            rawCourses.mapNotNull { course ->
+                val over = overrideMap[course.id]
+                val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
+                val effectiveStart = over?.newStartNode ?: course.startNode
+                val effectiveEnd = over?.newEndNode ?: course.endNode
+
+                if (effectiveDay != day) return@mapNotNull null
+
+                val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
+                if (!weeksList.contains(currentWeek)) return@mapNotNull null
+
+                DisplayCourse(course, effectiveDay, effectiveStart, effectiveEnd)
+            }.sortedBy { it.displayStartNode }
+        }
     }
 
     return WeekWidgetData(coursesByDay, timeNodeMap, currentWeek, isTranslucent)

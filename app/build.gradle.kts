@@ -13,8 +13,8 @@ android {
         applicationId = "com.seekai.simpleschedule"
         minSdk = 24
         targetSdk = 37
-        versionCode = 19
-        versionName = "2.8.0.0919"
+        versionCode = 21
+        versionName = "2.9.1.1016"
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -79,4 +79,7 @@ dependencies {
 
     // HTML 解析库 Jsoup
     implementation("org.jsoup:jsoup:1.18.1")
+
+    // SMB 支持
+    implementation("com.hierynomus:smbj:0.13.0")
 }

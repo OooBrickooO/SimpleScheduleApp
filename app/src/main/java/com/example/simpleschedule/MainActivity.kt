@@ -178,6 +178,9 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
+        if ((applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true)
+        }
         super.onCreate(savedInstanceState)
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -300,6 +303,8 @@ class MainActivity : ComponentActivity() {
             val isDark = isDarkSetting ?: isSystemDark
             val materialYou by viewModel.materialYou.collectAsState()
             val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
+            val accentColor by viewModel.accentColor.collectAsState()
+            val parsedAccent = if (accentColor != -1L) Color(accentColor) else null
 
             val lifecycleOwner = LocalLifecycleOwner.current
             DisposableEffect(lifecycleOwner) {
@@ -322,9 +327,11 @@ class MainActivity : ComponentActivity() {
 
             SimpleScheduleTheme(
                 darkTheme = isDark,
-                dynamicColor = materialYou
+                dynamicColor = materialYou,
+                accentColor = accentColor
             ) {
-                val animatedBgColor by animateColorAsState(
+                CompositionLocalProvider(com.example.simpleschedule.ui.theme.LocalAccentColor provides parsedAccent) {
+                    val animatedBgColor by animateColorAsState(
                     targetValue = if (isDark) {
                         if (materialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) MaterialTheme.colorScheme.background else BgDark
                     } else {
@@ -391,81 +398,87 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 ) { tab ->
-                                    if (tab == 0) {
-                                        TimetableScreen(
-                                            viewModel = viewModel,
-                                            courses = displayCourses,
-                                            timeNodes = activeTimeNodes,
-                                            currentWeek = currentWeek,
-                                            totalWeeks = totalWeeks,
-                                            scheduleGroups = scheduleGroups,
-                                            currentScheduleId = currentScheduleId,
-                                            isDark = isDark,
-                                            onAddClick = { courseToEdit = null; showAddDialog = true },
-                                            onManageCoursesClick = { navController.navigate("course_management") },
-                                            onManageTimetablesClick = { navController.navigate("timetable_list") },
-                                            onScheduleSettingsClick = { navController.navigate("schedule_settings") },
-                                            onGlobalSettingsClick = { navController.navigate("global_settings") },
-                                            onEditCourse = { courseToEdit = it; showAddDialog = true },
-                                            onWebViewImportClick = { navController.navigate("webview_import") },
-                                            onCsvImportClick = { navController.navigate("webview_import?stage=csv") },
-                                            onShareCodeClick = { showShareCodeDialog = true },
-                                            onCreateScheduleClick = { showCreateScheduleDialog = true },
-                                            onReminderSettingsClick = { navController.navigate("reminder_settings") }
-                                        )
-                                    } else {
-                                        ProfileScreen(
-                                            isDark = isDark,
-                                            onThemeToggle = { viewModel.toggleTheme(it) },
-                                            onShowAnnouncementClick = {
-                                                 if (announcementDialogTitle.isNotEmpty()) {
-                                                     showAnnouncementDialog = true
-                                                 } else {
-                                                     Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
-                                                     coroutineScope.launch {
-                                                         val result = fetchAnnouncement()
-                                                         if (result != null) {
-                                                             val (id, title, content) = result
-                                                             announcementDialogTitle = title
-                                                             announcementDialogContent = content
-                                                             showAnnouncementDialog = true
-                                                         } else {
-                                                             Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
+                                    when (tab) {
+                                        0 -> {
+                                            TimetableScreen(
+                                                viewModel = viewModel,
+                                                courses = displayCourses,
+                                                timeNodes = activeTimeNodes,
+                                                currentWeek = currentWeek,
+                                                totalWeeks = totalWeeks,
+                                                scheduleGroups = scheduleGroups,
+                                                currentScheduleId = currentScheduleId,
+                                                isDark = isDark,
+                                                onAddClick = { courseToEdit = null; showAddDialog = true },
+                                                onManageCoursesClick = { navController.navigate("course_management") },
+                                                onManageTimetablesClick = { navController.navigate("timetable_list") },
+                                                onScheduleSettingsClick = { navController.navigate("schedule_settings") },
+                                                onGlobalSettingsClick = { navController.navigate("global_settings") },
+                                                onEditCourse = { courseToEdit = it; showAddDialog = true },
+                                                onWebViewImportClick = { navController.navigate("webview_import") },
+                                                onCsvImportClick = { navController.navigate("webview_import?stage=csv") },
+                                                onShareCodeClick = { showShareCodeDialog = true },
+                                                onCreateScheduleClick = { showCreateScheduleDialog = true },
+                                                onReminderSettingsClick = { navController.navigate("reminder_settings") },
+                                                onDataManagementClick = { navController.navigate("data_management") }
+                                            )
+                                        }
+                                        else -> {
+                                            ProfileScreen(
+                                                isDark = isDark,
+                                                onThemeToggle = { viewModel.toggleTheme(it) },
+                                                onShowAnnouncementClick = {
+                                                     if (announcementDialogTitle.isNotEmpty()) {
+                                                         showAnnouncementDialog = true
+                                                     } else {
+                                                         Toast.makeText(context, "正在获取公告...", Toast.LENGTH_SHORT).show()
+                                                         coroutineScope.launch {
+                                                             val result = fetchAnnouncement()
+                                                             if (result != null) {
+                                                                 val (id, title, content) = result
+                                                                 announcementDialogTitle = title
+                                                                 announcementDialogContent = content
+                                                                 showAnnouncementDialog = true
+                                                             } else {
+                                                                 Toast.makeText(context, "无法获取公告，请稍后再试", Toast.LENGTH_SHORT).show()
+                                                             }
                                                          }
                                                      }
-                                                 }
-                                             },
-                                            onCheckUpdateClick = {
-                                                if (!isCheckingManualUpdate) {
-                                                    isCheckingManualUpdate = true
-                                                    Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
-                                                    coroutineScope.launch {
-                                                        val update = checkUpdate(UPDATE_URL)
-                                                        isCheckingManualUpdate = false
-                                                        if (update != null) {
-                                                            val currentVersionCode = try {
-                                                                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                                                    packageInfo.longVersionCode.toInt()
-                                                                } else {
-                                                                    @Suppress("DEPRECATION")
-                                                                    packageInfo.versionCode
+                                                 },
+                                                onHelpSearchClick = { navController.navigate("help_search") },
+                                                onAppearanceSettingsClick = { navController.navigate("appearance_settings") },
+                                                onCheckUpdateClick = {
+                                                    if (!isCheckingManualUpdate) {
+                                                        isCheckingManualUpdate = true
+                                                        Toast.makeText(context, "正在检查更新...", Toast.LENGTH_SHORT).show()
+                                                        coroutineScope.launch {
+                                                            val update = checkUpdate(UPDATE_URL)
+                                                            isCheckingManualUpdate = false
+                                                            if (update != null) {
+                                                                val currentVersionCode = try {
+                                                                    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                                                        packageInfo.longVersionCode.toInt()
+                                                                    } else {
+                                                                        @Suppress("DEPRECATION")
+                                                                        packageInfo.versionCode
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    1
                                                                 }
-                                                            } catch (e: Exception) {
-                                                                1
-                                                            }
-                                                            if (update.versionCode > currentVersionCode) {
-                                                                updateInfoToShow = update
+                                                                if (update.versionCode > currentVersionCode) {
+                                                                    updateInfoToShow = update
+                                                                } else {
+                                                                    Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                }
                                                             } else {
-                                                                Toast.makeText(context, "当前已经是最新版本喵！", Toast.LENGTH_SHORT).show()
+                                                                Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
                                                             }
-                                                        } else {
-                                                            Toast.makeText(context, "检查更新失败，请稍后重试", Toast.LENGTH_SHORT).show()
                                                         }
                                                     }
                                                 }
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -551,6 +564,14 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
+                            composable("data_management") {
+                                DataManagementScreen(
+                                    viewModel = viewModel,
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+
                             composable("global_settings") {
                                 GlobalSettingsScreen(
                                     viewModel = viewModel,
@@ -609,6 +630,15 @@ class MainActivity : ComponentActivity() {
                                             if (success) navController.popBackStack("main", inclusive = false)
                                         }
                                     }
+                                )
+                            }
+
+                            composable("help_search") {
+                                HelpSearchScreen(
+                                    isDark = isDark,
+                                    onBack = { navController.popBackStack() },
+                                    onNavigateToReminderSettings = { navController.navigate("reminder_settings") },
+                                    onNavigateToGlobalSettings = { navController.navigate("global_settings") }
                                 )
                             }
 
@@ -729,6 +759,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+            }
         }
 
     override fun onDestroy() {
@@ -768,7 +799,12 @@ class MainActivity : ComponentActivity() {
                 val query = DownloadManager.Query().setFilterById(id)
                 val cursor = manager.query(query)
                 if (cursor != null && cursor.moveToFirst()) {
-                    val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    val statusColumn = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val status = if (statusColumn >= 0) {
+                        cursor.getInt(statusColumn)
+                    } else {
+                        DownloadManager.STATUS_FAILED
+                    }
                     if (status == DownloadManager.STATUS_SUCCESSFUL) {
                         installDownloadedApk(context)
                     } else {
@@ -826,9 +862,12 @@ class MainActivity : ComponentActivity() {
                 val query = DownloadManager.Query().setFilterById(id)
                 val cursor = manager.query(query)
                 if (cursor != null && cursor.moveToFirst()) {
-                    val bytesDownloaded = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-                    val bytesTotal = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                    val status = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    val downloadedColumn = cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    val totalColumn = cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    val statusColumn = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val bytesDownloaded = if (downloadedColumn >= 0) cursor.getLong(downloadedColumn) else 0L
+                    val bytesTotal = if (totalColumn >= 0) cursor.getLong(totalColumn) else -1L
+                    val status = if (statusColumn >= 0) cursor.getInt(statusColumn) else DownloadManager.STATUS_FAILED
 
                     withContext(Dispatchers.Main) {
                         if (bytesTotal > 0) {

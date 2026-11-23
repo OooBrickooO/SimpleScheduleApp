@@ -4,7 +4,13 @@ import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.receiver.ReminderEngine
+import com.example.simpleschedule.utils.SmbHelper
+import com.example.simpleschedule.utils.WebDavHelper
+import com.example.simpleschedule.security.EncryptedSecretStore
 import com.example.simpleschedule.widget.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 import android.annotation.SuppressLint
 import java.io.InputStream
@@ -179,6 +185,19 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     val predictiveBackEnabled = application.dataStore.data.map { it[SettingsKeys.PREDICTIVE_BACK_ENABLED] ?: true }.stateIn(viewModelScope, SharingStarted.Lazily, true)
     val floatingBottomBar = application.dataStore.data.map { it[SettingsKeys.FLOATING_BOTTOM_BAR] ?: false }.stateIn(viewModelScope, SharingStarted.Lazily, false)
     val tabAnimationType = application.dataStore.data.map { it[SettingsKeys.TAB_ANIMATION_TYPE] ?: "Slide" }.stateIn(viewModelScope, SharingStarted.Lazily, "Slide")
+    val hasSeenMakeUpGuide: StateFlow<Boolean?> = application.dataStore.data.map { 
+        val seen: Boolean? = it[SettingsKeys.HAS_SEEN_MAKEUP_GUIDE] ?: false
+        seen
+    }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    val accentColor = application.dataStore.data.map { it[SettingsKeys.ACCENT_COLOR] ?: -1L }.stateIn(viewModelScope, SharingStarted.Lazily, -1L)
+    val courseColorPool = application.dataStore.data.map { it[SettingsKeys.COURSE_COLOR_POOL] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+
+    fun markMakeUpGuideSeen() {
+        viewModelScope.launch {
+            getApplication<Application>().dataStore.edit { it[SettingsKeys.HAS_SEEN_MAKEUP_GUIDE] = true }
+        }
+    }
 
     fun updateSetting(key: Preferences.Key<Boolean>, value: Boolean) {
         viewModelScope.launch {
@@ -198,6 +217,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun updateSetting(key: Preferences.Key<String>, value: String) = viewModelScope.launch {
         getApplication<Application>().dataStore.edit { it[key] = value }
     }
+    fun updateSetting(key: Preferences.Key<Long>, value: Long) = viewModelScope.launch {
+        getApplication<Application>().dataStore.edit { it[key] = value }
+    }
 
     val activeTimeNodes = _currentScheduleId.flatMapLatest { sId ->
         appDao.getScheduleGroupFlow(sId).flatMapLatest { sg ->
@@ -213,6 +235,10 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 DisplayCourse(course, override?.newDayOfWeek ?: course.dayOfWeek, override?.newStartNode ?: course.startNode, override?.newEndNode ?: course.endNode)
             }
         }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val makeUpRules = _currentScheduleId.flatMapLatest { sId ->
+        appDao.getMakeUpRulesBySchedule(sId)
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {
@@ -571,6 +597,28 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun addMakeUpRule(sourceDate: String, targetDate: String) {
+        viewModelScope.launch {
+            appDao.insertMakeUpRule(
+                MakeUpRule(
+                    scheduleId = _currentScheduleId.value,
+                    sourceDate = sourceDate,
+                    targetDate = targetDate
+                )
+            )
+            notifyWidgetUpdate()
+            scheduleNextAlarm()
+        }
+    }
+
+    fun deleteMakeUpRule(id: String) {
+        viewModelScope.launch {
+            appDao.deleteMakeUpRule(id)
+            notifyWidgetUpdate()
+            scheduleNextAlarm()
+        }
+    }
+
     fun getCourseStatistic(courseName: String): Flow<CourseStatistic?> {
         return appDao.getStatisticFlow(courseName)
     }
@@ -658,6 +706,433 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // --- 云备份 StateFlow ---
+    val webdavUrl = application.dataStore.data.map { it[SettingsKeys.WEBDAV_URL] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val webdavUsername = application.dataStore.data.map { it[SettingsKeys.WEBDAV_USERNAME] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val webdavPassword = application.dataStore.data.map { prefs -> EncryptedSecretStore.readSync(prefs, SettingsKeys.WEBDAV_PASSWORD_ENCRYPTED, SettingsKeys.WEBDAV_PASSWORD) }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val webdavRemotePath = application.dataStore.data.map { it[SettingsKeys.WEBDAV_REMOTE_PATH] ?: "SimpleSchedule/backup.json" }.stateIn(viewModelScope, SharingStarted.Lazily, "SimpleSchedule/backup.json")
 
+    val smbHost = application.dataStore.data.map { it[SettingsKeys.SMB_HOST] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbPort = application.dataStore.data.map { it[SettingsKeys.SMB_PORT] ?: 445 }.stateIn(viewModelScope, SharingStarted.Lazily, 445)
+    val smbShare = application.dataStore.data.map { it[SettingsKeys.SMB_SHARE] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbUsername = application.dataStore.data.map { it[SettingsKeys.SMB_USERNAME] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbPassword = application.dataStore.data.map { prefs ->
+        EncryptedSecretStore.readSync(prefs, SettingsKeys.SMB_PASSWORD_ENCRYPTED, SettingsKeys.SMB_PASSWORD)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbDomain = application.dataStore.data.map { it[SettingsKeys.SMB_DOMAIN] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbRemotePath = application.dataStore.data.map { it[SettingsKeys.SMB_REMOTE_PATH] ?: "SimpleSchedule/backup.json" }.stateIn(viewModelScope, SharingStarted.Lazily, "SimpleSchedule/backup.json")
+
+    val lastBackupTime = application.dataStore.data.map { it[SettingsKeys.LAST_BACKUP_TIME] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+
+    // --- 云备份与数据导入导出核心方法 ---
+
+    suspend fun exportFullBackupJson(): String = withContext(Dispatchers.IO) {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val root = JSONObject().apply {
+            put("version", 1)
+            put("exportTime", sdf.format(Date()))
+            put("appName", "SimpleSchedule")
+
+            val scheduleArray = JSONArray()
+            appDao.getAllScheduleGroupsDirect().forEach { sg ->
+                scheduleArray.put(JSONObject().apply {
+                    put("id", sg.id)
+                    put("name", sg.name)
+                    put("timetableId", sg.timetableId)
+                    put("startDate", sg.startDate)
+                })
+            }
+            put("schedules", scheduleArray)
+
+            val timetableArray = JSONArray()
+            appDao.getAllTimetableGroupsDirect().forEach { tg ->
+                timetableArray.put(JSONObject().apply {
+                    put("id", tg.id)
+                    put("name", tg.name)
+                })
+            }
+            put("timetables", timetableArray)
+
+            val timeNodeArray = JSONArray()
+            appDao.getAllTimeNodesDirect().forEach { tn ->
+                timeNodeArray.put(JSONObject().apply {
+                    put("id", tn.id)
+                    put("timetableId", tn.timetableId)
+                    put("nodeIndex", tn.nodeIndex)
+                    put("startTime", tn.startTime)
+                    put("endTime", tn.endTime)
+                })
+            }
+            put("timeNodes", timeNodeArray)
+
+            val courseArray = JSONArray()
+            appDao.getAllCoursesDirect().forEach { c ->
+                courseArray.put(JSONObject().apply {
+                    put("id", c.id)
+                    put("scheduleId", c.scheduleId)
+                    put("name", c.name)
+                    put("location", c.location)
+                    put("teacher", c.teacher)
+                    put("dayOfWeek", c.dayOfWeek)
+                    put("startNode", c.startNode)
+                    put("endNode", c.endNode)
+                    put("weeks", c.weeks)
+                    put("colorTheme", c.colorTheme)
+                    put("credits", c.credits ?: "")
+                })
+            }
+            put("courses", courseArray)
+
+            val overrideArray = JSONArray()
+            appDao.getAllOverridesDirect().forEach { co ->
+                overrideArray.put(JSONObject().apply {
+                    put("courseId", co.courseId)
+                    put("newDayOfWeek", co.newDayOfWeek)
+                    put("newStartNode", co.newStartNode)
+                    put("newEndNode", co.newEndNode)
+                })
+            }
+            put("courseOverrides", overrideArray)
+
+            val statArray = JSONArray()
+            appDao.getAllStatisticsDirect().forEach { cs ->
+                statArray.put(JSONObject().apply {
+                    put("courseName", cs.courseName)
+                    put("absenceCount", cs.absenceCount)
+                    put("calledCount", cs.calledCount)
+                })
+            }
+            put("courseStatistics", statArray)
+
+            val makeupArray = JSONArray()
+            appDao.getAllMakeUpRulesDirect().forEach { mr ->
+                makeupArray.put(JSONObject().apply {
+                    put("id", mr.id)
+                    put("scheduleId", mr.scheduleId)
+                    put("sourceDate", mr.sourceDate)
+                    put("targetDate", mr.targetDate)
+                })
+            }
+            put("makeUpRules", makeupArray)
+        }
+        root.toString(2)
+    }
+
+    suspend fun exportCurrentScheduleJson(): String = withContext(Dispatchers.IO) {
+        val sId = _currentScheduleId.value
+        val courses = appDao.getAllCoursesDirect().filter { it.scheduleId == sId }
+        val courseArray = JSONArray()
+        courses.forEach { c ->
+            courseArray.put(JSONObject().apply {
+                put("id", c.id)
+                put("name", c.name)
+                put("location", c.location)
+                put("teacher", c.teacher)
+                put("dayOfWeek", c.dayOfWeek)
+                put("startNode", c.startNode)
+                put("endNode", c.endNode)
+                put("weeks", c.weeks)
+                put("colorTheme", c.colorTheme)
+                put("credits", c.credits ?: "")
+            })
+        }
+        courseArray.toString(2)
+    }
+
+    fun restoreFullBackupJson(jsonString: String, mode: String = "FULL", onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val trimmed = jsonString.trim()
+                if (trimmed.startsWith("{")) {
+                    val root = JSONObject(trimmed)
+                    if (mode == "FULL") {
+                        appDao.deleteAllCourses()
+                        appDao.deleteAllScheduleGroups()
+                        appDao.deleteAllTimetableGroups()
+                        appDao.deleteAllTimeNodes()
+                        appDao.deleteAllOverrides()
+                        appDao.deleteAllStatistics()
+                        appDao.deleteAllMakeUpRules()
+                    }
+
+                    root.optJSONArray("schedules")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertScheduleGroup(
+                                ScheduleGroup(
+                                    id = obj.getString("id"),
+                                    name = obj.getString("name"),
+                                    timetableId = obj.optString("timetableId", "default_timetable"),
+                                    startDate = obj.optString("startDate", "")
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("timetables")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertTimetableGroup(
+                                TimetableGroup(
+                                    id = obj.getString("id"),
+                                    name = obj.getString("name")
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("timeNodes")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertTimeNodes(
+                                listOf(
+                                    TimeNode(
+                                        id = obj.optString("id", UUID.randomUUID().toString()),
+                                        timetableId = obj.getString("timetableId"),
+                                        nodeIndex = obj.getInt("nodeIndex"),
+                                        startTime = obj.getString("startTime"),
+                                        endTime = obj.getString("endTime")
+                                    )
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("courses")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertCourse(
+                                Course(
+                                    id = obj.optString("id", UUID.randomUUID().toString()),
+                                    scheduleId = obj.optString("scheduleId", _currentScheduleId.value),
+                                    name = obj.optString("name", "未知课程"),
+                                    location = obj.optString("location", ""),
+                                    teacher = obj.optString("teacher", ""),
+                                    dayOfWeek = obj.optInt("dayOfWeek", 1),
+                                    startNode = obj.optInt("startNode", 1),
+                                    endNode = obj.optInt("endNode", 2),
+                                    weeks = obj.optString("weeks", "[]"),
+                                    colorTheme = obj.optString("colorTheme", "blue"),
+                                    credits = obj.optString("credits").takeIf { !it.isNullOrBlank() }
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("courseOverrides")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertOverride(
+                                CourseOverride(
+                                    courseId = obj.getString("courseId"),
+                                    newDayOfWeek = obj.getInt("newDayOfWeek"),
+                                    newStartNode = obj.getInt("newStartNode"),
+                                    newEndNode = obj.getInt("newEndNode")
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("courseStatistics")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertStatistic(
+                                CourseStatistic(
+                                    courseName = obj.getString("courseName"),
+                                    absenceCount = obj.optInt("absenceCount", 0),
+                                    calledCount = obj.optInt("calledCount", 0)
+                                )
+                            )
+                        }
+                    }
+
+                    root.optJSONArray("makeUpRules")?.let { arr ->
+                        for (i in 0 until arr.length()) {
+                            val obj = arr.getJSONObject(i)
+                            appDao.insertMakeUpRule(
+                                MakeUpRule(
+                                    id = obj.optString("id", UUID.randomUUID().toString()),
+                                    scheduleId = obj.getString("scheduleId"),
+                                    sourceDate = obj.getString("sourceDate"),
+                                    targetDate = obj.getString("targetDate")
+                                )
+                            )
+                        }
+                    }
+
+                    val groups = appDao.getAllScheduleGroupsDirect()
+                    if (groups.isNotEmpty()) {
+                        switchSchedule(groups.first().id)
+                    }
+
+                    notifyWidgetUpdate()
+                    scheduleNextAlarm()
+                    onResult(true, "备份数据恢复成功！")
+                } else if (trimmed.startsWith("[")) {
+                    importFromJson(trimmed, replaceCurrent = (mode == "FULL")) { success ->
+                        if (success) {
+                            onResult(true, "课程列表导入成功！")
+                        } else {
+                            onResult(false, "课程数据解析失败！")
+                        }
+                    }
+                } else {
+                    onResult(false, "无效的 JSON 数据格式")
+                }
+            } catch (e: Exception) {
+                onResult(false, "导入失败: ${e.localizedMessage ?: e.message}")
+            }
+        }
+    }
+
+    fun saveWebDavSettings(url: String, user: String, pass: String, remotePath: String) {
+        updateSetting(SettingsKeys.WEBDAV_URL, url)
+        updateSetting(SettingsKeys.WEBDAV_USERNAME, user)
+        viewModelScope.launch { EncryptedSecretStore.write(getApplication<Application>(), SettingsKeys.WEBDAV_PASSWORD_ENCRYPTED, SettingsKeys.WEBDAV_PASSWORD, pass) }
+        updateSetting(SettingsKeys.WEBDAV_REMOTE_PATH, remotePath)
+    }
+
+    fun testWebDavConnection(url: String, user: String, pass: String, remotePath: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val res = WebDavHelper.testConnection(url, user, pass, remotePath)
+            res.fold(
+                onSuccess = { onResult(true, it) },
+                onFailure = { onResult(false, it.message ?: "连接失败") }
+            )
+        }
+    }
+
+    fun backupToWebDav(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val url = webdavUrl.value
+                val user = webdavUsername.value
+                val pass = webdavPassword.value
+                val path = webdavRemotePath.value
+                if (url.isBlank()) {
+                    onResult(false, "请先填写 WebDAV 服务器地址")
+                    return@launch
+                }
+                val content = exportFullBackupJson()
+                val res = WebDavHelper.uploadFile(url, user, pass, path, content)
+                res.fold(
+                    onSuccess = {
+                        val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                        updateSetting(SettingsKeys.LAST_BACKUP_TIME, now)
+                        onResult(true, "WebDAV 云备份成功！")
+                    },
+                    onFailure = { onResult(false, it.message ?: "WebDAV 备份失败") }
+                )
+            } catch (e: Exception) {
+                onResult(false, "备份失败: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun restoreFromWebDav(mode: String = "FULL", onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val url = webdavUrl.value
+                val user = webdavUsername.value
+                val pass = webdavPassword.value
+                val path = webdavRemotePath.value
+                if (url.isBlank()) {
+                    onResult(false, "请先填写 WebDAV 服务器地址")
+                    return@launch
+                }
+                val res = WebDavHelper.downloadFile(url, user, pass, path)
+                res.fold(
+                    onSuccess = { content ->
+                        restoreFullBackupJson(content, mode = mode, onResult = onResult)
+                    },
+                    onFailure = { onResult(false, it.message ?: "WebDAV 下载失败") }
+                )
+            } catch (e: Exception) {
+                onResult(false, "从 WebDAV 恢复失败: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun saveSmbSettings(host: String, port: Int, share: String, user: String, pass: String, domain: String, remotePath: String) {
+        updateSetting(SettingsKeys.SMB_HOST, host)
+        updateSetting(SettingsKeys.SMB_PORT, port)
+        updateSetting(SettingsKeys.SMB_SHARE, share)
+        updateSetting(SettingsKeys.SMB_USERNAME, user)
+        viewModelScope.launch { EncryptedSecretStore.write(getApplication<Application>(), SettingsKeys.SMB_PASSWORD_ENCRYPTED, SettingsKeys.SMB_PASSWORD, pass) }
+        updateSetting(SettingsKeys.SMB_DOMAIN, domain)
+        updateSetting(SettingsKeys.SMB_REMOTE_PATH, remotePath)
+    }
+
+    fun testSmbConnection(host: String, port: Int, share: String, user: String, pass: String, domain: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val res = SmbHelper.testConnection(host, port, share, user, pass, domain)
+            res.fold(
+                onSuccess = { onResult(true, it) },
+                onFailure = { onResult(false, it.message ?: "连接失败") }
+            )
+        }
+    }
+
+    fun backupToSmb(onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val host = smbHost.value
+                val port = smbPort.value
+                val share = smbShare.value
+                val user = smbUsername.value
+                val pass = smbPassword.value
+                val domain = smbDomain.value
+                val path = smbRemotePath.value
+
+                if (host.isBlank() || share.isBlank()) {
+                    onResult(false, "请先填写 SMB 服务器 IP 和共享名称")
+                    return@launch
+                }
+
+                val content = exportFullBackupJson()
+                val res = SmbHelper.uploadFile(host, port, share, user, pass, domain, path, content)
+                res.fold(
+                    onSuccess = {
+                        val now = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+                        updateSetting(SettingsKeys.LAST_BACKUP_TIME, now)
+                        onResult(true, "SMB 云备份成功！")
+                    },
+                    onFailure = { onResult(false, it.message ?: "SMB 备份失败") }
+                )
+            } catch (e: Exception) {
+                onResult(false, "SMB 备份异常: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun restoreFromSmb(mode: String = "FULL", onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val host = smbHost.value
+                val port = smbPort.value
+                val share = smbShare.value
+                val user = smbUsername.value
+                val pass = smbPassword.value
+                val domain = smbDomain.value
+                val path = smbRemotePath.value
+
+                if (host.isBlank() || share.isBlank()) {
+                    onResult(false, "请先填写 SMB 服务器 IP 和共享名称")
+                    return@launch
+                }
+
+                val res = SmbHelper.downloadFile(host, port, share, user, pass, domain, path)
+                res.fold(
+                    onSuccess = { content ->
+                        restoreFullBackupJson(content, mode = mode, onResult = onResult)
+                    },
+                    onFailure = { onResult(false, it.message ?: "SMB 下载失败") }
+                )
+            } catch (e: Exception) {
+                onResult(false, "从 SMB 恢复失败: ${e.localizedMessage}")
+            }
+        }
+    }
 }
+
 
