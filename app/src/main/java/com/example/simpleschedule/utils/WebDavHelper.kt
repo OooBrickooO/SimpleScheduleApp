@@ -11,20 +11,27 @@ import java.net.URL
 object WebDavHelper {
 
     private fun normalizeUrl(serverUrl: String, remotePath: String): String {
-        var base = serverUrl.trim()
-        if (!base.startsWith("http://") && !base.startsWith("https://")) {
-            base = "http://$base"
-        }
-        if (!base.endsWith("/")) {
-            base += "/"
-        }
+        val parsed = java.net.URI(serverUrl.trim().let { if (it.contains("://")) it else "https://$it" })
+        require(parsed.scheme.equals("https", true) || parsed.scheme.equals("http", true)) { "WebDAV 地址无效" }
+        require(parsed.host.isNullOrBlank().not()) { "WebDAV 地址无效" }
+        var base = parsed.toString()
+        if (!base.endsWith("/")) base += "/"
         val path = remotePath.trim().trimStart('/')
+        require(path.isNotBlank() && !path.contains("..")) { "WebDAV 路径无效" }
         return base + path
+    }
+
+    private fun validateScheme(serverUrl: String, password: String) {
+        val scheme = java.net.URI(serverUrl.trim().let { if (it.contains("://")) it else "https://$it" }).scheme
+        require(password.isBlank() || scheme.equals("https", ignoreCase = true)) {
+            "使用 WebDAV 密码时必须使用 HTTPS"
+        }
     }
 
     suspend fun testConnection(serverUrl: String, username: String, password: String, remotePath: String = ""): Result<String> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
+            validateScheme(serverUrl, password)
             val fullUrl = if (remotePath.isNotBlank()) normalizeUrl(serverUrl, remotePath) else normalizeUrl(serverUrl, "")
             val url = URL(fullUrl)
             connection = url.openConnection() as HttpURLConnection
@@ -56,6 +63,7 @@ object WebDavHelper {
     suspend fun uploadFile(serverUrl: String, username: String, password: String, remotePath: String, content: String): Result<Boolean> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
+            validateScheme(serverUrl, password)
             val fullUrl = normalizeUrl(serverUrl, remotePath)
             val url = URL(fullUrl)
             connection = url.openConnection() as HttpURLConnection
@@ -97,6 +105,7 @@ object WebDavHelper {
     suspend fun downloadFile(serverUrl: String, username: String, password: String, remotePath: String): Result<String> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
+            validateScheme(serverUrl, password)
             val fullUrl = normalizeUrl(serverUrl, remotePath)
             val url = URL(fullUrl)
             connection = url.openConnection() as HttpURLConnection

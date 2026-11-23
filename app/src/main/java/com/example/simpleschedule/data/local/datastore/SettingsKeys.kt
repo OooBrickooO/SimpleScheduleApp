@@ -176,6 +176,7 @@ object SettingsKeys {
     val WEBDAV_URL = stringPreferencesKey("webdav_url")
     val WEBDAV_USERNAME = stringPreferencesKey("webdav_username")
     val WEBDAV_PASSWORD = stringPreferencesKey("webdav_password")
+    val WEBDAV_PASSWORD_ENCRYPTED = stringPreferencesKey("webdav_password_encrypted")
     val WEBDAV_REMOTE_PATH = stringPreferencesKey("webdav_remote_path")
 
     // 云备份 - SMB
@@ -184,6 +185,7 @@ object SettingsKeys {
     val SMB_SHARE = stringPreferencesKey("smb_share")
     val SMB_USERNAME = stringPreferencesKey("smb_username")
     val SMB_PASSWORD = stringPreferencesKey("smb_password")
+    val SMB_PASSWORD_ENCRYPTED = stringPreferencesKey("smb_password_encrypted")
     val SMB_DOMAIN = stringPreferencesKey("smb_domain")
     val SMB_REMOTE_PATH = stringPreferencesKey("smb_remote_path")
 

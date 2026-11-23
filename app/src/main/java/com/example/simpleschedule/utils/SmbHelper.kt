@@ -25,8 +25,8 @@ object SmbHelper {
         domain: String = ""
     ): Result<String> = withContext(Dispatchers.IO) {
         try {
-            if (host.isBlank() || shareName.isBlank()) {
-                return@withContext Result.failure(Exception("请填写完整的服务器 IP 和共享名称"))
+            if (host.isBlank() || shareName.isBlank() || port !in 1..65535) {
+                return@withContext Result.failure(Exception("请填写有效的 SMB 服务器、共享名称和端口"))
             }
             val client = SMBClient()
             client.connect(host.trim(), port).use { connection ->

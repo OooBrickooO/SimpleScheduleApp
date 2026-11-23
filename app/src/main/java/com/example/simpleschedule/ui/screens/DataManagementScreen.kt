@@ -36,6 +36,7 @@ import java.util.Locale
 fun DataManagementScreen(
     viewModel: ScheduleViewModel,
     isDark: Boolean,
+    onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()

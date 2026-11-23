@@ -6,6 +6,7 @@ import com.example.simpleschedule.data.local.room.*
 import com.example.simpleschedule.receiver.ReminderEngine
 import com.example.simpleschedule.utils.SmbHelper
 import com.example.simpleschedule.utils.WebDavHelper
+import com.example.simpleschedule.utils.SecureSecretStore
 import com.example.simpleschedule.widget.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -708,14 +709,16 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     // --- 云备份 StateFlow ---
     val webdavUrl = application.dataStore.data.map { it[SettingsKeys.WEBDAV_URL] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val webdavUsername = application.dataStore.data.map { it[SettingsKeys.WEBDAV_USERNAME] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
-    val webdavPassword = application.dataStore.data.map { it[SettingsKeys.WEBDAV_PASSWORD] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val webdavPassword = application.dataStore.data.map { prefs -> SecureSecretStore.readSync(prefs, SettingsKeys.WEBDAV_PASSWORD_ENCRYPTED, SettingsKeys.WEBDAV_PASSWORD) }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val webdavRemotePath = application.dataStore.data.map { it[SettingsKeys.WEBDAV_REMOTE_PATH] ?: "SimpleSchedule/backup.json" }.stateIn(viewModelScope, SharingStarted.Lazily, "SimpleSchedule/backup.json")
 
     val smbHost = application.dataStore.data.map { it[SettingsKeys.SMB_HOST] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val smbPort = application.dataStore.data.map { it[SettingsKeys.SMB_PORT] ?: 445 }.stateIn(viewModelScope, SharingStarted.Lazily, 445)
     val smbShare = application.dataStore.data.map { it[SettingsKeys.SMB_SHARE] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val smbUsername = application.dataStore.data.map { it[SettingsKeys.SMB_USERNAME] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
-    val smbPassword = application.dataStore.data.map { it[SettingsKeys.SMB_PASSWORD] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
+    val smbPassword = application.dataStore.data.map { prefs ->
+        SecureSecretStore.readSync(prefs, SettingsKeys.SMB_PASSWORD_ENCRYPTED, SettingsKeys.SMB_PASSWORD)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val smbDomain = application.dataStore.data.map { it[SettingsKeys.SMB_DOMAIN] ?: "" }.stateIn(viewModelScope, SharingStarted.Lazily, "")
     val smbRemotePath = application.dataStore.data.map { it[SettingsKeys.SMB_REMOTE_PATH] ?: "SimpleSchedule/backup.json" }.stateIn(viewModelScope, SharingStarted.Lazily, "SimpleSchedule/backup.json")
 
@@ -985,7 +988,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
     fun saveWebDavSettings(url: String, user: String, pass: String, remotePath: String) {
         updateSetting(SettingsKeys.WEBDAV_URL, url)
         updateSetting(SettingsKeys.WEBDAV_USERNAME, user)
-        updateSetting(SettingsKeys.WEBDAV_PASSWORD, pass)
+        viewModelScope.launch { SecureSecretStore.write(getApplication<Application>(), SettingsKeys.WEBDAV_PASSWORD_ENCRYPTED, SettingsKeys.WEBDAV_PASSWORD, pass) }
         updateSetting(SettingsKeys.WEBDAV_REMOTE_PATH, remotePath)
     }
 
@@ -1055,7 +1058,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         updateSetting(SettingsKeys.SMB_PORT, port)
         updateSetting(SettingsKeys.SMB_SHARE, share)
         updateSetting(SettingsKeys.SMB_USERNAME, user)
-        updateSetting(SettingsKeys.SMB_PASSWORD, pass)
+        viewModelScope.launch { SecureSecretStore.write(getApplication<Application>(), SettingsKeys.SMB_PASSWORD_ENCRYPTED, SettingsKeys.SMB_PASSWORD, pass) }
         updateSetting(SettingsKeys.SMB_DOMAIN, domain)
         updateSetting(SettingsKeys.SMB_REMOTE_PATH, remotePath)
     }
