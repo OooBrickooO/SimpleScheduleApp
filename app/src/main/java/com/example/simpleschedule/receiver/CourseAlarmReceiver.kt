@@ -1,145 +1,36 @@
 package com.example.simpleschedule.receiver
 
-import com.example.simpleschedule.R
-import com.example.simpleschedule.data.local.datastore.SettingsKeys
-import com.example.simpleschedule.data.local.datastore.dataStore
-import com.example.simpleschedule.data.local.room.*
-import com.example.simpleschedule.widget.WidgetUpdateWorker
-import com.example.simpleschedule.MainActivity
-import com.example.simpleschedule.utils.LocalLogger
-
 import android.annotation.SuppressLint
-import java.io.InputStream
-import jxl.Workbook
-import android.app.Application
-import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.TimePickerDialog
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import android.provider.Settings
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
-import android.util.Base64
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.RemoteViews
+import android.speech.tts.UtteranceProgressListener
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewModelScope
-import androidx.room.*
-import androidx.work.*
-import java.util.concurrent.TimeUnit
-import androidx.glance.GlanceId
-import androidx.glance.GlanceModifier
-import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.action.clickable as glanceClickable
-import androidx.glance.background as glanceBackground
-import androidx.glance.layout.Column as GlanceColumn
-import androidx.glance.layout.Row as GlanceRow
-import androidx.glance.layout.Spacer as GlanceSpacer
-import androidx.glance.layout.fillMaxSize as glanceFillMaxSize
-import androidx.glance.layout.fillMaxWidth as glanceFillMaxWidth
-import androidx.glance.layout.height as glanceHeight
-import androidx.glance.layout.padding as glancePadding
-import androidx.glance.text.Text as GlanceText
-import androidx.glance.text.TextStyle
-import androidx.glance.text.FontWeight as GlanceFontWeight
-import androidx.glance.text.TextAlign as GlanceTextAlign
-import androidx.glance.unit.ColorProvider
-import androidx.glance.appwidget.appWidgetBackground
-import androidx.glance.appwidget.cornerRadius
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.simpleschedule.MainActivity
+import com.example.simpleschedule.R
+import com.example.simpleschedule.data.local.datastore.SettingsKeys
+import com.example.simpleschedule.data.local.datastore.dataStore
+import com.example.simpleschedule.ui.theme.getPalette
+import com.example.simpleschedule.utils.LocalLogger
+import com.example.simpleschedule.widget.WidgetUpdateWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
 import java.util.Locale
-import java.util.UUID
-import kotlin.math.roundToInt
 
 enum class NotificationState {
     UPCOMING,
@@ -157,28 +48,38 @@ fun buildCourseNotification(
     colorTheme: String,
     islandEnabled: Boolean
 ): android.app.Notification {
-    val CHANNEL_ID = "CourseAlarmChannel_v2"
+    val channelId = "CourseAlarmChannel_v2"
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         notificationManager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "上课提醒", NotificationManager.IMPORTANCE_HIGH)
+            NotificationChannel(channelId, "上课提醒", NotificationManager.IMPORTANCE_HIGH)
         )
     }
 
     val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
-    val cancelPending = PendingIntent.getBroadcast(context, SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(), cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    val cancelPending = PendingIntent.getBroadcast(
+        context,
+        SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(),
+        cancelIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
     val openIntent = Intent(context, MainActivity::class.java).apply {
         action = Intent.ACTION_MAIN
         addCategory("android.intent.category.NAVIGATION") // 兼容 ColorOS 16 要求的标准场景类别
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
-    val openPending = PendingIntent.getActivity(context, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+    val openPending = PendingIntent.getActivity(
+        context,
+        0,
+        openIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+    )
 
     val palette = try {
-        com.example.simpleschedule.ui.theme.getPalette(colorTheme, true)
-    } catch (e: Exception) {
+        getPalette(colorTheme, true)
+    } catch (_: Exception) {
         null
     }
     val accentColor = palette?.accent?.toArgb() ?: 0xFF6B7280.toInt()
@@ -189,7 +90,7 @@ fun buildCourseNotification(
     val style = NotificationCompat.BigTextStyle()
         .bigText("$courseName\n$contentText")
 
-    val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+    val builder = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(titleText)
         .setContentText(contentText)
@@ -218,46 +119,30 @@ fun buildCourseNotification(
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
         }
-        if (islandEnabled) {
-            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val cleanLocation = location
-                .replace("上课地点：", "")
-                .replace("上课地点:", "")
-                .replace("地点：", "")
-                .replace("地点:", "")
-                .replace("教室：", "")
-                .replace("教室:", "")
-                .replace("楼", "")
-                .trim()
-            val shortLocation = cleanLocation.take(7)
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
-        } else {
-            builder.setColorized(true)
-        }
     } else {
         if (classEndMillis > 0 && !islandEnabled) {
             builder.setWhen(classEndMillis)
             builder.setUsesChronometer(true)
             builder.setChronometerCountDown(true)
         }
-        if (islandEnabled) {
-            builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-            val cleanLocation = location
-                .replace("上课地点：", "")
-                .replace("上课地点:", "")
-                .replace("地点：", "")
-                .replace("地点:", "")
-                .replace("教室：", "")
-                .replace("教室:", "")
-                .replace("楼", "")
-                .trim()
-            val shortLocation = cleanLocation.take(7)
-            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
-            builder.getExtras().putCharSequence("android.shortCriticalText", shortLocation)
-        } else {
-            builder.setColorized(true)
-        }
+    }
+
+    if (islandEnabled) {
+        builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
+        val cleanLocation = location
+            .replace("上课地点：", "")
+            .replace("上课地点:", "")
+            .replace("地点：", "")
+            .replace("地点:", "")
+            .replace("教室：", "")
+            .replace("教室:", "")
+            .replace("楼", "")
+            .trim()
+        val shortLocation = cleanLocation.take(7)
+        builder.extras.putBoolean("android.requestPromotedOngoing", true)
+        builder.extras.putCharSequence("android.shortCriticalText", shortLocation)
+    } else {
+        builder.setColorized(true)
     }
 
     return builder.build()
@@ -284,24 +169,33 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
                 val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
-                LocalLogger.log(context, "Receiver", "课前提醒 ACTION_SHOW_REMINDER: 课程=$courseName, 通知=$showNotify, 语音=$playVoice")
+                val appContext = context.applicationContext
                 val pendingResult = goAsync()
-                kotlinx.coroutines.GlobalScope.launch {
+                CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val prefs = context.dataStore.data.first()
+                        val prefs = appContext.dataStore.data.first()
                         val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
 
                         if (showNotify) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                showNotification(context, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
+                            Handler(Looper.getMainLooper()).post {
+                                showNotification(
+                                    appContext,
+                                    courseName,
+                                    location,
+                                    timeStr,
+                                    classStartMillis,
+                                    classEndMillis,
+                                    colorTheme,
+                                    islandEnabled
+                                )
                             }
                         }
 
                         if (playVoice) {
-                            android.os.Handler(android.os.Looper.getMainLooper()).post {
-                                val handler = android.os.Handler(android.os.Looper.getMainLooper())
+                            Handler(Looper.getMainLooper()).post {
+                                val handler = Handler(Looper.getMainLooper())
                                 val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
-                                
+
                                 var isFinished = false
                                 val timeoutRunnable = Runnable {
                                     if (!isFinished) {
@@ -319,11 +213,11 @@ class CourseAlarmReceiver : BroadcastReceiver() {
 
                                 handler.postDelayed(timeoutRunnable, 8000)
 
-                                tts = TextToSpeech(context) { status ->
+                                tts = TextToSpeech(appContext) { status ->
                                     if (status == TextToSpeech.SUCCESS) {
                                         val result = tts?.setLanguage(Locale.CHINESE)
                                         if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                                            tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                                            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                                                 private fun finishTts() {
                                                     handler.post {
                                                         if (!isFinished) {
@@ -342,19 +236,10 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                                                 }
 
                                                 override fun onStart(utteranceId: String?) {}
-
-                                                override fun onDone(utteranceId: String?) {
-                                                    finishTts()
-                                                }
-
-                                                override fun onError(utteranceId: String?) {
-                                                    finishTts()
-                                                }
-
+                                                override fun onDone(utteranceId: String?) { finishTts() }
+                                                override fun onError(utteranceId: String?) { finishTts() }
                                                 @Deprecated("Deprecated in Java")
-                                                override fun onError(utteranceId: String?, errorCode: Int) {
-                                                    finishTts()
-                                                }
+                                                override fun onError(utteranceId: String?, errorCode: Int) { finishTts() }
                                             })
 
                                             val ttsParams = Bundle().apply {
@@ -362,7 +247,7 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                                             }
                                             tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, ttsParams, "CourseTTS")
                                         } else {
-                                            Toast.makeText(context, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(appContext, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
                                             handler.removeCallbacks(timeoutRunnable)
                                             pendingResult.finish()
                                         }
@@ -389,17 +274,33 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
                 val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
-                LocalLogger.log(context, "Receiver", "上课开始 ACTION_CLASS_START: 课程=$courseName")
-                kotlinx.coroutines.GlobalScope.launch {
+                val appContext = context.applicationContext
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val prefs = context.dataStore.data.first()
+                        val prefs = appContext.dataStore.data.first()
                         val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
 
-                        android.os.Handler(android.os.Looper.getMainLooper()).post {
-                            updateNotificationState(context, NotificationState.IN_CLASS, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, islandEnabled)
+                        Handler(Looper.getMainLooper()).post {
+                            try {
+                                updateNotificationState(
+                                    appContext,
+                                    NotificationState.IN_CLASS,
+                                    courseName,
+                                    location,
+                                    timeStr,
+                                    classStartMillis,
+                                    classEndMillis,
+                                    colorTheme,
+                                    islandEnabled
+                                )
+                            } finally {
+                                pendingResult.finish()
+                            }
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        pendingResult.finish()
                     }
                 }
             }
@@ -429,7 +330,6 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         colorTheme: String,
         islandEnabled: Boolean
     ) {
-        LocalLogger.log(context, "Receiver", "showNotification: 开启胶囊=$islandEnabled, 课程=$courseName")
         if (islandEnabled) {
             val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
                 putExtra("STATE", "UPCOMING")
@@ -441,22 +341,17 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 putExtra("COLOR_THEME", colorTheme)
             }
             try {
-                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
-                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 启动 CourseAlarmService")
+                ContextCompat.startForegroundService(context, serviceIntent)
             } catch (e: Exception) {
-                LocalLogger.log(context, "Receiver", "前台服务启动崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
-                // 后台启动前台服务受限时（如 Android 12+ FGS 限制），直接在广播接收器内弹出标准通知兜底
                 val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
-                LocalLogger.log(context, "Receiver", "已降级直接通过接收器展示标准通知")
             }
         } else {
             val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
-            LocalLogger.log(context, "Receiver", "直接通过接收器展示普通标准通知")
         }
     }
 
@@ -472,7 +367,6 @@ class CourseAlarmReceiver : BroadcastReceiver() {
         colorTheme: String,
         islandEnabled: Boolean
     ) {
-        LocalLogger.log(context, "Receiver", "updateNotificationState: 状态=$state, 开启胶囊=$islandEnabled")
         if (islandEnabled) {
             val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
                 putExtra("STATE", "IN_CLASS")
@@ -484,25 +378,17 @@ class CourseAlarmReceiver : BroadcastReceiver() {
                 putExtra("COLOR_THEME", colorTheme)
             }
             try {
-                androidx.core.content.ContextCompat.startForegroundService(context, serviceIntent)
-                LocalLogger.log(context, "Receiver", "成功调用 startForegroundService 更新服务状态 (IN_CLASS)")
+                ContextCompat.startForegroundService(context, serviceIntent)
             } catch (e: Exception) {
-                LocalLogger.log(context, "Receiver", "更新前台服务崩溃拦截 (FGS限制)：${e.message}")
                 e.printStackTrace()
-                // 后台启动前台服务受限时，直接在广播接收器内更新通知兜底
                 val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
                 val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 notificationManager.notify(1001, notification)
-                LocalLogger.log(context, "Receiver", "已降级直接通过接收器更新标准通知")
             }
         } else {
             val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(1001, notification)
-            LocalLogger.log(context, "Receiver", "直接通过接收器更新普通标准通知")
         }
     }
 }
-
-// --- 8. 桌面小组件 (Jetpack Glance) ---
-

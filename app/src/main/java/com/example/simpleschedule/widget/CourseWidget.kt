@@ -1,145 +1,44 @@
 package com.example.simpleschedule.widget
 
-import com.example.simpleschedule.MainActivity
-import com.example.simpleschedule.data.local.datastore.SettingsKeys
-import com.example.simpleschedule.data.local.datastore.dataStore
-import com.example.simpleschedule.data.local.room.*
-import com.example.simpleschedule.ui.theme.*
-
 import android.annotation.SuppressLint
-import java.io.InputStream
-import jxl.Workbook
-import android.app.Application
-import android.app.DatePickerDialog
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.TimePickerDialog
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
-import android.provider.Settings
-import android.speech.tts.TextToSpeech
-import android.util.Base64
-import android.webkit.JavascriptInterface
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import android.widget.RemoteViews
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.window.Dialog
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewModelScope
-import androidx.room.*
-import androidx.work.*
-import java.util.concurrent.TimeUnit
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.action.clickable as glanceClickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.provideContent
-import androidx.glance.appwidget.updateAll
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.action.clickable as glanceClickable
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.provideContent
 import androidx.glance.background as glanceBackground
 import androidx.glance.layout.Column as GlanceColumn
-import androidx.glance.layout.Row as GlanceRow
 import androidx.glance.layout.Spacer as GlanceSpacer
 import androidx.glance.layout.fillMaxSize as glanceFillMaxSize
 import androidx.glance.layout.fillMaxWidth as glanceFillMaxWidth
 import androidx.glance.layout.height as glanceHeight
 import androidx.glance.layout.padding as glancePadding
-import androidx.glance.text.Text as GlanceText
-import androidx.glance.text.TextStyle
 import androidx.glance.text.FontWeight as GlanceFontWeight
+import androidx.glance.text.Text as GlanceText
 import androidx.glance.text.TextAlign as GlanceTextAlign
+import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.glance.appwidget.appWidgetBackground
-import androidx.glance.appwidget.cornerRadius
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import org.json.JSONArray
-import java.text.SimpleDateFormat
+import com.example.simpleschedule.MainActivity
+import com.example.simpleschedule.data.local.datastore.SettingsKeys
+import com.example.simpleschedule.data.local.datastore.dataStore
+import com.example.simpleschedule.data.local.room.AppDatabase
+import com.example.simpleschedule.data.local.room.DisplayCourse
+import com.example.simpleschedule.data.local.room.TimeNode
+import com.example.simpleschedule.domain.ScheduleResolver
+import com.example.simpleschedule.ui.theme.getPalette
+import kotlinx.coroutines.flow.firstOrNull
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
-import java.util.UUID
-import kotlin.math.roundToInt
-import androidx.glance.appwidget.SizeMode
-import androidx.glance.LocalSize
-import androidx.compose.ui.unit.dp
 
 data class WidgetData(
     val todayCourses: List<DisplayCourse>,
@@ -157,64 +56,46 @@ suspend fun loadWidgetData(context: Context): WidgetData {
     val currentSchedule = scheduleGroups.find { it.id == savedId } ?: scheduleGroups.firstOrNull()
 
     val cal = Calendar.getInstance()
-    val todayDayOfWeek = if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) 7 else cal.get(Calendar.DAY_OF_WEEK) - 1
-
-    var currentWeek = 1
-    if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
-        try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
-            while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
-            val currentCalForWeek = Calendar.getInstance()
-            while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
-            val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
-            currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
-            if (currentWeek < 1) currentWeek = 1
-        } catch (e: Exception) {}
-    }
+    val todayDayOfWeek = ScheduleResolver.calendarDayToIsoDay(cal)
+    val currentWeek = if (currentSchedule != null) {
+        ScheduleResolver.calculateWeekFromStartDate(currentSchedule.startDate, cal)
+    } else 1
 
     val rawCourses = if (currentSchedule != null) appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
     val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
     val overrideMap = overrides.associateBy { it.courseId }
     val makeUpRules = if (currentSchedule != null) appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
-
     val timeNodes = if (currentSchedule != null) appDao.getTimeNodes(currentSchedule.timetableId) else emptyList()
     val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
 
-    val currentTimeStr = String.format(Locale.getDefault(), "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+    val displayCourses = ScheduleResolver.applyOverrides(rawCourses, overrideMap)
+    val todayDateStr = ScheduleResolver.formatDate(cal)
+    val currentTimeStr = String.format(Locale.US, "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
 
-    val todayDateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.time)
-    val targetRule = makeUpRules.find { it.targetDate == todayDateStr }
-    val holidayRule = makeUpRules.find { it.sourceDate == todayDateStr }
+    val daySchedule = if (currentSchedule != null) {
+        ScheduleResolver.resolveDayCourses(
+            dateStr = todayDateStr,
+            week = currentWeek,
+            dayOfWeek = todayDayOfWeek,
+            startDateStr = currentSchedule.startDate,
+            displayCourses = displayCourses,
+            makeUpRules = makeUpRules
+        )
+    } else null
 
-    val todayCourses = if (holidayRule != null) {
-        emptyList()
-    } else {
-        val (evalDayOfWeek, evalWeek) = if (targetRule != null && currentSchedule != null) {
-            val srcInfo = com.example.simpleschedule.utils.getWeekAndDay(targetRule.sourceDate, currentSchedule.startDate)
-            if (srcInfo != null) Pair(srcInfo.second, srcInfo.first)
-            else Pair(todayDayOfWeek, currentWeek)
-        } else Pair(todayDayOfWeek, currentWeek)
-
-        rawCourses.mapNotNull { course ->
-            val over = overrideMap[course.id]
-            val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-            val effectiveStart = over?.newStartNode ?: course.startNode
-            val effectiveEnd = over?.newEndNode ?: course.endNode
-
-            if (effectiveDay != evalDayOfWeek) return@mapNotNull null
-
-            val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-            if (!weeksList.contains(evalWeek)) return@mapNotNull null
-
-            val endNodeInfo = timeNodeMap[effectiveEnd]
-            if (endNodeInfo != null && endNodeInfo.endTime <= currentTimeStr) {
-                return@mapNotNull null
+    val todayCourses = (daySchedule?.courses ?: emptyList()).filter { dc ->
+        val endNodeInfo = timeNodeMap[dc.displayEndNode]
+        if (endNodeInfo != null) {
+            val nowMins = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+            val endHm = ScheduleResolver.parseTimeMinutes(endNodeInfo.endTime)
+            if (endHm != null && endHm.first * 60 + endHm.second <= nowMins) {
+                return@filter false
+            } else if (endHm == null && endNodeInfo.endTime <= currentTimeStr) {
+                return@filter false
             }
-
-            DisplayCourse(course, todayDayOfWeek, effectiveStart, effectiveEnd)
-        }.sortedBy { it.displayStartNode }
-    }
+        }
+        true
+    }.sortedBy { it.displayStartNode }
 
     return WidgetData(todayCourses, timeNodeMap, isTranslucent)
 }
@@ -237,8 +118,7 @@ class CourseWidget2x2 : GlanceAppWidget() {
     }
 }
 
-
-@Suppress("RestrictedApi")
+@SuppressLint("RestrictedApi")
 @Composable
 fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean) {
     val intent = Intent(context, MainActivity::class.java).apply {
@@ -253,9 +133,9 @@ fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, 
             .glancePadding(16.dp)
             .glanceClickable(actionStartActivity(intent))
     ) {
-        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
+        val totalSlots = todayCourses.size
         GlanceText(
-            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $distinctCourseCount 门课要上",
+            text = if (todayCourses.isEmpty()) "今天已经没有课啦，好好休息喵~" else "今日还有 $totalSlots 节课程安排",
             style = TextStyle(color = ColorProvider(Color.White), fontSize = 16.sp, fontWeight = GlanceFontWeight.Bold)
         )
         GlanceSpacer(modifier = GlanceModifier.glanceHeight(12.dp))
@@ -289,7 +169,7 @@ fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, 
 
         if (todayCourses.size > 4) {
             GlanceText(
-                text = "... 还有 ${todayCourses.size - 4} 门课被折叠了喵",
+                text = "... 还有 ${todayCourses.size - 4} 节课被折叠了喵",
                 style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.6f)), fontSize = 12.sp)
             )
         }
@@ -312,7 +192,7 @@ fun CourseWidgetContent4x2(context: Context, todayCourses: List<DisplayCourse>, 
     }
 }
 
-@Suppress("RestrictedApi")
+@SuppressLint("RestrictedApi")
 @Composable
 fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse>, timeNodeMap: Map<Int, TimeNode>, isTranslucent: Boolean, maxShow: Int) {
     val intent = Intent(context, MainActivity::class.java).apply {
@@ -327,9 +207,8 @@ fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse
             .glancePadding(8.dp)
             .glanceClickable(actionStartActivity(intent))
     ) {
-        val distinctCourseCount = todayCourses.distinctBy { it.course.name }.size
         GlanceText(
-            text = if (todayCourses.isEmpty()) "今日无课" else "今日 $distinctCourseCount 门课",
+            text = if (todayCourses.isEmpty()) "今日无课" else "今日 ${todayCourses.size} 节课",
             style = TextStyle(color = ColorProvider(Color.White), fontSize = 12.sp, fontWeight = GlanceFontWeight.Bold)
         )
         GlanceSpacer(modifier = GlanceModifier.glanceHeight(6.dp))
@@ -340,8 +219,8 @@ fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse
             val course = displayCourse.course
             val startNode = timeNodeMap[displayCourse.displayStartNode]
             val startTime = startNode?.startTime ?: ""
-            val cleanLocation = course.location.replace("楼", "")
-            val infoText = if (cleanLocation.isNotEmpty()) "$startTime @$cleanLocation" else startTime
+            val loc = course.location.trim()
+            val infoText = if (loc.isNotEmpty()) "$startTime @$loc" else startTime
 
             val palette = getPalette(course.colorTheme, isDark = true)
             val cardAlpha = if (isTranslucent) 0.7f else 1.0f
@@ -371,7 +250,7 @@ fun CourseWidgetContentNarrow(context: Context, todayCourses: List<DisplayCourse
 
         if (todayCourses.size > maxShow) {
             GlanceText(
-                text = "... 还有 ${todayCourses.size - maxShow} 门",
+                text = "... 还有 ${todayCourses.size - maxShow} 节",
                 style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 9.sp)
             )
         }
@@ -394,7 +273,3 @@ class CourseWidgetReceiver : GlanceAppWidgetReceiver() {
 class CourseWidget2x2Receiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = CourseWidget2x2()
 }
-
-
-// --- 9. 后台守护任务 (WorkManager) ---
-

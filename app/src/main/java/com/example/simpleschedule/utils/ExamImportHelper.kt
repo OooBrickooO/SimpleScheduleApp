@@ -1,15 +1,19 @@
 package com.example.simpleschedule.utils
 
 import com.example.simpleschedule.data.local.room.TimeNode
-import org.jsoup.Jsoup
+import com.example.simpleschedule.domain.ScheduleResolver
 import org.json.JSONArray
 import org.json.JSONObject
+import org.jsoup.Jsoup
 import java.io.InputStream
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 import kotlin.math.abs
+
+private val examCourseColors = listOf("blue", "pink", "purple", "slate", "indigo", "rose")
+
+private fun toMinuteOfDay(timeStr: String): Int? {
+    val hm = ScheduleResolver.parseTimeMinutes(timeStr) ?: return null
+    return hm.first * 60 + hm.second
+}
 
 /**
  * 解析正方教务系统的考试 HTML 文件
@@ -28,22 +32,21 @@ fun parseZhengfangExamHtml(
         val htmlContent = inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
         val doc = Jsoup.parse(htmlContent)
 
-        // 查找所有 jqgrow 行
         val rows = doc.select("tr.jqgrow")
         if (rows.isEmpty()) {
             return Pair(null, "在 HTML 文件中未找到任何考试数据行。请确保文件是正确的正方教务考试安排页面（包含 tabGrid 表格）！")
         }
 
         val coursesJsonArray = JSONArray()
-        val colorList = listOf("blue", "pink", "purple", "slate", "indigo", "rose")
-        val timePattern = Regex("""(\d{4}-\d{2}-\d{2})\((\d{2}:\d{2})-(\d{2}:\d{2})\)""")
+        val timePattern = Regex("""(\d{4}-\d{2}-\d{2})\((\d{1,2}:\d{2})-(\d{1,2}:\d{2})\)""")
 
         for (row in rows) {
             val nameCell = row.selectFirst("td[aria-describedby$=tabGrid_kcmc]")
             val timeCell = row.selectFirst("td[aria-describedby$=tabGrid_kssj]")
             val locCell = row.selectFirst("td[aria-describedby$=tabGrid_cdmc]")
             val seatCell = row.selectFirst("td[aria-describedby$=tabGrid_zwh]")
-            val creditsCell = row.selectFirst("td[aria-describedby$=tabGrid_xf]") ?: row.selectFirst("td[aria-describedby$=tabGrid_credits]")
+            val creditsCell = row.selectFirst("td[aria-describedby$=tabGrid_xf]")
+                ?: row.selectFirst("td[aria-describedby$=tabGrid_credits]")
 
             val kcmc = nameCell?.text()?.trim() ?: ""
             val kssj = timeCell?.text()?.trim() ?: ""
@@ -51,52 +54,44 @@ fun parseZhengfangExamHtml(
             val zwh = seatCell?.text()?.trim() ?: ""
             val credits = creditsCell?.text()?.trim() ?: ""
 
-            if (kcmc.isEmpty() || kssj.isEmpty()) {
-                continue
-            }
+            if (kcmc.isEmpty() || kssj.isEmpty()) continue
 
-            // 匹配日期与时间
             val match = timePattern.find(kssj) ?: continue
             val dateStr = match.groupValues[1]
-            val examStart = match.groupValues[2]
-            val examEnd = match.groupValues[3]
+            val examStartMins = toMinuteOfDay(match.groupValues[2]) ?: continue
+            val examEndMins = toMinuteOfDay(match.groupValues[3]) ?: continue
 
-            // 计算考试周次和星期几
             val weekAndDay = getWeekAndDay(dateStr, startDateStr) ?: continue
             val week = weekAndDay.first
             val dayOfWeek = weekAndDay.second
 
-            // 计算占用的节数区间 (向上取整逻辑：重叠的节均被占用)
             val overlappingNodes = timeNodes.filter { node ->
-                val nodeStart = node.startTime.trim()
-                val nodeEnd = node.endTime.trim()
-                nodeStart < examEnd && nodeEnd > examStart
+                val nodeStartMins = toMinuteOfDay(node.startTime) ?: return@filter false
+                val nodeEndMins = toMinuteOfDay(node.endTime) ?: return@filter false
+                nodeStartMins < examEndMins && nodeEndMins > examStartMins
             }
 
-            val startNode = if (overlappingNodes.isNotEmpty()) {
-                overlappingNodes.minOf { it.nodeIndex }
+            val (startNode, endNode) = if (overlappingNodes.isNotEmpty()) {
+                Pair(
+                    overlappingNodes.minOf { it.nodeIndex },
+                    overlappingNodes.maxOf { it.nodeIndex }
+                )
             } else {
-                1
-            }
-            val endNode = if (overlappingNodes.isNotEmpty()) {
-                overlappingNodes.maxOf { it.nodeIndex }
-            } else {
-                startNode
+                val nearestNode = timeNodes.minByOrNull { node ->
+                    val s = toMinuteOfDay(node.startTime) ?: Int.MAX_VALUE
+                    abs(s - examStartMins)
+                }?.nodeIndex ?: 1
+                Pair(nearestNode, nearestNode)
             }
 
-            // 如果有座位号，追加到考试地点
-            val finalLocation = if (zwh.isNotEmpty() && zwh != " " && zwh != "&nbsp;") {
+            val finalLocation = if (zwh.isNotEmpty() && zwh != "\u00A0" && zwh != "&nbsp;") {
                 "$cdmc (座号: $zwh)"
             } else {
                 cdmc
             }
 
-            // 基于课程名哈希选择颜色主题
-            var nameHash = 0
-            for (char in kcmc) {
-                nameHash += char.code
-            }
-            val colorTheme = colorList[abs(nameHash) % colorList.size]
+            val nameHash = kcmc.sumOf { it.code }
+            val colorTheme = examCourseColors[(nameHash and 0x7fffffff) % examCourseColors.size]
             val finalName = "[考试]$kcmc"
 
             val courseObj = JSONObject().apply {

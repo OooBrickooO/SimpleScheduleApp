@@ -1,4 +1,4 @@
-package com.example.simpleschedule.ui.screens
+package com.example.simpleschedule.ui.settings
 
 import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.Canvas
@@ -6,18 +6,45 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -25,14 +52,21 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.simpleschedule.ui.theme.*
-import com.example.simpleschedule.viewmodel.ScheduleViewModel
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
+import com.example.simpleschedule.ui.common.AppBackHandler
+import com.example.simpleschedule.ui.common.SettingCheckboxItem
+import com.example.simpleschedule.ui.theme.BgDark
+import com.example.simpleschedule.ui.theme.BgLight
+import com.example.simpleschedule.ui.theme.BorderDark
+import com.example.simpleschedule.ui.theme.BorderLight
+import com.example.simpleschedule.ui.theme.TextDark
+import com.example.simpleschedule.ui.theme.TextLight
+import com.example.simpleschedule.viewmodel.ScheduleViewModel
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
-import kotlin.random.Random
+import kotlin.math.sqrt
 
 @Composable
 fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack: () -> Unit) {
@@ -47,10 +81,13 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
     val courseColorPoolString by viewModel.courseColorPool.collectAsState()
     var showCustomAccent by remember { mutableStateOf(false) }
 
+    var sliderCellHeight by remember(cellHeightDp) { mutableFloatStateOf(cellHeightDp) }
+    var sliderCornerRadius by remember(cornerRadiusDp) { mutableFloatStateOf(cornerRadiusDp) }
+
     val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsState()
     val backModifier = AppBackHandler(predictiveBackEnabled) { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize().then(backModifier).background(if(isDark) BgDark else BgLight)) {
+    Column(modifier = Modifier.fillMaxSize().then(backModifier).background(if (isDark) BgDark else BgLight)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -58,24 +95,27 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = textColor, modifier = Modifier.clickable { onBack() }.padding(8.dp))
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = "Back",
+                tint = textColor,
+                modifier = Modifier.clickable { onBack() }.padding(8.dp)
+            )
             Spacer(modifier = Modifier.width(8.dp))
             Text("更多外观设置", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = textColor)
         }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
-            
-            // Global Accent Color Module
             item {
                 Text("全局主色调 (Accent Color)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp)) {
                     Column {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             val presetColors = listOf(
-                                -1L to Color.Transparent, // Default
-                                0xFFE63946 to Color(0xFFE63946), // Red
-                                0xFF457B9D to Color(0xFF457B9D), // Blue
-                                0xFF2A9D8F to Color(0xFF2A9D8F), // Green
-                                0xFF9B5DE5 to Color(0xFF9B5DE5)  // Purple
+                                -1L to Color.Transparent,
+                                0xFFE63946L to Color(0xFFE63946),
+                                0xFF457B9DL to Color(0xFF457B9D),
+                                0xFF2A9D8FL to Color(0xFF2A9D8F),
+                                0xFF9B5DE5L to Color(0xFF9B5DE5)
                             )
                             presetColors.forEach { (value, color) ->
                                 val isSelected = accentColor == value
@@ -83,18 +123,17 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(if (value == -1L) (if(isDark) Color.DarkGray else Color.LightGray) else color)
+                                        .background(if (value == -1L) (if (isDark) Color.DarkGray else Color.LightGray) else color)
                                         .border(if (isSelected) 2.dp else 0.dp, if (isSelected) textColor else Color.Transparent, CircleShape)
                                         .clickable { viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, value) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (value == -1L) {
-                                        Text("默认", fontSize = 10.sp, color = if(isDark) Color.White else Color.Black)
+                                        Text("默认", fontSize = 10.sp, color = if (isDark) Color.White else Color.Black)
                                     }
                                 }
                             }
-                            
-                            // Custom color toggle button
+
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)
@@ -107,28 +146,26 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
                                 Text("自定义", fontSize = 9.sp, color = textColor)
                             }
                         }
-                    if (showCustomAccent) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("拖动以自定义颜色", fontSize = 12.sp, color = textColor.copy(alpha = 0.5f))
-                        Spacer(modifier = Modifier.height(8.dp))
-                        SingleColorGamutSelector(isDark = isDark) { customColor ->
-                            // Convert Android Color to ARGB Long
-                            val argb = (customColor.value.toLong() shr 32)
-                            viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, argb)
+                        if (showCustomAccent) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("点击或拖动色域图以自定义颜色", fontSize = 12.sp, color = textColor.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            SingleColorGamutSelector(isDark = isDark) { customColor ->
+                                val argb = customColor.value.toLong() ushr 32
+                                viewModel.updateSetting(SettingsKeys.ACCENT_COLOR, argb)
+                            }
                         }
-                    }
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Gamut Color Selection Module
             item {
                 Text("课程颜色分配池 (Gamut Pool)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp)).padding(16.dp)) {
                     Column {
-                        Text("在下方色域图中拖动光圈，实时圈选生成属于你的 10 种课表随机颜色！", fontSize = 12.sp, color = textColor.copy(alpha = 0.7f), modifier = Modifier.padding(bottom = 16.dp))
-                        
+                        Text("在下方色域图中点击或拖动光圈，实时圈选生成属于你的 10 种课表颜色！", fontSize = 12.sp, color = textColor.copy(alpha = 0.7f), modifier = Modifier.padding(bottom = 16.dp))
+
                         ColorGamutSelector(
                             isDark = isDark,
                             onColorsGenerated = { colors ->
@@ -139,10 +176,11 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
 
                         Spacer(modifier = Modifier.height(20.dp))
                         Text("当前池子预览:", fontSize = 12.sp, color = textColor.copy(alpha = 0.7f), modifier = Modifier.padding(bottom = 8.dp))
-                        
-                        // Parse current pool
-                        val currentPool = if (courseColorPoolString.isBlank()) emptyList() else courseColorPoolString.split(",").mapNotNull { it.toULongOrNull()?.let { v -> Color(v) } }
-                        
+
+                        val currentPool = if (courseColorPoolString.isBlank()) emptyList() else {
+                            courseColorPoolString.split(",").mapNotNull { it.toULongOrNull()?.let { v -> Color(v) } }
+                        }
+
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             if (currentPool.isEmpty()) {
                                 Text("默认主题色", fontSize = 12.sp, color = textColor)
@@ -152,12 +190,12 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
                                 }
                             }
                         }
-                        
+
                         if (currentPool.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                "恢复默认课表颜色", 
-                                fontSize = 12.sp, 
+                                "恢复默认课表颜色",
+                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.clickable { viewModel.updateSetting(SettingsKeys.COURSE_COLOR_POOL, "") }
                             )
@@ -167,28 +205,36 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Existing Grid Settings
             item {
                 Text("网格属性 (Grid Settings)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = textColor.copy(alpha = 0.6f), modifier = Modifier.padding(bottom = 8.dp))
                 Box(modifier = Modifier.fillMaxWidth().background(surfaceColor, RoundedCornerShape(12.dp)).border(0.5.dp, borderColor, RoundedCornerShape(12.dp))) {
                     Column {
-                        SettingCheckboxItem(title = "隐藏格子内的时间显示", checked = hideTime, onCheckedChange = { viewModel.updateSetting(SettingsKeys.HIDE_TIME, it) }, textColor = textColor, borderColor = borderColor, isDark = isDark)
+                        SettingCheckboxItem(
+                            title = "隐藏格子内的时间显示",
+                            checked = hideTime,
+                            onCheckedChange = { viewModel.updateSetting(SettingsKeys.HIDE_TIME, it) },
+                            textColor = textColor,
+                            borderColor = borderColor,
+                            isDark = isDark
+                        )
 
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("课程格子高度 (${cellHeightDp.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                            Text("课程格子高度 (${sliderCellHeight.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                             Slider(
-                                value = cellHeightDp,
-                                onValueChange = { viewModel.updateSetting(SettingsKeys.CELL_HEIGHT, it) },
+                                value = sliderCellHeight,
+                                onValueChange = { sliderCellHeight = it },
+                                onValueChangeFinished = { viewModel.updateSetting(SettingsKeys.CELL_HEIGHT, sliderCellHeight) },
                                 valueRange = 40f..100f,
                                 colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
                             )
                         }
                         HorizontalDivider(color = borderColor, thickness = 0.5.dp)
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("格子圆角半径 (${cornerRadiusDp.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
+                            Text("格子圆角半径 (${sliderCornerRadius.roundToInt()}dp)", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor)
                             Slider(
-                                value = cornerRadiusDp,
-                                onValueChange = { viewModel.updateSetting(SettingsKeys.CORNER_RADIUS, it) },
+                                value = sliderCornerRadius,
+                                onValueChange = { sliderCornerRadius = it },
+                                onValueChangeFinished = { viewModel.updateSetting(SettingsKeys.CORNER_RADIUS, sliderCornerRadius) },
                                 valueRange = 0f..24f,
                                 colors = SliderDefaults.colors(thumbColor = textColor, activeTrackColor = textColor, inactiveTrackColor = textColor.copy(alpha = 0.2f))
                             )
@@ -204,32 +250,27 @@ fun AppearanceSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBa
 @Composable
 fun ColorGamutSelector(isDark: Boolean, onColorsGenerated: (List<Color>) -> Unit) {
     val borderColor = if (isDark) BorderDark else BorderLight
-    var cursorPosition by remember { mutableStateOf(Offset(100f, 100f)) }
-    var canvasSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+    var cursorPosition by remember { mutableStateOf(Offset(140f, 120f)) }
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
     val cursorRadius = 60f
 
     val hueColors = listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
-    
+
     fun generateColorsFromCircle() {
         if (canvasSize.width == 0f || canvasSize.height == 0f) return
-        
         val colors = mutableListOf<Color>()
         val centerX = cursorPosition.x
         val centerY = cursorPosition.y
-        
-        // Generate 10 evenly distributed points inside the circle using golden angle
-        val goldenAngle = PI * (3.0 - kotlin.math.sqrt(5.0))
+        val goldenAngle = PI * (3.0 - sqrt(5.0))
         for (i in 0 until 10) {
-            val r = cursorRadius * kotlin.math.sqrt(i / 9f) // sqrt for even area distribution
+            val r = cursorRadius * sqrt(i / 9f)
             val theta = i * goldenAngle
-            
             val px = (centerX + r * cos(theta).toFloat()).coerceIn(0f, canvasSize.width)
             val py = (centerY + r * sin(theta).toFloat()).coerceIn(0f, canvasSize.height)
-            
             val hue = (px / canvasSize.width) * 360f
-            val saturation = 1f - (py / canvasSize.height) // Top is full saturation, bottom is white
-            val value = if (isDark) 0.8f else 0.95f
-            
+            // Top is white (saturation = 0), bottom is vivid hue (saturation = 1)
+            val saturation = (py / canvasSize.height).coerceIn(0f, 1f)
+            val value = if (isDark) 0.85f else 0.95f
             val androidColor = AndroidColor.HSVToColor(floatArrayOf(hue, saturation, value))
             colors.add(Color(androidColor))
         }
@@ -242,45 +283,33 @@ fun ColorGamutSelector(isDark: Boolean, onColorsGenerated: (List<Color>) -> Unit
             .height(180.dp)
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .pointerInput(Unit) {
+            .pointerInput(isDark) {
+                detectTapGestures { pos ->
+                    cursorPosition = Offset(
+                        pos.x.coerceIn(0f, size.width.toFloat()),
+                        pos.y.coerceIn(0f, size.height.toFloat())
+                    )
+                    generateColorsFromCircle()
+                }
+            }
+            .pointerInput(isDark) {
                 detectDragGestures(
                     onDragEnd = { generateColorsFromCircle() }
                 ) { change, dragAmount ->
                     change.consume()
-                    val newX = (cursorPosition.x + dragAmount.x).coerceIn(0f, size.width.toFloat())
-                    val newY = (cursorPosition.y + dragAmount.y).coerceIn(0f, size.height.toFloat())
-                    cursorPosition = Offset(newX, newY)
+                    cursorPosition = Offset(
+                        (cursorPosition.x + dragAmount.x).coerceIn(0f, size.width.toFloat()),
+                        (cursorPosition.y + dragAmount.y).coerceIn(0f, size.height.toFloat())
+                    )
                 }
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             canvasSize = size
-            // 1. Draw Hue gradient (Horizontal)
-            drawRect(
-                brush = Brush.horizontalGradient(hueColors),
-                size = size
-            )
-            // 2. Draw Saturation overlay (Vertical, White to Transparent)
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.White, Color.Transparent)
-                ),
-                size = size
-            )
-            
-            // Draw Cursor
-            drawCircle(
-                color = Color.White,
-                radius = cursorRadius,
-                center = cursorPosition,
-                style = Stroke(width = 3.dp.toPx())
-            )
-            drawCircle(
-                color = Color.Black.copy(alpha = 0.5f),
-                radius = cursorRadius,
-                center = cursorPosition,
-                style = Stroke(width = 1.dp.toPx())
-            )
+            drawRect(brush = Brush.horizontalGradient(hueColors), size = size)
+            drawRect(brush = Brush.verticalGradient(colors = listOf(Color.White, Color.Transparent)), size = size)
+            drawCircle(color = Color.White, radius = cursorRadius, center = cursorPosition, style = Stroke(width = 3.dp.toPx()))
+            drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = cursorRadius, center = cursorPosition, style = Stroke(width = 1.dp.toPx()))
         }
     }
 }
@@ -288,20 +317,19 @@ fun ColorGamutSelector(isDark: Boolean, onColorsGenerated: (List<Color>) -> Unit
 @Composable
 fun SingleColorGamutSelector(isDark: Boolean, onColorGenerated: (Color) -> Unit) {
     val borderColor = if (isDark) BorderDark else BorderLight
-    var cursorPosition by remember { mutableStateOf(Offset(100f, 100f)) }
-    var canvasSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
+    var cursorPosition by remember { mutableStateOf(Offset(140f, 100f)) }
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
     val cursorRadius = 16f
 
     val hueColors = listOf(Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red)
-    
+
     fun extractColorAtCursor() {
         if (canvasSize.width == 0f || canvasSize.height == 0f) return
         val px = cursorPosition.x.coerceIn(0f, canvasSize.width)
         val py = cursorPosition.y.coerceIn(0f, canvasSize.height)
         val hue = (px / canvasSize.width) * 360f
-        val saturation = 1f - (py / canvasSize.height)
-        val value = if (isDark) 0.8f else 0.95f
-        
+        val saturation = (py / canvasSize.height).coerceIn(0f, 1f)
+        val value = if (isDark) 0.85f else 0.95f
         val androidColor = AndroidColor.HSVToColor(floatArrayOf(hue, saturation, value))
         onColorGenerated(Color(androidColor))
     }
@@ -312,14 +340,24 @@ fun SingleColorGamutSelector(isDark: Boolean, onColorGenerated: (Color) -> Unit)
             .height(120.dp)
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .pointerInput(Unit) {
+            .pointerInput(isDark) {
+                detectTapGestures { pos ->
+                    cursorPosition = Offset(
+                        pos.x.coerceIn(0f, size.width.toFloat()),
+                        pos.y.coerceIn(0f, size.height.toFloat())
+                    )
+                    extractColorAtCursor()
+                }
+            }
+            .pointerInput(isDark) {
                 detectDragGestures(
                     onDragEnd = { extractColorAtCursor() }
                 ) { change, dragAmount ->
                     change.consume()
-                    val newX = (cursorPosition.x + dragAmount.x).coerceIn(0f, size.width.toFloat())
-                    val newY = (cursorPosition.y + dragAmount.y).coerceIn(0f, size.height.toFloat())
-                    cursorPosition = Offset(newX, newY)
+                    cursorPosition = Offset(
+                        (cursorPosition.x + dragAmount.x).coerceIn(0f, size.width.toFloat()),
+                        (cursorPosition.y + dragAmount.y).coerceIn(0f, size.height.toFloat())
+                    )
                 }
             }
     ) {
@@ -328,6 +366,7 @@ fun SingleColorGamutSelector(isDark: Boolean, onColorGenerated: (Color) -> Unit)
             drawRect(brush = Brush.horizontalGradient(hueColors), size = size)
             drawRect(brush = Brush.verticalGradient(colors = listOf(Color.White, Color.Transparent)), size = size)
             drawCircle(color = Color.White, radius = cursorRadius, center = cursorPosition, style = Stroke(width = 3.dp.toPx()))
+            drawCircle(color = Color.Black.copy(alpha = 0.5f), radius = cursorRadius, center = cursorPosition, style = Stroke(width = 1.dp.toPx()))
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.simpleschedule.widget
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -8,35 +9,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.action.clickable as glanceClickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.provideContent
-import androidx.glance.background as glanceBackground
-import androidx.glance.layout.*
-import androidx.glance.layout.Column as GlanceColumn
-import androidx.glance.layout.padding as glancePadding
-import androidx.glance.text.Text as GlanceText
-import androidx.glance.text.TextStyle
-import androidx.glance.text.FontWeight as GlanceFontWeight
-import androidx.glance.text.TextAlign as GlanceTextAlign
-import androidx.glance.unit.ColorProvider
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.action.clickable as glanceClickable
+import androidx.glance.appwidget.provideContent
+import androidx.glance.background as glanceBackground
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column as GlanceColumn
+import androidx.glance.layout.Row
+import androidx.glance.layout.RowScope
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding as glancePadding
+import androidx.glance.layout.width
+import androidx.glance.text.FontWeight as GlanceFontWeight
+import androidx.glance.text.Text as GlanceText
+import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.example.simpleschedule.MainActivity
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
-import com.example.simpleschedule.data.local.room.*
+import com.example.simpleschedule.data.local.room.AppDatabase
+import com.example.simpleschedule.data.local.room.DisplayCourse
+import com.example.simpleschedule.data.local.room.TimeNode
+import com.example.simpleschedule.domain.ScheduleResolver
 import com.example.simpleschedule.ui.theme.getPalette
 import kotlinx.coroutines.flow.firstOrNull
-import java.text.SimpleDateFormat
-import java.util.*
 
 data class WeekWidgetData(
     val coursesByDay: Map<Int, List<DisplayCourse>>,
     val timeNodeMap: Map<Int, TimeNode>,
     val currentWeek: Int,
+    val maxNode: Int,
     val isTranslucent: Boolean
 )
 
@@ -49,73 +60,40 @@ suspend fun loadWeekWidgetData(context: Context): WeekWidgetData {
     val scheduleGroups = appDao.getAllScheduleGroups().firstOrNull() ?: emptyList()
     val currentSchedule = scheduleGroups.find { it.id == savedId } ?: scheduleGroups.firstOrNull()
 
-    var currentWeek = 1
-    if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
-        try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val startCal = Calendar.getInstance().apply { time = sdf.parse(currentSchedule.startDate) ?: Date() }
-            while (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) startCal.add(Calendar.DAY_OF_YEAR, -1)
-            val currentCalForWeek = Calendar.getInstance()
-            while (currentCalForWeek.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) currentCalForWeek.add(Calendar.DAY_OF_YEAR, -1)
-            val diffMillis = currentCalForWeek.timeInMillis - startCal.timeInMillis
-            currentWeek = ((diffMillis / (1000 * 60 * 60 * 24)) / 7).toInt() + 1
-            if (currentWeek < 1) currentWeek = 1
-        } catch (e: Exception) {}
-    }
+    val currentWeek = if (currentSchedule != null) {
+        ScheduleResolver.calculateWeekFromStartDate(currentSchedule.startDate)
+    } else 1
 
     val rawCourses = if (currentSchedule != null) appDao.getCoursesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
     val overrides = appDao.getAllOverrides().firstOrNull() ?: emptyList()
     val overrideMap = overrides.associateBy { it.courseId }
     val makeUpRules = if (currentSchedule != null) appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList() else emptyList()
-
     val timeNodes = if (currentSchedule != null) appDao.getTimeNodes(currentSchedule.timetableId) else emptyList()
     val timeNodeMap = timeNodes.associateBy { it.nodeIndex }
 
+    val displayCourses = ScheduleResolver.applyOverrides(rawCourses, overrideMap)
+
     val coursesByDay = (1..7).associateWith { day ->
-        val dayDateStr = if (currentSchedule != null && currentSchedule.startDate.isNotEmpty()) {
-            com.example.simpleschedule.utils.getDateByWeekAndDay(currentWeek, day, currentSchedule.startDate) ?: ""
-        } else ""
-
-        val targetRule = makeUpRules.find { it.targetDate.isNotEmpty() && it.targetDate == dayDateStr }
-        val holidayRule = makeUpRules.find { it.sourceDate.isNotEmpty() && it.sourceDate == dayDateStr }
-
-        if (holidayRule != null) {
+        if (currentSchedule == null) {
             emptyList()
-        } else if (targetRule != null && currentSchedule != null) {
-            val srcInfo = com.example.simpleschedule.utils.getWeekAndDay(targetRule.sourceDate, currentSchedule.startDate)
-            if (srcInfo != null) {
-                rawCourses.mapNotNull { course ->
-                    val over = overrideMap[course.id]
-                    val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-                    val effectiveStart = over?.newStartNode ?: course.startNode
-                    val effectiveEnd = over?.newEndNode ?: course.endNode
-
-                    if (effectiveDay != srcInfo.second) return@mapNotNull null
-
-                    val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                    if (!weeksList.contains(srcInfo.first)) return@mapNotNull null
-
-                    DisplayCourse(course, day, effectiveStart, effectiveEnd)
-                }.sortedBy { it.displayStartNode }
-            } else emptyList()
         } else {
-            rawCourses.mapNotNull { course ->
-                val over = overrideMap[course.id]
-                val effectiveDay = over?.newDayOfWeek ?: course.dayOfWeek
-                val effectiveStart = over?.newStartNode ?: course.startNode
-                val effectiveEnd = over?.newEndNode ?: course.endNode
-
-                if (effectiveDay != day) return@mapNotNull null
-
-                val weeksList = course.weeks.removeSurrounding("[", "]").split(",").mapNotNull { it.trim().toIntOrNull() }
-                if (!weeksList.contains(currentWeek)) return@mapNotNull null
-
-                DisplayCourse(course, effectiveDay, effectiveStart, effectiveEnd)
-            }.sortedBy { it.displayStartNode }
+            val dayDateStr = ScheduleResolver.getDateByWeekAndDay(currentWeek, day, currentSchedule.startDate) ?: ""
+            ScheduleResolver.resolveDayCourses(
+                dateStr = dayDateStr,
+                week = currentWeek,
+                dayOfWeek = day,
+                startDateStr = currentSchedule.startDate,
+                displayCourses = displayCourses,
+                makeUpRules = makeUpRules
+            ).courses
         }
     }
 
-    return WeekWidgetData(coursesByDay, timeNodeMap, currentWeek, isTranslucent)
+    val maxNodeFromCourses = coursesByDay.values.flatten().maxOfOrNull { it.displayEndNode } ?: 12
+    val maxNodeFromTimetable = timeNodes.maxOfOrNull { it.nodeIndex } ?: 12
+    val maxNode = maxOf(12, maxNodeFromCourses, maxNodeFromTimetable).coerceAtMost(17)
+
+    return WeekWidgetData(coursesByDay, timeNodeMap, currentWeek, maxNode, isTranslucent)
 }
 
 class CourseWeekWidget : GlanceAppWidget() {
@@ -127,6 +105,7 @@ class CourseWeekWidget : GlanceAppWidget() {
     }
 }
 
+@SuppressLint("RestrictedApi")
 @Composable
 fun CourseWeekWidgetContent(context: Context, data: WeekWidgetData) {
     val intent = Intent(context, MainActivity::class.java).apply {
@@ -134,7 +113,7 @@ fun CourseWeekWidgetContent(context: Context, data: WeekWidgetData) {
     }
 
     val dayNames = listOf("一", "二", "三", "四", "五", "六", "日")
-    
+
     GlanceColumn(
         modifier = GlanceModifier.fillMaxSize()
             .appWidgetBackground()
@@ -154,14 +133,15 @@ fun CourseWeekWidgetContent(context: Context, data: WeekWidgetData) {
                 style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.5f)), fontSize = 11.sp)
             )
         }
-        
+
         Spacer(modifier = GlanceModifier.height(10.dp))
-        
+
         Row(modifier = GlanceModifier.fillMaxSize().defaultWeight()) {
             (1..7).forEach { day ->
                 DayColumn(
                     dayName = dayNames[day - 1],
                     courses = data.coursesByDay[day] ?: emptyList(),
+                    maxNode = data.maxNode,
                     isLast = day == 7
                 )
             }
@@ -169,8 +149,10 @@ fun CourseWeekWidgetContent(context: Context, data: WeekWidgetData) {
     }
 }
 
+@SuppressLint("RestrictedApi")
 @Composable
-fun RowScope.DayColumn(dayName: String, courses: List<DisplayCourse>, isLast: Boolean) {
+fun RowScope.DayColumn(dayName: String, courses: List<DisplayCourse>, maxNode: Int, isLast: Boolean) {
+    val cellHeight = if (maxNode > 14) 4.dp else 6.dp
     GlanceColumn(
         modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -180,17 +162,17 @@ fun RowScope.DayColumn(dayName: String, courses: List<DisplayCourse>, isLast: Bo
             style = TextStyle(color = ColorProvider(Color.White.copy(alpha = 0.7f)), fontSize = 12.sp, fontWeight = GlanceFontWeight.Medium)
         )
         Spacer(modifier = GlanceModifier.height(6.dp))
-        
+
         Box(modifier = GlanceModifier.fillMaxSize().defaultWeight()) {
             GlanceColumn(modifier = GlanceModifier.fillMaxSize()) {
-                (1..12).forEach { node ->
+                (1..maxNode).forEach { node ->
                     val course = courses.find { node >= it.displayStartNode && node <= it.displayEndNode }
                     if (course != null) {
                         val palette = getPalette(course.course.colorTheme, isDark = true)
                         Box(
                             modifier = GlanceModifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(cellHeight)
                                 .glanceBackground(ColorProvider(palette.accent.copy(alpha = 0.9f)))
                                 .cornerRadius(2.dp)
                         ) {}
@@ -198,7 +180,7 @@ fun RowScope.DayColumn(dayName: String, courses: List<DisplayCourse>, isLast: Bo
                         Box(
                             modifier = GlanceModifier
                                 .fillMaxWidth()
-                                .height(6.dp)
+                                .height(cellHeight)
                                 .glanceBackground(ColorProvider(Color.White.copy(alpha = 0.05f)))
                         ) {}
                     }

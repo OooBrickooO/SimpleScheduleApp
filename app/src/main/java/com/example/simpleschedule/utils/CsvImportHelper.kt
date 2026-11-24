@@ -20,13 +20,16 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
-import java.nio.CharBuffer
 import java.nio.charset.CharacterCodingException
 import java.nio.charset.Charset
 import java.nio.charset.CodingErrorAction
-import kotlin.math.abs
 
 private val courseColors = listOf("blue", "pink", "purple", "slate", "indigo", "rose")
+
+private val monthAbbreviations = mapOf(
+    "jan" to 1, "feb" to 2, "mar" to 3, "apr" to 4, "may" to 5, "jun" to 6,
+    "jul" to 7, "aug" to 8, "sep" to 9, "sept" to 9, "oct" to 10, "nov" to 11, "dec" to 12
+)
 
 suspend fun downloadCsvTemplate(context: Context, urlString: String): File? = withContext(Dispatchers.IO) {
     val urlsToTry = listOf(
@@ -45,7 +48,7 @@ suspend fun downloadCsvTemplate(context: Context, urlString: String): File? = wi
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android) SimpleScheduleApp")
             if (connection.responseCode == 200) {
                 val bytes = connection.inputStream.use { it.readBytes() }
-                if (bytes.isNotEmpty() && bytes.size < 1000000) {
+                if (bytes.isNotEmpty() && bytes.size < 1_000_000) {
                     val decoded = decodeCsvBytes(bytes)
                     if (decoded.contains("课程") || decoded.contains(",")) {
                         return@withContext saveCsvToDownloads(context, bytes, "课表模板.csv")
@@ -62,7 +65,6 @@ suspend fun downloadCsvTemplate(context: Context, urlString: String): File? = wi
 }
 
 fun saveCsvToDownloads(context: Context, bytes: ByteArray, fileName: String): File {
-    // 1. 先在应用私有外部存储目录写入一份保证永远存在且可读的物理文件（兼容所有安卓版本且免权限）
     val appPrivateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
     if (appPrivateDir != null && !appPrivateDir.exists()) {
         appPrivateDir.mkdirs()
@@ -74,7 +76,6 @@ fun saveCsvToDownloads(context: Context, bytes: ByteArray, fileName: String): Fi
         e.printStackTrace()
     }
 
-    // 2. Android 10+ (API 29+): 通过 MediaStore.Downloads 写入公共下载目录（系统级支持，无需申请危险存储权限）
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         try {
             val resolver = context.contentResolver
@@ -94,7 +95,6 @@ fun saveCsvToDownloads(context: Context, bytes: ByteArray, fileName: String): Fi
             e.printStackTrace()
         }
     } else {
-        // 3. Android 9 及以下 (API < 29): 尝试向公共存储目录写入文件并刷新媒体库
         try {
             val publicDownloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             if (!publicDownloads.exists()) {
@@ -111,7 +111,6 @@ fun saveCsvToDownloads(context: Context, bytes: ByteArray, fileName: String): Fi
         }
     }
 
-    // 4. 检查公共下载目录是否已经存在可读文件（包括 MediaStore 写入或者已有文件）
     val publicCandidate = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName)
     if (publicCandidate.exists() && publicCandidate.canRead()) {
         return publicCandidate
@@ -121,7 +120,6 @@ fun saveCsvToDownloads(context: Context, bytes: ByteArray, fileName: String): Fi
 }
 
 fun openFileManagerForFile(context: Context, file: File?) {
-    // 1. 首选方案：尝试唤起系统下载管理的 Download 视图（适配大部分品牌手机与原生系统）
     try {
         val downloadIntent = Intent(DownloadManager.ACTION_VIEW_DOWNLOADS).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -132,7 +130,6 @@ fun openFileManagerForFile(context: Context, file: File?) {
         }
     } catch (_: Exception) {}
 
-    // 2. 次选方案：通过 DocumentsUI/SAF 协议打开 Download 目录
     try {
         val downloadFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         val uri = Uri.parse(downloadFolder.absolutePath)
@@ -146,7 +143,6 @@ fun openFileManagerForFile(context: Context, file: File?) {
         }
     } catch (_: Exception) {}
 
-    // 3. 备选方案：通过 FileProvider 唤起系统应用选择器
     try {
         if (file != null && file.exists()) {
             val authority = "${context.packageName}.fileprovider"
@@ -160,7 +156,6 @@ fun openFileManagerForFile(context: Context, file: File?) {
         }
     } catch (_: Exception) {}
 
-    // 4. 兜底提示
     Toast.makeText(context, "课表模板已保存至「下载」目录，请打开手机自带「文件管理」查看喵！", Toast.LENGTH_LONG).show()
 }
 
@@ -204,7 +199,7 @@ fun parseCourseCsv(csvText: String): String? {
             put("startNode", start)
             put("endNode", end)
             put("weeks", JSONArray(weeks).toString())
-            put("colorTheme", courseColors[abs(nameHash) % courseColors.size])
+            put("colorTheme", courseColors[(nameHash and 0x7fffffff) % courseColors.size])
         })
     }
 
@@ -217,23 +212,84 @@ private fun findColumn(header: List<String>, vararg names: String): Int {
 
 private fun List<String>.valueAt(index: Int): String = getOrNull(index).orEmpty()
 
+private fun addWeekRange(result: MutableSet<Int>, first: Int, last: Int, type: String) {
+    if (first > last) return
+    (first..last).filter { week ->
+        when (type) {
+            "单周", "单" -> week % 2 == 1
+            "双周", "双" -> week % 2 == 0
+            else -> true
+        }
+    }.filter { it in 1..50 }.forEach(result::add)
+}
+
+/**
+ * Parses week ranges including values Excel auto-converts to dates (e.g. "1月16日", "2026/1/16", "16-Jan").
+ */
 private fun parseWeeks(value: String): List<Int> {
     val result = mutableSetOf<Int>()
+    val normalized = normalizeExcelDateWeeks(value)
+
     val pattern = Regex("(\\d+)\\s*(?:-\\s*(\\d+))?\\s*(单周|双周|单|双|周)?")
-    pattern.findAll(value).forEach { match ->
+    pattern.findAll(normalized).forEach { match ->
         val first = match.groupValues[1].toIntOrNull() ?: return@forEach
         val last = match.groupValues[2].toIntOrNull() ?: first
         val type = match.groupValues[3]
-        if (first > last) return@forEach
-        (first..last).filter { week ->
-            when (type) {
-                "单周", "单" -> week % 2 == 1
-                "双周", "双" -> week % 2 == 0
-                else -> true
-            }
-        }.filter { it in 1..50 }.forEach(result::add)
+        addWeekRange(result, first, last, type)
     }
     return result.sorted()
+}
+
+private fun normalizeExcelDateWeeks(value: String): String {
+    var text = value.trim()
+
+    // 1. Chinese date format e.g. "1月16日" or "2026年1月16日单" -> "1-16单"
+    val cnDateRegex = Regex("(?:\\d{4}\\s*年\\s*)?(\\d{1,2})\\s*月\\s*(\\d{1,2})\\s*日?")
+    text = cnDateRegex.replace(text) { m ->
+        val first = m.groupValues[1].toIntOrNull()
+        val second = m.groupValues[2].toIntOrNull()
+        if (first != null && second != null && first in 1..30 && second in 1..30 && first <= second) {
+            "$first-$second"
+        } else {
+            m.value
+        }
+    }
+
+    // 2. Slash or ISO year-month-day format e.g. "2026/1/16", "2026-01-16", "1/16" -> "1-16"
+    val slashDateRegex = Regex("(?:\\b\\d{4}[/-])?(\\d{1,2})[/-](\\d{1,2})\\b")
+    text = slashDateRegex.replace(text) { m ->
+        val first = m.groupValues[1].toIntOrNull()
+        val second = m.groupValues[2].toIntOrNull()
+        if (first != null && second != null && first in 1..30 && second in 1..30 && first <= second) {
+            "$first-$second"
+        } else {
+            m.value
+        }
+    }
+
+    // 3. English month-day formats Excel emits: "16-Jan" or "Jan-16"
+    val dayMonthRegex = Regex("\\b(\\d{1,2})-([A-Za-z]{3,4})\\b")
+    text = dayMonthRegex.replace(text) { m ->
+        val day = m.groupValues[1].toIntOrNull()
+        val month = monthAbbreviations[m.groupValues[2].lowercase()]
+        if (month != null && day != null && month in 1..30 && day in 1..30 && month <= day) {
+            "$month-$day"
+        } else {
+            m.value
+        }
+    }
+    val monthDayRegex = Regex("\\b([A-Za-z]{3,4})-(\\d{1,2})\\b")
+    text = monthDayRegex.replace(text) { m ->
+        val month = monthAbbreviations[m.groupValues[1].lowercase()]
+        val day = m.groupValues[2].toIntOrNull()
+        if (month != null && day != null && month in 1..30 && day in 1..30 && month <= day) {
+            "$month-$day"
+        } else {
+            m.value
+        }
+    }
+
+    return text
 }
 
 private fun parseCsvRows(text: String): List<List<String>> {

@@ -69,4 +69,38 @@ class ExamImportHelperTest {
         assertEquals(4, thirdExam.getInt("endNode"))
         assertEquals("[19]", thirdExam.getString("weeks"))
     }
+
+    @Test
+    fun testParseInlineZhengfangExamHtmlWithUnpaddedTimeNode() {
+        val html = """
+            <table>
+              <tr class="jqgrow">
+                <td aria-describedby="tabGrid_kcmc">操作系统</td>
+                <td aria-describedby="tabGrid_kssj">2026-06-22(08:30-10:30)</td>
+                <td aria-describedby="tabGrid_cdmc">弘毅楼201</td>
+                <td aria-describedby="tabGrid_zwh">08</td>
+                <td aria-describedby="tabGrid_xf">3.5</td>
+              </tr>
+            </table>
+        """.trimIndent()
+
+        val timeNodes = listOf(
+            TimeNode(timetableId = "tt", nodeIndex = 1, startTime = "8:00", endTime = "8:45"),
+            TimeNode(timetableId = "tt", nodeIndex = 2, startTime = "8:50", endTime = "9:35"),
+            TimeNode(timetableId = "tt", nodeIndex = 3, startTime = "9:55", endTime = "10:40")
+        )
+
+        val (jsonData, errorMsg) = parseZhengfangExamHtml(html.byteInputStream(), timeNodes, "2026-03-02")
+        assertNull(errorMsg)
+        assertNotNull(jsonData)
+
+        val arr = JSONArray(jsonData)
+        assertEquals(1, arr.length())
+        val item = arr.getJSONObject(0)
+        assertEquals("[考试]操作系统", item.getString("name"))
+        assertEquals(1, item.getInt("dayOfWeek"))
+        assertEquals(1, item.getInt("startNode"))
+        assertEquals(3, item.getInt("endNode"))
+        assertEquals("3.5", item.getString("credits"))
+    }
 }
