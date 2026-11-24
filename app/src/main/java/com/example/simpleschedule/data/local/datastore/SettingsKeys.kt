@@ -34,6 +34,8 @@ object SettingsKeys {
     val REMINDER_VOICE_ENABLED = booleanPreferencesKey("reminder_voice_enabled")
     val REMINDER_NOTIFY_ENABLED = booleanPreferencesKey("reminder_notify_enabled")
     val REMINDER_ADVANCE_MINS = intPreferencesKey("reminder_advance_mins")
+    val LAST_TRIGGERED_CLASS_START_MILLIS = longPreferencesKey("last_triggered_class_start_millis")
+    val LAST_DISMISSED_CLASS_START_MILLIS = longPreferencesKey("last_dismissed_class_start_millis")
 
     val WIDGET_TRANSLUCENT = booleanPreferencesKey("widget_translucent")
     val LAST_SEEN_ANNOUNCEMENT_VERSION = stringPreferencesKey("last_seen_announcement_version")

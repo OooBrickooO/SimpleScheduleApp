@@ -36,6 +36,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,8 +46,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,6 +68,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
+import com.example.simpleschedule.receiver.ReminderDiagnosticEntry
+import com.example.simpleschedule.receiver.ReminderDiagnosticStore
 import com.example.simpleschedule.receiver.ReminderEngine
 import com.example.simpleschedule.ui.common.AppBackHandler
 import com.example.simpleschedule.ui.common.SettingCheckboxItem
@@ -74,6 +80,9 @@ import com.example.simpleschedule.ui.theme.BorderLight
 import com.example.simpleschedule.ui.theme.TextDark
 import com.example.simpleschedule.ui.theme.TextLight
 import com.example.simpleschedule.viewmodel.ScheduleViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -96,6 +105,12 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
     var hasExactAlarmPermission by remember { mutableStateOf(true) }
     var hasBatteryExemption by remember { mutableStateOf(true) }
     var hasPromotionPermission by remember { mutableStateOf(true) }
+    var diagnosticsExpanded by remember { mutableStateOf(false) }
+    var diagnosticEntries by remember { mutableStateOf<List<ReminderDiagnosticEntry>>(emptyList()) }
+
+    val refreshDiagnostics = {
+        diagnosticEntries = ReminderDiagnosticStore.loadEntries(context)
+    }
 
     val checkAllPermissions = {
         hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -121,10 +136,15 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
         } else true
     }
 
+    LaunchedEffect(Unit) {
+        refreshDiagnostics()
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 checkAllPermissions()
+                refreshDiagnostics()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -292,18 +312,20 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                                         val classStartTime = triggerTime + 20000
                                         val classEndTime = classStartTime + 35000
                                         ReminderEngine.scheduleAlarmByParams(
-                                            context,
-                                            "【测试】课A",
-                                            "地球",
-                                            "测试",
-                                            triggerTime,
-                                            classStartTime,
-                                            classEndTime,
-                                            reminderNotifyEnabled,
-                                            reminderVoiceEnabled,
-                                            "slate"
+                                            context = context,
+                                            courseName = "【测试】课A",
+                                            location = "地球",
+                                            timeStr = "测试",
+                                            triggerMillis = triggerTime,
+                                            classStartMillis = classStartTime,
+                                            classEndMillis = classEndTime,
+                                            showNotify = reminderNotifyEnabled,
+                                            playVoice = reminderVoiceEnabled,
+                                            colorTheme = "slate",
+                                            isTest = true
                                         )
-                                        Toast.makeText(context, "已设置测试提醒：5秒后触发，25秒后上课，60秒后下课。请锁定屏幕或退回桌面测试喵！", Toast.LENGTH_LONG).show()
+                                        refreshDiagnostics()
+                                        Toast.makeText(context, "已设置测试提醒：5秒后触发，25秒后上课并自动消除通知。请锁定屏幕或退回桌面测试喵！", Toast.LENGTH_LONG).show()
                                     }
                                 )
                             }
@@ -421,6 +443,24 @@ fun ReminderSettingsScreen(viewModel: ScheduleViewModel, isDark: Boolean, onBack
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                ReminderDiagnosticLogCard(
+                    entries = diagnosticEntries,
+                    expanded = diagnosticsExpanded,
+                    isDark = isDark,
+                    textColor = textColor,
+                    borderColor = borderColor,
+                    surfaceColor = surfaceColor,
+                    onToggleExpand = {
+                        diagnosticsExpanded = !diagnosticsExpanded
+                        if (diagnosticsExpanded) refreshDiagnostics()
+                    },
+                    onRefresh = { refreshDiagnostics() },
+                    onClear = {
+                        ReminderDiagnosticStore.clear(context)
+                        refreshDiagnostics()
+                    }
+                )
                 Spacer(modifier = Modifier.height(48.dp).navigationBarsPadding())
             }
         }
@@ -490,5 +530,193 @@ fun PermissionCheckRow(
     }
     if (showBottomBorder) {
         HorizontalDivider(color = borderColor, thickness = 0.5.dp)
+    }
+}
+
+@Composable
+private fun ReminderDiagnosticLogCard(
+    entries: List<ReminderDiagnosticEntry>,
+    expanded: Boolean,
+    isDark: Boolean,
+    textColor: Color,
+    borderColor: Color,
+    surfaceColor: Color,
+    onToggleExpand: () -> Unit,
+    onRefresh: () -> Unit,
+    onClear: () -> Unit
+) {
+    val timeFormatter = remember { SimpleDateFormat("MM-dd HH:mm:ss", Locale.US) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(surfaceColor, RoundedCornerShape(12.dp))
+            .border(0.5.dp, borderColor, RoundedCornerShape(12.dp))
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() }
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "最近提醒诊断日志 (近 30 条)",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                    Text(
+                        text = if (entries.isEmpty()) "暂无记录" else "已记录 ${entries.size} 条，点击查看唤醒偏差与播报耗时",
+                        fontSize = 11.sp,
+                        color = textColor.copy(alpha = 0.55f)
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = if (expanded) "收起" else "展开",
+                    tint = textColor.copy(alpha = 0.7f)
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    HorizontalDivider(color = borderColor, thickness = 0.5.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onRefresh) {
+                            Text("刷新", fontSize = 12.sp, color = textColor)
+                        }
+                        TextButton(onClick = onClear) {
+                            Text("清空", fontSize = 12.sp, color = Color(0xFFEF4444))
+                        }
+                    }
+
+                    if (entries.isEmpty()) {
+                        Text(
+                            text = "暂无提醒诊断记录。可点击上方「发送一条测试提醒」生成完整链路记录。",
+                            fontSize = 12.sp,
+                            color = textColor.copy(alpha = 0.6f),
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            entries.forEach { entry ->
+                                val (tagLabel, tagBg, tagFg) = when (entry.eventType) {
+                                    "SCHEDULED" -> Triple(
+                                        "调度",
+                                        if (isDark) Color(0xFF1E3A8A) else Color(0xFFDBEAFE),
+                                        if (isDark) Color(0xFF93C5FD) else Color(0xFF1D4ED8)
+                                    )
+                                    "WAKEUP" -> Triple(
+                                        "唤醒",
+                                        if (isDark) Color(0xFF065F46) else Color(0xFFD1FAE5),
+                                        if (isDark) Color(0xFF34D399) else Color(0xFF065F46)
+                                    )
+                                    "FGS_NOTIFY" -> Triple(
+                                        "通知",
+                                        if (isDark) Color(0xFF4C1D95) else Color(0xFFEDE9FE),
+                                        if (isDark) Color(0xFFC4B5FD) else Color(0xFF6D28D9)
+                                    )
+                                    "TTS" -> Triple(
+                                        "播报",
+                                        if (isDark) Color(0xFF78350F) else Color(0xFFFEF3C7),
+                                        if (isDark) Color(0xFFFCD34D) else Color(0xFFB45309)
+                                    )
+                                    "DISMISS" -> Triple(
+                                        "清理",
+                                        if (isDark) Color(0xFF27272A) else Color(0xFFE4E4E7),
+                                        if (isDark) Color(0xFFD4D4D8) else Color(0xFF3F3F46)
+                                    )
+                                    else -> Triple(
+                                        "异常",
+                                        if (isDark) Color(0xFF991B1B) else Color(0xFFFEE2E2),
+                                        if (isDark) Color(0xFFF87171) else Color(0xFF991B1B)
+                                    )
+                                }
+
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            if (isDark) Color(0xFF27272A).copy(alpha = 0.65f) else Color.White,
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .border(0.5.dp, borderColor.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                                        .padding(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .background(tagBg, RoundedCornerShape(4.dp))
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(tagLabel, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = tagFg)
+                                            }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = timeFormatter.format(Date(entry.timestampMillis)),
+                                                fontSize = 11.sp,
+                                                color = textColor.copy(alpha = 0.65f)
+                                            )
+                                        }
+                                        if (entry.scheduledMillis > 0L && entry.actualMillis > 0L) {
+                                            val driftText = "偏差 ${ReminderDiagnosticStore.formatDrift(entry.driftMillis)}"
+                                            Text(
+                                                text = driftText,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (kotlin.math.abs(entry.driftMillis) > 10_000L) {
+                                                    Color(0xFFEF4444)
+                                                } else {
+                                                    if (isDark) Color(0xFF34D399) else Color(0xFF059669)
+                                                }
+                                            )
+                                        }
+                                    }
+                                    if (entry.courseName.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = entry.courseName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = textColor
+                                        )
+                                    }
+                                    if (entry.detail.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = entry.detail,
+                                            fontSize = 11.sp,
+                                            color = textColor.copy(alpha = 0.72f),
+                                            lineHeight = 15.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

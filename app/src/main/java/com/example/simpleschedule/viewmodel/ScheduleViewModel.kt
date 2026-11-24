@@ -120,9 +120,8 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 _currentWeek.value = 1
             } else {
                 val targetId = if (savedId != null && groups.any { it.id == savedId }) savedId else groups.first().id
-                switchSchedule(targetId)
+                switchSchedule(targetId, resetReminderState = false)
             }
-            scheduleNextAlarm()
             ReminderEngine.scheduleNextWidgetUpdate(getApplication(), scheduleRepo.dao)
         }
     }
@@ -139,7 +138,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settingsRepo.setPreference(key, value)
             if (key.name in reminderSensitiveKeys) {
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
@@ -152,7 +151,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settingsRepo.setPreference(key, value)
             if (key.name in reminderSensitiveKeys) {
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
@@ -185,9 +184,9 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun scheduleNextAlarm() {
+    fun scheduleNextAlarm(resetHandledState: Boolean = false) {
         viewModelScope.launch {
-            ReminderEngine.calculateAndScheduleNext(getApplication(), scheduleRepo.dao)
+            ReminderEngine.calculateAndScheduleNext(getApplication(), scheduleRepo.dao, resetHandledState)
         }
     }
 
@@ -213,7 +212,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 scheduleRepo.updateSchedule(it.copy(startDate = dateStr))
                 _currentWeek.value = ScheduleResolver.calculateWeekFromStartDate(dateStr)
                 notifyWidgetUpdate()
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
@@ -225,12 +224,12 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 val newStartDate = ScheduleResolver.calculateStartDateForWeek(week)
                 scheduleRepo.updateSchedule(it.copy(startDate = newStartDate))
                 notifyWidgetUpdate()
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
 
-    fun switchSchedule(id: String) {
+    fun switchSchedule(id: String, resetReminderState: Boolean = true) {
         _currentScheduleId.value = id
         viewModelScope.launch {
             settingsRepo.setPreference(SettingsKeys.CURRENT_SCHEDULE_ID, id)
@@ -239,7 +238,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 ScheduleResolver.calculateWeekFromStartDate(group.startDate)
             } else 1
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = resetReminderState)
         }
     }
 
@@ -270,7 +269,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                     switchSchedule(groups.first { it.id != id }.id)
                 } else {
                     notifyWidgetUpdate()
-                    scheduleNextAlarm()
+                    scheduleNextAlarm(resetHandledState = true)
                 }
             }
         }
@@ -281,7 +280,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             scheduleRepo.getScheduleGroupDirect(_currentScheduleId.value)?.let {
                 scheduleRepo.updateSchedule(it.copy(timetableId = timetableId))
                 notifyWidgetUpdate()
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
@@ -290,7 +289,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             scheduleRepo.saveTimetableAtomic(id, name, nodes)
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -298,7 +297,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             if (scheduleRepo.deleteTimetableAtomic(id)) {
                 notifyWidgetUpdate()
-                scheduleNextAlarm()
+                scheduleNextAlarm(resetHandledState = true)
             }
         }
     }
@@ -319,7 +318,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             val newEnd = (newStart + span).coerceIn(newStart, maxNode)
             scheduleRepo.upsertOverride(CourseOverride(courseId, newDay, newStart, newEnd))
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -351,7 +350,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                 )
             )
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -396,7 +395,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
             )
             scheduleRepo.upsertCourse(updated, updateExistingOverride = true)
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -404,7 +403,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             scheduleRepo.deleteCourseAtomic(courseId)
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -412,7 +411,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             scheduleRepo.addMakeUpRule(_currentScheduleId.value, sourceDate, targetDate)
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -420,7 +419,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             scheduleRepo.deleteMakeUpRule(id)
             notifyWidgetUpdate()
-            scheduleNextAlarm()
+            scheduleNextAlarm(resetHandledState = true)
         }
     }
 
@@ -456,7 +455,7 @@ class ScheduleViewModel(application: Application) : AndroidViewModel(application
                         updateSetting(SettingsKeys.TOTAL_WEEKS, maxWeek)
                     }
                     notifyWidgetUpdate()
-                    scheduleNextAlarm()
+                    scheduleNextAlarm(resetHandledState = true)
                     onResult(true)
                 },
                 onFailure = { onResult(false) }

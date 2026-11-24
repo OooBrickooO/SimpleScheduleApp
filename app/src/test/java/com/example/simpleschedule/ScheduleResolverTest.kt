@@ -149,6 +149,31 @@ class ScheduleResolverTest {
     }
 
     @Test
+    fun resolveNextUpcomingCourseSkipsDismissedCourseBeforeClassStart() {
+        val courses = listOf(
+            Course("c1", "s1", "早八高数", "A101", "T1", dayOfWeek = 1, startNode = 1, endNode = 2, weeks = "[1]", colorTheme = "blue"),
+            Course("c2", "s1", "第二节线代", "B202", "T2", dayOfWeek = 1, startNode = 3, endNode = 4, weeks = "[1]", colorTheme = "pink")
+        )
+        val nowMillis = calAt(2026, 3, 2, 7, 42).timeInMillis
+        val dismissedCourseStart = calAt(2026, 3, 2, 8, 0).timeInMillis
+
+        val next = ScheduleResolver.resolveNextUpcomingCourse(
+            nowMillis = nowMillis,
+            advanceMins = 20,
+            startDateStr = "2026-03-02",
+            rawCourses = courses,
+            overrideMap = emptyMap(),
+            timeNodeMap = timeNodes,
+            makeUpRules = emptyList(),
+            minClassStartExclusiveMillis = dismissedCourseStart
+        )
+
+        assertNotNull(next)
+        assertEquals("第二节线代", next!!.course.name)
+        assertEquals(calAt(2026, 3, 2, 9, 55).timeInMillis, next.classStartMillis)
+    }
+
+    @Test
     fun resolveNextUpcomingCourseReturnsNullWhenEmpty() {
         assertNull(
             ScheduleResolver.resolveNextUpcomingCourse(

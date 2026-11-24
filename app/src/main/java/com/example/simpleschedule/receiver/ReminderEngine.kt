@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.datastore.preferences.core.edit
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
 import com.example.simpleschedule.data.local.room.AppDao
@@ -18,46 +19,91 @@ import java.util.Date
 import java.util.Locale
 
 object ReminderEngine {
-    private const val REQUEST_CODE_REMIND = 1001
-    private const val REQUEST_CODE_CANCEL = 1002
-    private const val REQUEST_CODE_WIDGET = 1003
-    private const val REQUEST_CODE_CLASS_START = 1004
+    const val ACTION_SHOW_REMINDER = "ACTION_SHOW_REMINDER"
+    const val ACTION_CLASS_START = "ACTION_CLASS_START"
+    const val ACTION_DISMISS_REMINDER = "ACTION_DISMISS_REMINDER"
+    const val ACTION_UPDATE_WIDGET = "ACTION_UPDATE_WIDGET"
+
+    const val EXTRA_COURSE_NAME = "COURSE_NAME"
+    const val EXTRA_LOCATION = "LOCATION"
+    const val EXTRA_TIME_STR = "TIME_STR"
+    const val EXTRA_CLASS_START_MILLIS = "CLASS_START_MILLIS"
+    const val EXTRA_CLASS_END_MILLIS = "CLASS_END_MILLIS"
+    const val EXTRA_SHOW_NOTIFY = "SHOW_NOTIFY"
+    const val EXTRA_PLAY_VOICE = "PLAY_VOICE"
+    const val EXTRA_COLOR_THEME = "COLOR_THEME"
+    const val EXTRA_SCHEDULED_TRIGGER_MILLIS = "SCHEDULED_TRIGGER_MILLIS"
+    const val EXTRA_IS_TEST = "IS_TEST"
+    const val EXTRA_DISMISS_REASON = "DISMISS_REASON"
+
+    const val REQUEST_CODE_REMIND = 1001
+    const val REQUEST_CODE_CANCEL = 1002
+    const val REQUEST_CODE_WIDGET = 1003
+    const val REQUEST_CODE_CLASS_START = 1004
+    const val REQUEST_CODE_MANUAL_DISMISS = 1005
+    const val REQUEST_CODE_SWIPE_DISMISS = 1006
+    const val REQUEST_CODE_SAFETY_DISMISS = 1007
+
+    fun cancelDismissAndFollowUpAlarms(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        cancelBroadcastAlarm(alarmManager, context, REQUEST_CODE_CANCEL, ACTION_DISMISS_REMINDER)
+        cancelBroadcastAlarm(alarmManager, context, REQUEST_CODE_CLASS_START, ACTION_CLASS_START)
+        cancelBroadcastAlarm(alarmManager, context, REQUEST_CODE_SAFETY_DISMISS, ACTION_DISMISS_REMINDER)
+    }
 
     fun cancelAllReminderAlarms(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        val showPending = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE_REMIND,
-            Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_SHOW_REMINDER" },
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        showPending?.let { alarmManager.cancel(it); it.cancel() }
-
-        val startPending = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE_CLASS_START,
-            Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_CLASS_START" },
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        startPending?.let { alarmManager.cancel(it); it.cancel() }
-
-        val cancelPending = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE_CANCEL,
-            Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" },
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        cancelPending?.let { alarmManager.cancel(it); it.cancel() }
-
+        cancelBroadcastAlarm(alarmManager, context, REQUEST_CODE_REMIND, ACTION_SHOW_REMINDER)
+        cancelDismissAndFollowUpAlarms(context)
         LocalLogger.log(context, "ReminderEngine", "已取消所有已注册的上课提醒闹钟")
     }
 
-    suspend fun calculateAndScheduleNext(context: Context, appDao: AppDao) {
-        val prefs = context.dataStore.data.first()
+    private fun cancelBroadcastAlarm(
+        alarmManager: AlarmManager,
+        context: Context,
+        requestCode: Int,
+        action: String
+    ) {
+        val pending = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            Intent(context, CourseAlarmReceiver::class.java).apply { this.action = action },
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        pending?.let {
+            alarmManager.cancel(it)
+            it.cancel()
+        }
+    }
+
+    suspend fun calculateAndScheduleNext(
+        context: Context,
+        appDao: AppDao,
+        resetHandledState: Boolean = false
+    ) {
+        val appContext = context.applicationContext
+        if (resetHandledState) {
+            appContext.dataStore.edit { prefs ->
+                prefs[SettingsKeys.LAST_TRIGGERED_CLASS_START_MILLIS] = 0L
+                prefs[SettingsKeys.LAST_DISMISSED_CLASS_START_MILLIS] = 0L
+            }
+        }
+
+        val prefs = appContext.dataStore.data.first()
         val enabled = prefs[SettingsKeys.REMINDER_ENABLED] ?: false
         if (!enabled) {
-            cancelAllReminderAlarms(context)
+            cancelAllReminderAlarms(appContext)
+            CourseAlarmService.dismissActiveNotificationAndStop(appContext)
+            return
+        }
+
+        val nowMillis = System.currentTimeMillis()
+        val lastTriggered = prefs[SettingsKeys.LAST_TRIGGERED_CLASS_START_MILLIS] ?: 0L
+        val lastDismissed = prefs[SettingsKeys.LAST_DISMISSED_CLASS_START_MILLIS] ?: 0L
+
+        // Active-reminder guard: keep the currently displayed notification's dismiss alarm intact
+        if (!resetHandledState && lastTriggered > nowMillis && lastDismissed < lastTriggered) {
             return
         }
 
@@ -77,20 +123,25 @@ object ReminderEngine {
         val makeUpRules = appDao.getMakeUpRulesBySchedule(currentSchedule.id).firstOrNull() ?: emptyList()
 
         val nextEvent = ScheduleResolver.resolveNextUpcomingCourse(
-            nowMillis = System.currentTimeMillis(),
+            nowMillis = nowMillis,
             advanceMins = advanceMins,
             startDateStr = currentSchedule.startDate,
             rawCourses = rawCourses,
             overrideMap = overrideMap,
             timeNodeMap = timeNodeMap,
             makeUpRules = makeUpRules,
-            lookaheadDays = 14
-        ) ?: return
+            lookaheadDays = 14,
+            minClassStartExclusiveMillis = maxOf(nowMillis, lastDismissed)
+        )
+        if (nextEvent == null) {
+            cancelAllReminderAlarms(appContext)
+            return
+        }
 
         try {
             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
             LocalLogger.log(
-                context,
+                appContext,
                 "ReminderEngine",
                 "成功计算下一节课：${nextEvent.course.name}, 触发=${sdf.format(Date(nextEvent.triggerMillis))}, 上课=${sdf.format(Date(nextEvent.classStartMillis))}, 下课=${sdf.format(Date(nextEvent.classEndMillis))}"
             )
@@ -98,7 +149,7 @@ object ReminderEngine {
         }
 
         scheduleAlarmByParams(
-            context = context,
+            context = appContext,
             courseName = nextEvent.course.name,
             location = nextEvent.course.location,
             timeStr = nextEvent.timeRange,
@@ -107,7 +158,8 @@ object ReminderEngine {
             classEndMillis = nextEvent.classEndMillis,
             showNotify = isNotifyOn,
             playVoice = isVoiceOn,
-            colorTheme = nextEvent.course.colorTheme
+            colorTheme = nextEvent.course.colorTheme,
+            isTest = false
         )
     }
 
@@ -122,49 +174,45 @@ object ReminderEngine {
         classEndMillis: Long,
         showNotify: Boolean,
         playVoice: Boolean,
-        colorTheme: String
+        colorTheme: String,
+        isTest: Boolean = false
     ) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val appContext = context.applicationContext
+        val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val showIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
-            action = "ACTION_SHOW_REMINDER"
-            putExtra("COURSE_NAME", courseName)
-            putExtra("LOCATION", location)
-            putExtra("TIME_STR", timeStr)
-            putExtra("CLASS_START_MILLIS", classStartMillis)
-            putExtra("CLASS_END_MILLIS", classEndMillis)
-            putExtra("SHOW_NOTIFY", showNotify)
-            putExtra("PLAY_VOICE", playVoice)
-            putExtra("COLOR_THEME", colorTheme)
+        // Cancel legacy ACTION_CLASS_START (1004) if any older version registered it
+        cancelBroadcastAlarm(alarmManager, appContext, REQUEST_CODE_CLASS_START, ACTION_CLASS_START)
+
+        val showIntent = Intent(appContext, CourseAlarmReceiver::class.java).apply {
+            action = ACTION_SHOW_REMINDER
+            putExtra(EXTRA_COURSE_NAME, courseName)
+            putExtra(EXTRA_LOCATION, location)
+            putExtra(EXTRA_TIME_STR, timeStr)
+            putExtra(EXTRA_CLASS_START_MILLIS, classStartMillis)
+            putExtra(EXTRA_CLASS_END_MILLIS, classEndMillis)
+            putExtra(EXTRA_SHOW_NOTIFY, showNotify)
+            putExtra(EXTRA_PLAY_VOICE, playVoice)
+            putExtra(EXTRA_COLOR_THEME, colorTheme)
+            putExtra(EXTRA_SCHEDULED_TRIGGER_MILLIS, triggerMillis)
+            putExtra(EXTRA_IS_TEST, isTest)
         }
         val showPending = PendingIntent.getBroadcast(
-            context,
+            appContext,
             REQUEST_CODE_REMIND,
             showIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val startIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
-            action = "ACTION_CLASS_START"
-            putExtra("COURSE_NAME", courseName)
-            putExtra("LOCATION", location)
-            putExtra("TIME_STR", timeStr)
-            putExtra("CLASS_START_MILLIS", classStartMillis)
-            putExtra("CLASS_END_MILLIS", classEndMillis)
-            putExtra("COLOR_THEME", colorTheme)
-        }
-        val startPending = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE_CLASS_START,
-            startIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
-            action = "ACTION_DISMISS_REMINDER"
+        val cancelIntent = Intent(appContext, CourseAlarmReceiver::class.java).apply {
+            action = ACTION_DISMISS_REMINDER
+            putExtra(EXTRA_COURSE_NAME, courseName)
+            putExtra(EXTRA_CLASS_START_MILLIS, classStartMillis)
+            putExtra(EXTRA_SCHEDULED_TRIGGER_MILLIS, classStartMillis)
+            putExtra(EXTRA_IS_TEST, isTest)
+            putExtra(EXTRA_DISMISS_REASON, "class_start")
         }
         val cancelPending = PendingIntent.getBroadcast(
-            context,
+            appContext,
             REQUEST_CODE_CANCEL,
             cancelIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -172,7 +220,14 @@ object ReminderEngine {
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                LocalLogger.log(context, "ReminderEngine", "注册精确闹钟失败：缺少系统精确闹钟权限")
+                LocalLogger.log(appContext, "ReminderEngine", "注册精确闹钟失败：缺少系统精确闹钟权限")
+                ReminderDiagnosticStore.record(
+                    context = appContext,
+                    eventType = "ERROR",
+                    courseName = courseName,
+                    scheduledMillis = triggerMillis,
+                    detail = "缺少精确闹钟权限，未注册提醒闹钟"
+                )
                 return
             }
 
@@ -182,13 +237,28 @@ object ReminderEngine {
                 alarmManager.setAlarmClock(alarmClockInfo, showPending)
             }
             if (classStartMillis > currentTime) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, classStartMillis, startPending)
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, classStartMillis, cancelPending)
             }
-            if (classEndMillis > currentTime) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, classEndMillis, cancelPending)
-            }
+
+            val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.US)
+            val triggerLabel = timeFmt.format(Date(triggerMillis))
+            val dismissLabel = if (classStartMillis > 0L) timeFmt.format(Date(classStartMillis)) else "无"
+            ReminderDiagnosticStore.record(
+                context = appContext,
+                eventType = "SCHEDULED",
+                courseName = courseName,
+                scheduledMillis = triggerMillis,
+                detail = "触发=$triggerLabel, 上课消通知=$dismissLabel, 通知=$showNotify, 播报=$playVoice, 测试=$isTest"
+            )
         } catch (e: SecurityException) {
             e.printStackTrace()
+            ReminderDiagnosticStore.record(
+                context = appContext,
+                eventType = "ERROR",
+                courseName = courseName,
+                scheduledMillis = triggerMillis,
+                detail = "注册闹钟 SecurityException: ${e.message}"
+            )
         }
     }
 
@@ -215,7 +285,7 @@ object ReminderEngine {
         )
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_UPDATE_WIDGET" }
+        val intent = Intent(context, CourseAlarmReceiver::class.java).apply { action = ACTION_UPDATE_WIDGET }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             REQUEST_CODE_WIDGET,

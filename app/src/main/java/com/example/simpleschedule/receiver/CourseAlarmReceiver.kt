@@ -1,6 +1,7 @@
 package com.example.simpleschedule.receiver
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,18 +12,21 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import android.widget.Toast
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.datastore.preferences.core.edit
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.simpleschedule.MainActivity
 import com.example.simpleschedule.R
 import com.example.simpleschedule.data.local.datastore.SettingsKeys
 import com.example.simpleschedule.data.local.datastore.dataStore
+import com.example.simpleschedule.data.local.room.AppDatabase
 import com.example.simpleschedule.ui.theme.getPalette
 import com.example.simpleschedule.utils.LocalLogger
 import com.example.simpleschedule.widget.WidgetUpdateWorker
@@ -32,22 +36,16 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-enum class NotificationState {
-    UPCOMING,
-    IN_CLASS
-}
-
 fun buildCourseNotification(
     context: Context,
-    state: NotificationState,
     courseName: String,
     location: String,
     timeStr: String,
     classStartMillis: Long,
-    classEndMillis: Long,
     colorTheme: String,
-    islandEnabled: Boolean
-): android.app.Notification {
+    islandEnabled: Boolean,
+    isTest: Boolean = false
+): Notification {
     val channelId = "CourseAlarmChannel_v2"
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -57,11 +55,31 @@ fun buildCourseNotification(
         )
     }
 
-    val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply { action = "ACTION_DISMISS_REMINDER" }
+    val cancelIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
+        action = ReminderEngine.ACTION_DISMISS_REMINDER
+        putExtra(ReminderEngine.EXTRA_COURSE_NAME, courseName)
+        putExtra(ReminderEngine.EXTRA_CLASS_START_MILLIS, classStartMillis)
+        putExtra(ReminderEngine.EXTRA_IS_TEST, isTest)
+        putExtra(ReminderEngine.EXTRA_DISMISS_REASON, "manual_click")
+    }
     val cancelPending = PendingIntent.getBroadcast(
         context,
-        SettingsKeys.REMINDER_ADVANCE_MINS.hashCode(),
+        ReminderEngine.REQUEST_CODE_MANUAL_DISMISS,
         cancelIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val swipeDeleteIntent = Intent(context, CourseAlarmReceiver::class.java).apply {
+        action = ReminderEngine.ACTION_DISMISS_REMINDER
+        putExtra(ReminderEngine.EXTRA_COURSE_NAME, courseName)
+        putExtra(ReminderEngine.EXTRA_CLASS_START_MILLIS, classStartMillis)
+        putExtra(ReminderEngine.EXTRA_IS_TEST, isTest)
+        putExtra(ReminderEngine.EXTRA_DISMISS_REASON, "swipe_delete")
+    }
+    val swipeDeletePending = PendingIntent.getBroadcast(
+        context,
+        ReminderEngine.REQUEST_CODE_SWIPE_DISMISS,
+        swipeDeleteIntent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
@@ -100,31 +118,25 @@ fun buildCourseNotification(
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setOngoing(true)
         .setContentIntent(openPending)
+        .setDeleteIntent(swipeDeletePending)
         .addAction(
             android.R.drawable.ic_menu_close_clear_cancel,
             "一键清除",
             cancelPending
         )
 
-    if (classEndMillis > 0) {
-        val duration = classEndMillis - System.currentTimeMillis()
+    // Auto-expire when class actually starts
+    if (classStartMillis > 0) {
+        val duration = classStartMillis - System.currentTimeMillis()
         if (duration > 0) {
             builder.setTimeoutAfter(duration)
         }
     }
 
-    if (state == NotificationState.UPCOMING) {
-        if (classStartMillis > 0 && !islandEnabled) {
-            builder.setWhen(classStartMillis)
-            builder.setUsesChronometer(true)
-            builder.setChronometerCountDown(true)
-        }
-    } else {
-        if (classEndMillis > 0 && !islandEnabled) {
-            builder.setWhen(classEndMillis)
-            builder.setUsesChronometer(true)
-            builder.setChronometerCountDown(true)
-        }
+    if (classStartMillis > 0 && !islandEnabled) {
+        builder.setWhen(classStartMillis)
+        builder.setUsesChronometer(true)
+        builder.setChronometerCountDown(true)
     }
 
     if (islandEnabled) {
@@ -149,246 +161,270 @@ fun buildCourseNotification(
 }
 
 class CourseAlarmReceiver : BroadcastReceiver() {
-    private var tts: TextToSpeech? = null
+    private var fallbackTts: TextToSpeech? = null
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("MissingPermission", "WakelockTimeout")
     override fun onReceive(context: Context, intent: Intent) {
-        LocalLogger.log(context, "Receiver", "onReceive 触发: action=${intent.action}")
-        when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED, "ACTION_UPDATE_WIDGET" -> {
-                val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
-                WorkManager.getInstance(context).enqueue(workRequest)
-            }
-            "ACTION_SHOW_REMINDER" -> {
-                val courseName = intent.getStringExtra("COURSE_NAME") ?: "未知课程"
-                val location = intent.getStringExtra("LOCATION") ?: "未知地点"
-                val timeStr = intent.getStringExtra("TIME_STR") ?: "00:00"
-                val classStartMillis = intent.getLongExtra("CLASS_START_MILLIS", 0L)
-                val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
-                val showNotify = intent.getBooleanExtra("SHOW_NOTIFY", true)
-                val playVoice = intent.getBooleanExtra("PLAY_VOICE", true)
-                val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
+        val action = intent.action ?: return
+        LocalLogger.log(context, "Receiver", "onReceive 触发: action=$action")
+        val appContext = context.applicationContext
 
-                val appContext = context.applicationContext
+        when (action) {
+            Intent.ACTION_BOOT_COMPLETED, ReminderEngine.ACTION_UPDATE_WIDGET -> {
+                val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                WorkManager.getInstance(appContext).enqueueUniqueWork(
+                    "WidgetRefreshWork",
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest
+                )
+            }
+
+            ReminderEngine.ACTION_SHOW_REMINDER -> {
+                val actualMillis = System.currentTimeMillis()
+                val courseName = intent.getStringExtra(ReminderEngine.EXTRA_COURSE_NAME) ?: "未知课程"
+                val location = intent.getStringExtra(ReminderEngine.EXTRA_LOCATION) ?: "未知地点"
+                val timeStr = intent.getStringExtra(ReminderEngine.EXTRA_TIME_STR) ?: "00:00"
+                val classStartMillis = intent.getLongExtra(ReminderEngine.EXTRA_CLASS_START_MILLIS, 0L)
+                val showNotify = intent.getBooleanExtra(ReminderEngine.EXTRA_SHOW_NOTIFY, true)
+                val playVoice = intent.getBooleanExtra(ReminderEngine.EXTRA_PLAY_VOICE, true)
+                val colorTheme = intent.getStringExtra(ReminderEngine.EXTRA_COLOR_THEME) ?: "slate"
+                val scheduledMillis = intent.getLongExtra(ReminderEngine.EXTRA_SCHEDULED_TRIGGER_MILLIS, 0L)
+                val isTest = intent.getBooleanExtra(ReminderEngine.EXTRA_IS_TEST, false)
+
+                ReminderDiagnosticStore.record(
+                    context = appContext,
+                    eventType = "WAKEUP",
+                    courseName = courseName,
+                    scheduledMillis = scheduledMillis,
+                    actualMillis = actualMillis,
+                    detail = "通知=$showNotify, 播报=$playVoice, 测试=$isTest"
+                )
+
+                CourseAlarmService.acquireHandoffWakeLock(appContext, 12_000L)
                 val pendingResult = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
+                    var handedOffToService = false
                     try {
                         val prefs = appContext.dataStore.data.first()
                         val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
 
-                        if (showNotify) {
-                            Handler(Looper.getMainLooper()).post {
-                                showNotification(
-                                    appContext,
-                                    courseName,
-                                    location,
-                                    timeStr,
-                                    classStartMillis,
-                                    classEndMillis,
-                                    colorTheme,
-                                    islandEnabled
-                                )
+                        if (!isTest && classStartMillis > 0L) {
+                            appContext.dataStore.edit { editPrefs ->
+                                editPrefs[SettingsKeys.LAST_TRIGGERED_CLASS_START_MILLIS] = classStartMillis
                             }
                         }
 
-                        if (playVoice) {
-                            Handler(Looper.getMainLooper()).post {
-                                val handler = Handler(Looper.getMainLooper())
-                                val textToSpeak = "您接下来在 ${location.replace("楼", "")} 有一节 $courseName 课。请准备。"
-
-                                var isFinished = false
-                                val timeoutRunnable = Runnable {
-                                    if (!isFinished) {
-                                        isFinished = true
-                                        try {
-                                            tts?.stop()
-                                            tts?.shutdown()
-                                            tts = null
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        }
-                                        pendingResult.finish()
-                                    }
+                        if (showNotify || playVoice) {
+                            val serviceIntent = Intent(appContext, CourseAlarmService::class.java).apply {
+                                putExtra(ReminderEngine.EXTRA_COURSE_NAME, courseName)
+                                putExtra(ReminderEngine.EXTRA_LOCATION, location)
+                                putExtra(ReminderEngine.EXTRA_TIME_STR, timeStr)
+                                putExtra(ReminderEngine.EXTRA_CLASS_START_MILLIS, classStartMillis)
+                                putExtra(ReminderEngine.EXTRA_COLOR_THEME, colorTheme)
+                                putExtra(ReminderEngine.EXTRA_SHOW_NOTIFY, showNotify)
+                                putExtra(SettingsKeys.DYNAMIC_ISLAND_ENABLED.name, islandEnabled)
+                                putExtra(ReminderEngine.EXTRA_PLAY_VOICE, playVoice)
+                                putExtra(ReminderEngine.EXTRA_IS_TEST, isTest)
+                            }
+                            try {
+                                ContextCompat.startForegroundService(appContext, serviceIntent)
+                                handedOffToService = true
+                                pendingResult.finish()
+                            } catch (t: Throwable) {
+                                t.printStackTrace()
+                                ReminderDiagnosticStore.record(
+                                    context = appContext,
+                                    eventType = "ERROR",
+                                    courseName = courseName,
+                                    actualMillis = System.currentTimeMillis(),
+                                    detail = "启动前台服务失败，启用兜底通知/播报: ${t.message}"
+                                )
+                                if (showNotify) {
+                                    val notification = buildCourseNotification(
+                                        context = appContext,
+                                        courseName = courseName,
+                                        location = location,
+                                        timeStr = timeStr,
+                                        classStartMillis = classStartMillis,
+                                        colorTheme = colorTheme,
+                                        islandEnabled = islandEnabled,
+                                        isTest = isTest
+                                    )
+                                    val nm = appContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                                    nm.notify(CourseAlarmService.NOTIFICATION_ID, notification)
                                 }
-
-                                handler.postDelayed(timeoutRunnable, 8000)
-
-                                tts = TextToSpeech(appContext) { status ->
-                                    if (status == TextToSpeech.SUCCESS) {
-                                        val result = tts?.setLanguage(Locale.CHINESE)
-                                        if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                                            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                                                private fun finishTts() {
-                                                    handler.post {
-                                                        if (!isFinished) {
-                                                            isFinished = true
-                                                            handler.removeCallbacks(timeoutRunnable)
-                                                            try {
-                                                                tts?.stop()
-                                                                tts?.shutdown()
-                                                                tts = null
-                                                            } catch (e: Exception) {
-                                                                e.printStackTrace()
-                                                            }
-                                                            pendingResult.finish()
-                                                        }
-                                                    }
-                                                }
-
-                                                override fun onStart(utteranceId: String?) {}
-                                                override fun onDone(utteranceId: String?) { finishTts() }
-                                                override fun onError(utteranceId: String?) { finishTts() }
-                                                @Deprecated("Deprecated in Java")
-                                                override fun onError(utteranceId: String?, errorCode: Int) { finishTts() }
-                                            })
-
-                                            val ttsParams = Bundle().apply {
-                                                putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CourseTTS")
-                                            }
-                                            tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, ttsParams, "CourseTTS")
-                                        } else {
-                                            Toast.makeText(appContext, "语音播报失败：系统缺少中文TTS引擎", Toast.LENGTH_LONG).show()
-                                            handler.removeCallbacks(timeoutRunnable)
-                                            pendingResult.finish()
-                                        }
-                                    } else {
-                                        handler.removeCallbacks(timeoutRunnable)
-                                        pendingResult.finish()
-                                    }
+                                if (playVoice) {
+                                    speakFallbackInReceiver(appContext, courseName, location, pendingResult)
+                                } else {
+                                    pendingResult.finish()
                                 }
                             }
                         } else {
+                            if (!isTest && classStartMillis > 0L) {
+                                appContext.dataStore.edit { editPrefs ->
+                                    editPrefs[SettingsKeys.LAST_DISMISSED_CLASS_START_MILLIS] = classStartMillis
+                                }
+                            }
+                            val dao = AppDatabase.getDatabase(appContext).appDao()
+                            ReminderEngine.calculateAndScheduleNext(appContext, dao)
                             pendingResult.finish()
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        ReminderDiagnosticStore.record(
+                            context = appContext,
+                            eventType = "ERROR",
+                            courseName = courseName,
+                            actualMillis = System.currentTimeMillis(),
+                            detail = "Receiver 触发异常: ${e.message}"
+                        )
                         pendingResult.finish()
+                    } finally {
+                        if (!handedOffToService) {
+                            CourseAlarmService.releaseHandoffWakeLock()
+                        }
                     }
                 }
             }
-            "ACTION_CLASS_START" -> {
-                val courseName = intent.getStringExtra("COURSE_NAME") ?: "未知课程"
-                val location = intent.getStringExtra("LOCATION") ?: "未知地点"
-                val timeStr = intent.getStringExtra("TIME_STR") ?: "00:00"
-                val classStartMillis = intent.getLongExtra("CLASS_START_MILLIS", 0L)
-                val classEndMillis = intent.getLongExtra("CLASS_END_MILLIS", 0L)
-                val colorTheme = intent.getStringExtra("COLOR_THEME") ?: "slate"
 
-                val appContext = context.applicationContext
+            ReminderEngine.ACTION_DISMISS_REMINDER, ReminderEngine.ACTION_CLASS_START -> {
+                val actualMillis = System.currentTimeMillis()
+                val courseName = intent.getStringExtra(ReminderEngine.EXTRA_COURSE_NAME) ?: "当前课程"
+                val classStartMillis = intent.getLongExtra(ReminderEngine.EXTRA_CLASS_START_MILLIS, 0L)
+                val scheduledMillis = intent.getLongExtra(ReminderEngine.EXTRA_SCHEDULED_TRIGGER_MILLIS, 0L)
+                val isTest = intent.getBooleanExtra(ReminderEngine.EXTRA_IS_TEST, false)
+                val reason = intent.getStringExtra(ReminderEngine.EXTRA_DISMISS_REASON)
+                    ?: if (action == ReminderEngine.ACTION_CLASS_START) "legacy_class_start" else "dismiss"
+
+                LocalLogger.log(appContext, "Receiver", "执行清理 ($reason): 取消闹钟并同步停止前台服务")
+
+                ReminderEngine.cancelDismissAndFollowUpAlarms(appContext)
+                CourseAlarmService.dismissActiveNotificationAndStop(appContext)
+
+                val pm = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+                val wakeLock = runCatching {
+                    pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SimpleSchedule:DismissWakeLock").apply {
+                        setReferenceCounted(false)
+                        acquire(10_000L)
+                    }
+                }.getOrNull()
+
                 val pendingResult = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val prefs = appContext.dataStore.data.first()
-                        val islandEnabled = prefs[SettingsKeys.DYNAMIC_ISLAND_ENABLED] ?: false
-
-                        Handler(Looper.getMainLooper()).post {
-                            try {
-                                updateNotificationState(
-                                    appContext,
-                                    NotificationState.IN_CLASS,
-                                    courseName,
-                                    location,
-                                    timeStr,
-                                    classStartMillis,
-                                    classEndMillis,
-                                    colorTheme,
-                                    islandEnabled
-                                )
-                            } finally {
-                                pendingResult.finish()
+                        if (!isTest && classStartMillis > 0L) {
+                            appContext.dataStore.edit { editPrefs ->
+                                editPrefs[SettingsKeys.LAST_DISMISSED_CLASS_START_MILLIS] = classStartMillis
                             }
                         }
+                        val dao = AppDatabase.getDatabase(appContext).appDao()
+                        ReminderEngine.calculateAndScheduleNext(appContext, dao)
+
+                        val reasonLabel = when (reason) {
+                            "manual_click" -> "手动点击一键清除"
+                            "swipe_delete" -> "通知栏划掉"
+                            "class_start" -> "上课时间到达自动消除"
+                            "safety_timeout" -> "安全兜底超时清理"
+                            else -> reason
+                        }
+                        ReminderDiagnosticStore.record(
+                            context = appContext,
+                            eventType = "DISMISS",
+                            courseName = courseName,
+                            scheduledMillis = if (reason == "class_start") scheduledMillis else 0L,
+                            actualMillis = actualMillis,
+                            detail = "$reasonLabel -> 已停服移除通知并调度下节"
+                        )
+
+                        val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
+                        WorkManager.getInstance(appContext).enqueueUniqueWork(
+                            "WidgetRefreshWork",
+                            ExistingWorkPolicy.REPLACE,
+                            workRequest
+                        )
                     } catch (e: Exception) {
                         e.printStackTrace()
+                    } finally {
+                        runCatching {
+                            if (wakeLock?.isHeld == true) wakeLock.release()
+                        }
                         pendingResult.finish()
                     }
                 }
             }
-            "ACTION_DISMISS_REMINDER" -> {
-                LocalLogger.log(context, "Receiver", "下课清理 ACTION_DISMISS_REMINDER: 取消通知并停止前台服务")
-                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.cancel(1001)
-                try {
-                    context.stopService(Intent(context, CourseAlarmService::class.java))
-                } catch (e: Exception) {
-                    e.printStackTrace()
+        }
+    }
+
+    private fun speakFallbackInReceiver(
+        appContext: Context,
+        courseName: String,
+        location: String,
+        pendingResult: PendingResult
+    ) {
+        Handler(Looper.getMainLooper()).post {
+            val handler = Handler(Looper.getMainLooper())
+            val speakLocation = location.ifBlank { "未知地点" }.replace("楼", "")
+            val textToSpeak = "您接下来在 $speakLocation 有一节 $courseName 课。请准备。"
+
+            var isFinished = false
+            val timeoutRunnable = Runnable {
+                if (!isFinished) {
+                    isFinished = true
+                    runCatching {
+                        fallbackTts?.stop()
+                        fallbackTts?.shutdown()
+                    }
+                    fallbackTts = null
+                    pendingResult.finish()
                 }
-                val workRequest = OneTimeWorkRequestBuilder<WidgetUpdateWorker>().build()
-                WorkManager.getInstance(context).enqueue(workRequest)
             }
-        }
-    }
+            handler.postDelayed(timeoutRunnable, 8000L)
 
-    @SuppressLint("MissingPermission")
-    private fun showNotification(
-        context: Context,
-        courseName: String,
-        location: String,
-        timeStr: String,
-        classStartMillis: Long,
-        classEndMillis: Long,
-        colorTheme: String,
-        islandEnabled: Boolean
-    ) {
-        if (islandEnabled) {
-            val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
-                putExtra("STATE", "UPCOMING")
-                putExtra("COURSE_NAME", courseName)
-                putExtra("LOCATION", location)
-                putExtra("TIME_STR", timeStr)
-                putExtra("CLASS_START_MILLIS", classStartMillis)
-                putExtra("CLASS_END_MILLIS", classEndMillis)
-                putExtra("COLOR_THEME", colorTheme)
-            }
-            try {
-                ContextCompat.startForegroundService(context, serviceIntent)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
-                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(1001, notification)
-            }
-        } else {
-            val notification = buildCourseNotification(context, NotificationState.UPCOMING, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(1001, notification)
-        }
-    }
+            fallbackTts = TextToSpeech(appContext) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    val result = fallbackTts?.setLanguage(Locale.CHINESE)
+                    if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                        fallbackTts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                            private fun finishTts() {
+                                handler.post {
+                                    if (!isFinished) {
+                                        isFinished = true
+                                        handler.removeCallbacks(timeoutRunnable)
+                                        runCatching {
+                                            fallbackTts?.stop()
+                                            fallbackTts?.shutdown()
+                                        }
+                                        fallbackTts = null
+                                        pendingResult.finish()
+                                    }
+                                }
+                            }
 
-    @SuppressLint("MissingPermission")
-    private fun updateNotificationState(
-        context: Context,
-        state: NotificationState,
-        courseName: String,
-        location: String,
-        timeStr: String,
-        classStartMillis: Long,
-        classEndMillis: Long,
-        colorTheme: String,
-        islandEnabled: Boolean
-    ) {
-        if (islandEnabled) {
-            val serviceIntent = Intent(context, CourseAlarmService::class.java).apply {
-                putExtra("STATE", "IN_CLASS")
-                putExtra("COURSE_NAME", courseName)
-                putExtra("LOCATION", location)
-                putExtra("TIME_STR", timeStr)
-                putExtra("CLASS_START_MILLIS", classStartMillis)
-                putExtra("CLASS_END_MILLIS", classEndMillis)
-                putExtra("COLOR_THEME", colorTheme)
+                            override fun onStart(utteranceId: String?) {}
+                            override fun onDone(utteranceId: String?) { finishTts() }
+                            override fun onError(utteranceId: String?) { finishTts() }
+                            @Deprecated("Deprecated in Java")
+                            override fun onError(utteranceId: String?, errorCode: Int) { finishTts() }
+                        })
+                        val params = Bundle().apply {
+                            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "CourseFallbackTTS")
+                        }
+                        fallbackTts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, "CourseFallbackTTS")
+                    } else {
+                        handler.removeCallbacks(timeoutRunnable)
+                        if (!isFinished) {
+                            isFinished = true
+                            pendingResult.finish()
+                        }
+                    }
+                } else {
+                    handler.removeCallbacks(timeoutRunnable)
+                    if (!isFinished) {
+                        isFinished = true
+                        pendingResult.finish()
+                    }
+                }
             }
-            try {
-                ContextCompat.startForegroundService(context, serviceIntent)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, true)
-                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                notificationManager.notify(1001, notification)
-            }
-        } else {
-            val notification = buildCourseNotification(context, state, courseName, location, timeStr, classStartMillis, classEndMillis, colorTheme, false)
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.notify(1001, notification)
         }
     }
 }

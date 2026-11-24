@@ -262,7 +262,8 @@ object ScheduleResolver {
         overrideMap: Map<String, CourseOverride>,
         timeNodeMap: Map<Int, TimeNode>,
         makeUpRules: List<MakeUpRule>,
-        lookaheadDays: Int = 14
+        lookaheadDays: Int = 14,
+        minClassStartExclusiveMillis: Long = nowMillis
     ): UpcomingCourseEvent? {
         if (rawCourses.isEmpty() || timeNodeMap.isEmpty()) return null
         val displayCourses = applyOverrides(rawCourses, overrideMap)
@@ -306,7 +307,8 @@ object ScheduleResolver {
 
                 val classStartMillis = startCal.timeInMillis
                 val classEndMillis = endCal.timeInMillis
-                if (classStartMillis <= nowMillis) return@mapNotNull null
+                val effectiveCutoff = maxOf(nowMillis, minClassStartExclusiveMillis)
+                if (classStartMillis <= effectiveCutoff) return@mapNotNull null
 
                 val rawTriggerMillis = classStartMillis - advanceMins * 60_000L
                 val triggerMillis = maxOf(rawTriggerMillis, nowMillis + 2_000L)
