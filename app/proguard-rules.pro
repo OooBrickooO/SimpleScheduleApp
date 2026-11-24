@@ -13,6 +13,7 @@
 -keep class com.hierynomus.smbj.** { *; }
 -keep class com.hierynomus.mssmb2.** { *; }
 -keep class com.hierynomus.protocol.** { *; }
+-dontwarn org.ietf.jgss.**
 -keepclassmembers class * {
     @net.engio.mbassy.listener.Handler <methods>;
 }
