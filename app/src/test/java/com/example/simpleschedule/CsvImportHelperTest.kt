@@ -46,4 +46,23 @@ class CsvImportHelperTest {
         assertEquals((1..16).toList().toString().replace(" ", ""), courses.getJSONObject(2).getString("weeks"))
         assertEquals("[1,3,5,7]", courses.getJSONObject(3).getString("weeks"))
     }
+
+    @Test
+    fun parsesAdvisorAndExtendedTeacherLocationHeaders() {
+        val csv = """
+            课程名称,星期,开始节数,结束节数,导师,教室,周数
+            毕业设计,3,5,6, 张导师(教授) , 环宇A302 ,1-16
+            科研训练,4,7,8,Dr. Smith,综合实训楼401,2-10双
+        """.trimIndent()
+
+        val result = parseCourseCsv(csv)
+        assertNotNull(result)
+
+        val courses = JSONArray(result)
+        assertEquals(2, courses.length())
+        assertEquals("张导师(教授)", courses.getJSONObject(0).getString("teacher"))
+        assertEquals("环宇A302", courses.getJSONObject(0).getString("location"))
+        assertEquals("Dr. Smith", courses.getJSONObject(1).getString("teacher"))
+        assertEquals(listOf(2, 4, 6, 8, 10).toString().replace(" ", ""), courses.getJSONObject(1).getString("weeks"))
+    }
 }

@@ -103,7 +103,8 @@ fun buildCourseNotification(
     val accentColor = palette?.accent?.toArgb() ?: 0xFF6B7280.toInt()
 
     val titleText = courseName
-    val contentText = location.replace("楼", "")
+    val displayLocation = CourseLocationFormatter.formatDisplayLocation(location)
+    val contentText = displayLocation.replace("楼", "").ifBlank { displayLocation }
 
     val style = NotificationCompat.BigTextStyle()
         .bigText("$courseName\n$contentText")
@@ -141,18 +142,9 @@ fun buildCourseNotification(
 
     if (islandEnabled) {
         builder.setColorized(false) // 绝对不能设为 true，否则 Android 16 拒绝提升为胶囊通知
-        val cleanLocation = location
-            .replace("上课地点：", "")
-            .replace("上课地点:", "")
-            .replace("地点：", "")
-            .replace("地点:", "")
-            .replace("教室：", "")
-            .replace("教室:", "")
-            .replace("楼", "")
-            .trim()
-        val shortLocation = cleanLocation.take(7)
-        builder.extras.putBoolean("android.requestPromotedOngoing", true)
-        builder.extras.putCharSequence("android.shortCriticalText", shortLocation)
+        val shortLocation = CourseLocationFormatter.formatShortCapsuleLocation(location)
+        builder.setRequestPromotedOngoing(true)
+        builder.setShortCriticalText(shortLocation)
     } else {
         builder.setColorized(true)
     }

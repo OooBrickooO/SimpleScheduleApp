@@ -173,8 +173,8 @@ fun parseCourseCsv(csvText: String): String? {
         "day" to findColumn(header, "星期", "周几"),
         "start" to findColumn(header, "开始节数", "开始节次", "开始节", "起始节次"),
         "end" to findColumn(header, "结束节数", "结束节次", "结束节", "终止节次"),
-        "teacher" to findColumn(header, "老师", "教师", "授课教师"),
-        "location" to findColumn(header, "地点", "上课地点"),
+        "teacher" to findColumn(header, "老师", "教师", "授课教师", "导师", "任课教师", "指导教师", "主讲教师", "Teacher", "teacher"),
+        "location" to findColumn(header, "地点", "上课地点", "教室", "教学场地", "Location", "location"),
         "weeks" to findColumn(header, "周数", "周次", "上课周次")
     )
 
@@ -193,8 +193,8 @@ fun parseCourseCsv(csvText: String): String? {
         val nameHash = name.sumOf { it.code }
         courses.put(JSONObject().apply {
             put("name", name)
-            put("location", row.valueAt(columnIndexes.getValue("location")).ifBlank { "未排地点" })
-            put("teacher", row.valueAt(columnIndexes.getValue("teacher")))
+            put("location", row.valueAt(columnIndexes.getValue("location")).trim().ifBlank { "未排地点" })
+            put("teacher", row.valueAt(columnIndexes.getValue("teacher")).trim())
             put("dayOfWeek", day)
             put("startNode", start)
             put("endNode", end)

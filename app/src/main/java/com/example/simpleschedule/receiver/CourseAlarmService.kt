@@ -158,12 +158,19 @@ class CourseAlarmService : Service() {
                 startForeground(NOTIFICATION_ID, notification)
             }
 
+            val shortCapsule = CourseLocationFormatter.formatShortCapsuleLocation(location)
             ReminderDiagnosticStore.record(
                 context = this,
                 eventType = "FGS_NOTIFY",
                 courseName = courseName,
                 actualMillis = System.currentTimeMillis(),
-                detail = if (isVoiceOnlyMode) "静音播报前台保活(无课程通知)" else "前台通知已显示, 流体云=$islandEnabled"
+                detail = if (isVoiceOnlyMode) {
+                    "静音播报前台保活(无课程通知)"
+                } else if (islandEnabled) {
+                    "前台通知已显示, 流体云=开, 胶囊=$shortCapsule"
+                } else {
+                    "前台通知已显示, 流体云=关"
+                }
             )
 
             if (showNotify) {
