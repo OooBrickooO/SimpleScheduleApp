@@ -66,7 +66,7 @@ fun ProfileScreen(
             }
             "v${packageInfo.versionName}"
         } catch (_: Exception) {
-            "v2.9.0"
+            "v3.0.0.1124"
         }
     }
 
