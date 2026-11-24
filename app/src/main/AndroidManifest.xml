@@ -10,8 +10,12 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- 接收开机广播的权限，用于重新注册后台闹钟和小组件午夜更新 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
@@ -26,6 +30,7 @@
     </queries>
 
     <application
+        android:name=".SimpleScheduleApplication"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true"
         android:allowBackup="true"
@@ -38,12 +43,25 @@
         android:theme="@style/Theme.SimpleSchedule"
         android:enableOnBackInvokedCallback="true">
 
-        <receiver android:name=".receiver.CourseAlarmReceiver" android:exported="true">
+        <receiver
+            android:name=".receiver.SystemBootReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receiver.CourseAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
                 <action android:name="ACTION_UPDATE_WIDGET" />
                 <action android:name="ACTION_SHOW_REMINDER" />
+                <action android:name="ACTION_CLASS_START" />
                 <action android:name="ACTION_DISMISS_REMINDER" />
             </intent-filter>
         </receiver>
@@ -92,8 +110,6 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/course_week_widget_info" />
         </receiver>
-
-
 
         <activity
             android:name=".MainActivity"

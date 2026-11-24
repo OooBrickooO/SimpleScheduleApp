@@ -31,9 +31,11 @@ Thumbs.db
 # Miscellaneous
 /app/release/
 /Target/
+Target/
 /deploy.ps1
 /web/
 /AI_INSTRUCTIONS.md
+.artifacts/
 .kotlin/
 *.csv
 *.xlsx

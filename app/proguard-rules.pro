@@ -1,21 +1,39 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Preserve annotations & generic signatures for WebView JS bridge, Room, and SMBJ
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,RuntimeVisibleAnnotations
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# WebView @JavascriptInterface bridge
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Room entities and DAOs
+-keep class com.example.simpleschedule.data.local.room.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# SMBJ + MBassador + BouncyCastle + SLF4J
+-keep class com.hierynomus.smbj.** { *; }
+-keep class com.hierynomus.mssmb2.** { *; }
+-keep class com.hierynomus.protocol.** { *; }
+-keepclassmembers class * {
+    @net.engio.mbassy.listener.Handler <methods>;
+}
+-keep class net.engio.mbassy.** { *; }
+-dontwarn net.engio.mbassy.**
+
+-keep class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
+-dontwarn org.bouncycastle.jsse.**
+-dontwarn org.bouncycastle.jcajce.**
+
+-keep class org.slf4j.** { *; }
+-dontwarn org.slf4j.**
+-keep class org.slf4j.impl.StaticLoggerBinder { *; }
+-keep class org.slf4j.impl.StaticMDCBinder { *; }
+-keep class org.slf4j.impl.StaticMarkerBinder { *; }
+
+# JXL / Jsoup / OkHttp
+-keep class jxl.** { *; }
+-dontwarn jxl.**
+-keep class org.jsoup.** { *; }
+-dontwarn org.jsoup.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
