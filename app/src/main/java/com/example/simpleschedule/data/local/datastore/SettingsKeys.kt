@@ -171,5 +171,24 @@ object SettingsKeys {
     val HAS_SEEN_MAKEUP_GUIDE = booleanPreferencesKey("has_seen_makeup_guide")
     val ACCENT_COLOR = longPreferencesKey("accent_color")
     val COURSE_COLOR_POOL = stringPreferencesKey("course_color_pool")
+
+    // 云备份 - WebDAV
+    val WEBDAV_URL = stringPreferencesKey("webdav_url")
+    val WEBDAV_USERNAME = stringPreferencesKey("webdav_username")
+    val WEBDAV_PASSWORD = stringPreferencesKey("webdav_password")
+    val WEBDAV_PASSWORD_ENCRYPTED = stringPreferencesKey("webdav_password_encrypted")
+    val WEBDAV_REMOTE_PATH = stringPreferencesKey("webdav_remote_path")
+
+    // 云备份 - SMB
+    val SMB_HOST = stringPreferencesKey("smb_host")
+    val SMB_PORT = intPreferencesKey("smb_port")
+    val SMB_SHARE = stringPreferencesKey("smb_share")
+    val SMB_USERNAME = stringPreferencesKey("smb_username")
+    val SMB_PASSWORD = stringPreferencesKey("smb_password")
+    val SMB_PASSWORD_ENCRYPTED = stringPreferencesKey("smb_password_encrypted")
+    val SMB_DOMAIN = stringPreferencesKey("smb_domain")
+    val SMB_REMOTE_PATH = stringPreferencesKey("smb_remote_path")
+
+    val LAST_BACKUP_TIME = stringPreferencesKey("last_backup_time")
 }
 

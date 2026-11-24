@@ -220,78 +220,63 @@ fun DotMatrixBackground(isDark: Boolean) {
 }
 
 @Composable
-fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, onTabSelected: (Int) -> Unit) {
+fun BottomNavBar(
+    isDark: Boolean,
+    isFloating: Boolean = false,
+    currentTab: Int,
+    onTabSelected: (Int) -> Unit
+) {
     val borderColor = if (isDark) BorderDark else BorderLight
-    val accent = com.example.simpleschedule.ui.theme.LocalAccentColor.current
+    val accent = LocalAccentColor.current
     val activeColor = accent ?: if (isDark) Color.White else Color.Black
     val inactiveColor = if (isDark) Color.White.copy(alpha = 0.4f) else Color.Black.copy(alpha = 0.4f)
-    
-    // 指示器背景色
-    val indicatorColor = accent?.copy(alpha = 0.12f) ?: (if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f))
+    val indicatorColor = accent?.copy(alpha = 0.12f)
+        ?: if (isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f)
+
+    @Composable
+    fun Item(index: Int, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
+        NavBarItem(
+            icon = icon,
+            label = label,
+            isActive = currentTab == index,
+            color = if (currentTab == index) activeColor else inactiveColor,
+            onClick = { onTabSelected(index) }
+        )
+    }
 
     if (isFloating) {
-        Box(
-            modifier = Modifier
-                .wrapContentSize()
-                .padding(bottom = 20.dp),
-            contentAlignment = Alignment.BottomCenter
-        ) {
+        Box(modifier = Modifier.wrapContentSize().padding(bottom = 20.dp), contentAlignment = Alignment.BottomCenter) {
             Surface(
                 color = if (isDark) Color.Black.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(32.dp),
                 border = BorderStroke(0.5.dp, borderColor.copy(alpha = 0.3f)),
                 shadowElevation = 10.dp,
                 tonalElevation = 0.dp,
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = 24.dp)
+                modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 24.dp)
             ) {
                 Box(modifier = Modifier.padding(6.dp)) {
-                    // 计算平滑滑动的偏移量
-                    val itemWidth = 100.dp
+                    val itemWidth = 110.dp
                     val indicatorOffset by animateDpAsState(
-                        targetValue = if (currentTab == 0) 0.dp else itemWidth,
+                        targetValue = itemWidth * currentTab.coerceIn(0, 1),
                         animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
                         label = "nav_indicator"
                     )
-
-                    // 高亮聚焦背景（Indicator Pill）
                     Box(
-                        modifier = Modifier
-                            .offset(x = indicatorOffset)
-                            .size(width = itemWidth, height = 48.dp)
+                        modifier = Modifier.offset(x = indicatorOffset).size(itemWidth, 48.dp)
                             .background(indicatorColor, RoundedCornerShape(24.dp))
                     )
-
-                    // 图标按钮行
-                    Row(
-                        modifier = Modifier.width(itemWidth * 2),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.width(itemWidth * 2), verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
-                            NavBarItem(
-                                icon = Icons.Rounded.DateRange,
-                                label = "TIMETABLE",
-                                isActive = currentTab == 0,
-                                color = if (currentTab == 0) activeColor else inactiveColor,
-                                onClick = { onTabSelected(0) }
-                            )
+                            Item(0, Icons.Rounded.DateRange, "TIMETABLE")
                         }
                         Box(modifier = Modifier.width(itemWidth).height(48.dp), contentAlignment = Alignment.Center) {
-                            NavBarItem(
-                                icon = Icons.Rounded.Person,
-                                label = "PROFILE",
-                                isActive = currentTab == 1,
-                                color = if (currentTab == 1) activeColor else inactiveColor,
-                                onClick = { onTabSelected(1) }
-                            )
+                            Item(1, Icons.Rounded.Person, "PROFILE")
                         }
                     }
                 }
             }
         }
     } else {
-        // 非悬浮模式样式优化
         Surface(
             color = if (isDark) BgDark.copy(alpha = 0.85f) else BgLight.copy(alpha = 0.85f),
             border = BorderStroke(0.5.dp, borderColor),
@@ -299,68 +284,48 @@ fun BottomNavBar(isDark: Boolean, isFloating: Boolean = false, currentTab: Int, 
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(vertical = 12.dp, horizontal = 32.dp),
+                modifier = Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(vertical = 12.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                NavBarItem(
-                    icon = Icons.Rounded.DateRange,
-                    label = "TIMETABLE",
-                    isActive = currentTab == 0,
-                    color = if (currentTab == 0) activeColor else inactiveColor,
-                    onClick = { onTabSelected(0) }
-                )
-                NavBarItem(
-                    icon = Icons.Rounded.Person,
-                    label = "PROFILE",
-                    isActive = currentTab == 1,
-                    color = if (currentTab == 1) activeColor else inactiveColor,
-                    onClick = { onTabSelected(1) }
-                )
+                Item(0, Icons.Rounded.DateRange, "TIMETABLE")
+                Item(1, Icons.Rounded.Person, "PROFILE")
             }
         }
     }
 }
 
 @Composable
-fun NavBarItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, isActive: Boolean, color: Color, onClick: () -> Unit) {
+fun NavBarItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    isActive: Boolean,
+    color: Color,
+    onClick: () -> Unit
+) {
     val animatedColor by animateColorAsState(targetValue = color, label = "nav_item_color")
-    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .background(Color.Transparent)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
+        modifier = Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        )
     ) {
-        Icon(
-            imageVector = icon, 
-            contentDescription = label, 
-            tint = animatedColor, 
-            modifier = Modifier.size(24.dp)
-        )
+        Icon(icon, contentDescription = label, tint = animatedColor, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = label, 
-            fontSize = 10.sp, 
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal, 
-            color = animatedColor, 
-            letterSpacing = 1.sp
-        )
+        Text(label, fontSize = 10.sp, fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal, color = animatedColor, letterSpacing = 1.sp)
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimetableScreen(
     viewModel: ScheduleViewModel, courses: List<DisplayCourse>, timeNodes: List<TimeNode>, currentWeek: Int, totalWeeks: Int, scheduleGroups: List<ScheduleGroup>, currentScheduleId: String, isDark: Boolean,
     onAddClick: () -> Unit, onManageCoursesClick: () -> Unit, onManageTimetablesClick: () -> Unit, onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit,
-    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onCsvImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onReminderSettingsClick: () -> Unit
+    onEditCourse: (Course) -> Unit, onWebViewImportClick: () -> Unit, onCsvImportClick: () -> Unit, onShareCodeClick: () -> Unit, onCreateScheduleClick: () -> Unit, onReminderSettingsClick: () -> Unit,
+    onDataManagementClick: () -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
     val borderColor = if (isDark) BorderDark else BorderLight
@@ -668,6 +633,7 @@ fun TimetableScreen(
             onScheduleSettingsClick = onScheduleSettingsClick,
             onGlobalSettingsClick = onGlobalSettingsClick,
             onReminderSettingsClick = onReminderSettingsClick,
+            onDataManagementClick = onDataManagementClick,
             onDeleteScheduleClick = { id, name -> scheduleIdToDelete = id; scheduleNameToDelete = name }
         )
     }
@@ -2286,6 +2252,16 @@ fun WebViewImportScreen(
     var url by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var loadUrl by remember { mutableStateOf("https://jwxt.cjlu.edu.cn/") }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var desktopModeEnabled by remember { mutableStateOf(false) }
+
+    fun normalizeWebUrl(rawUrl: String): String {
+        val trimmed = rawUrl.trim()
+        return when {
+            trimmed.startsWith("http://", ignoreCase = true) || trimmed.startsWith("https://", ignoreCase = true) -> trimmed
+            trimmed.isEmpty() -> "https://jwxt.cjlu.edu.cn/"
+            else -> "https://$trimmed"
+        }
+    }
     
     var showBlockDialog by remember { mutableStateOf(false) }
     var showSyncCreditsDialog by remember { mutableStateOf(false) }
@@ -2565,7 +2541,9 @@ fun WebViewImportScreen(
                                         )
                                         Button(
                                             onClick = {
-                                                loadUrl = url
+                                                val targetUrl = normalizeWebUrl(url)
+                                                url = targetUrl
+                                                loadUrl = targetUrl
                                                 selectedSchool = null
                                                 stage = ImportStage.WEB_IMPORT
                                             },
@@ -2639,8 +2617,8 @@ fun WebViewImportScreen(
                                                     stage = ImportStage.XLS_IMPORT
                                                 } else {
                                                     if (item.url.isNotEmpty()) {
-                                                        url = item.url
-                                                        loadUrl = item.url
+                                                        url = normalizeWebUrl(item.url)
+                                                        loadUrl = normalizeWebUrl(item.url)
                                                     } else {
                                                         val query = android.net.Uri.encode("${item.name}教务系统")
                                                         val searchUrl = "https://m.baidu.com/s?word=$query"
@@ -2731,7 +2709,11 @@ fun WebViewImportScreen(
                             cursorColor = textColor
                         )
                     )
-                    TextButton(onClick = { loadUrl = url }) {
+                    TextButton(onClick = {
+                        val targetUrl = normalizeWebUrl(url)
+                        url = targetUrl
+                        loadUrl = targetUrl
+                    }) {
                         Text("访问", color = textColor, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -2776,133 +2758,288 @@ fun WebViewImportScreen(
                 Box(modifier = Modifier.weight(1f).fillMaxWidth().navigationBarsPadding()) {
                     AndroidView(
                         factory = { ctx ->
-                            WebView(ctx).apply {
-                                settings.javaScriptEnabled = true
-                                settings.domStorageEnabled = true
-                                settings.useWideViewPort = true
-                                settings.loadWithOverviewMode = true
-                                settings.setSupportZoom(true)
-                                settings.builtInZoomControls = true
-                                settings.displayZoomControls = false
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                                }
-                                val injectUniversalFixJs = """
-                                    javascript:(function() {
-                                        function applyUniversalFixes() {
-                                            try {
-                                                var meta = document.querySelector('meta[name="viewport"]');
-                                                if (!meta) {
-                                                    meta = document.createElement('meta');
-                                                    meta.name = 'viewport';
-                                                    document.head.appendChild(meta);
-                                                }
-                                                meta.content = 'width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes';
+                            object : WebView(ctx) {
+                                private var downX = 0f
+                                private var downY = 0f
+                                private var lastX = 0f
+                                private var horizontalDragging = false
+                                private val touchSlop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
 
-                                                var styleId = '__simple_schedule_web_fix__';
-                                                var styleEl = document.getElementById(styleId);
-                                                if (!styleEl) {
-                                                    styleEl = document.createElement('style');
-                                                    styleEl.id = styleId;
-                                                    styleEl.innerHTML = `
-                                                        html, body {
-                                                            overflow: auto !important;
-                                                            overflow-x: auto !important;
-                                                            overflow-y: auto !important;
-                                                            height: auto !important;
-                                                            min-height: 100% !important;
-                                                            max-height: none !important;
-                                                        }
-                                                        .login-page, .login-bg, .login_bg, #app, .wrapper, .main-container,
-                                                        div[class*="login-page"], div[class*="login_bg"], div[class*="wrapper"] {
-                                                            overflow: auto !important;
-                                                            height: auto !important;
-                                                            min-height: 100vh !important;
-                                                            max-height: none !important;
-                                                            padding-bottom: 20px !important;
-                                                        }
-                                                        @media screen and (max-width: 800px) {
-                                                            .login-container, .login-box, .login_box, .login-card, .login-wrapper, .login-wrap,
-                                                            #login-box, #login_box, #loginBox, .auth-box, .auth_box, .login_form, .login-form-wrap,
-                                                            div[class*="login-container"], div[class*="login-box"], div[class*="loginBox"],
-                                                            div[class*="auth-container"], div[class*="login_container"] {
-                                                                position: relative !important;
-                                                                top: 10px !important;
-                                                                right: auto !important;
-                                                                left: auto !important;
-                                                                bottom: auto !important;
-                                                                margin: 10px auto !important;
-                                                                float: none !important;
-                                                                max-width: 96% !important;
-                                                                max-height: none !important;
-                                                                width: auto !important;
-                                                                height: auto !important;
-                                                            }
-                                                            #qcodepc, #qcode, .qrcode-bg, #qrcode-img, .qr_code, .qr-code {
-                                                                position: relative !important;
-                                                                top: auto !important;
-                                                                left: auto !important;
-                                                                margin: 10px auto !important;
-                                                                float: none !important;
-                                                                max-width: 100% !important;
-                                                            }
-                                                        }
-                                                    `;
-                                                    document.head.appendChild(styleEl);
-                                                }
+                                override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+                                    when (event.actionMasked) {
+                                        android.view.MotionEvent.ACTION_DOWN -> {
+                                            downX = event.x
+                                            downY = event.y
+                                            lastX = event.x
+                                            horizontalDragging = false
+                                            parent?.requestDisallowInterceptTouchEvent(true)
+                                        }
 
-                                                var loginInputs = document.querySelectorAll('input[type="password"], input[name*="password"], input[name*="user"], button[type="submit"], #dl, .login-btn');
-                                                loginInputs.forEach(function(input) {
-                                                    var curr = input.parentElement;
-                                                    while (curr && curr !== document.body && curr !== document.documentElement) {
-                                                        var compStyle = window.getComputedStyle ? window.getComputedStyle(curr) : curr.style;
-                                                        if (compStyle) {
-                                                            if (compStyle.overflow === 'hidden') {
-                                                                curr.style.setProperty('overflow', 'auto', 'important');
-                                                            }
-                                                            if (window.innerWidth <= 800 && (compStyle.position === 'absolute' || compStyle.position === 'fixed')) {
-                                                                if (curr.classList.contains('login-container') || curr.classList.contains('login-box') || curr.classList.contains('login_box') || curr.classList.contains('login-card') || (curr.id && curr.id.indexOf('login') !== -1)) {
-                                                                    curr.style.setProperty('position', 'relative', 'important');
-                                                                    curr.style.setProperty('top', '10px', 'important');
-                                                                    curr.style.setProperty('right', 'auto', 'important');
-                                                                    curr.style.setProperty('left', 'auto', 'important');
-                                                                    curr.style.setProperty('margin', '10px auto', 'important');
-                                                                }
-                                                            }
-                                                        }
-                                                        curr = curr.parentElement;
-                                                    }
-                                                });
-                                            } catch(e) {
-                                                console.error('SimpleSchedule web fix error:', e);
+                                        android.view.MotionEvent.ACTION_MOVE -> {
+                                            val dx = event.x - downX
+                                            val dy = event.y - downY
+                                            if (!horizontalDragging &&
+                                                kotlin.math.abs(dx) > touchSlop &&
+                                                kotlin.math.abs(dx) > kotlin.math.abs(dy)
+                                            ) {
+                                                horizontalDragging = true
+                                                parent?.requestDisallowInterceptTouchEvent(true)
+                                            }
+                                            if (horizontalDragging) {
+                                                // WebView 在部分旧版正方页面上不会把横向触摸手势转换为 scrollX，
+                                                // 这里直接按手指位移滚动内容，保证左右拖动可用。
+                                                val deltaX = (lastX - event.x).toInt()
+                                                if (deltaX != 0) {
+                                                    scrollBy(deltaX, 0)
+                                                }
+                                                lastX = event.x
+                                                return true
                                             }
                                         }
 
-                                        applyUniversalFixes();
-                                        if (document.readyState === 'loading') {
-                                            document.addEventListener('DOMContentLoaded', applyUniversalFixes);
+                                        android.view.MotionEvent.ACTION_UP,
+                                        android.view.MotionEvent.ACTION_CANCEL -> {
+                                            parent?.requestDisallowInterceptTouchEvent(false)
+                                            if (horizontalDragging && event.actionMasked == android.view.MotionEvent.ACTION_UP) {
+                                                performClick()
+                                                horizontalDragging = false
+                                                return true
+                                            }
+                                            horizontalDragging = false
                                         }
-                                        window.addEventListener('load', applyUniversalFixes);
-                                        setTimeout(applyUniversalFixes, 500);
-                                        setTimeout(applyUniversalFixes, 1500);
-                                        setTimeout(applyUniversalFixes, 3000);
+                                    }
+                                    return super.onTouchEvent(event)
+                                }
+
+                                override fun performClick(): Boolean {
+                                    super.performClick()
+                                    return true
+                                }
+                            }.apply {
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.databaseEnabled = true
+                                // 旧版正方首页依赖桌面端布局；移动 UA 会让它进入不完整的移动分支。
+                                settings.userAgentString =
+                                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+                                        "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+                                // 教务系统按桌面端页面布局，启用 WebView 的宽视口但不自动缩放。
+                                settings.useWideViewPort = true
+                                settings.loadWithOverviewMode = false
+                                settings.setSupportZoom(true)
+                                settings.builtInZoomControls = true
+                                settings.displayZoomControls = false
+                                settings.allowContentAccess = true
+                                settings.allowFileAccess = false
+                                isVerticalScrollBarEnabled = true
+                                isHorizontalScrollBarEnabled = true
+                                isScrollbarFadingEnabled = false
+                                scrollBarStyle = WebView.SCROLLBARS_INSIDE_OVERLAY
+                                overScrollMode = WebView.OVER_SCROLL_ALWAYS
+                                isNestedScrollingEnabled = false
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                                    settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                }
+                                android.webkit.CookieManager.getInstance().setAcceptCookie(true)
+                                android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
+
+                                val enableLegacyDesktopWidthJs = """
+                                    (function() {
+                                        try {
+                                            var styleId = '__simple_schedule_legacy_width__';
+                                            var oldStyle = document.getElementById(styleId);
+                                            if (!oldStyle && document.head) {
+                                                var style = document.createElement('style');
+                                                style.id = styleId;
+                                                style.textContent =
+                                                    'html, body { min-width: 1100px !important; }' +
+                                                    '.login { min-width: 1100px !important; width: 1100px !important; }';
+                                                document.head.appendChild(style);
+                                            }
+                                        } catch (e) {
+                                            console.error('SimpleSchedule legacy width error: ' + e);
+                                        }
+                                    })();
+                                """.trimIndent()
+
+                                val applyDesktopPageLayoutJs = """
+                                    (function() {
+                                        try {
+                                            var isFramework = location.pathname.indexOf('/framework/') >= 0;
+                                            var frameInfo = [];
+                                            for (var i = 0; i < window.frames.length; i++) {
+                                                try {
+                                                    var frameWindow = window.frames[i];
+                                                    var frameDocument = frameWindow.document;
+                                                    var frameBody = frameDocument.body;
+                                                    frameInfo.push(i + ':' + frameWindow.location.href +
+                                                        ' body=' + (frameBody ? frameBody.scrollWidth + 'x' + frameBody.scrollHeight : 'none') +
+                                                        ' ready=' + frameDocument.readyState);
+                                                } catch (e) {
+                                                    frameInfo.push(i + ':<unavailable>');
+                                                }
+                                            }
+                                            console.log('SimpleSchedule layout=' + (isFramework ? 'framework' : 'login') +
+                                                ' body=' + document.body.scrollWidth + 'x' + document.body.scrollHeight +
+                                                ' viewport=' + window.innerWidth + 'x' + window.innerHeight +
+                                                ' frames=[' + frameInfo.join('|') + ']');
+                                        } catch (e) {
+                                            console.error('SimpleSchedule layout diagnostic error: ' + e);
+                                        }
                                     })();
                                 """.trimIndent()
 
                                 webViewClient = object : WebViewClient() {
                                     override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                                         super.onPageStarted(view, url, favicon)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                        android.util.Log.d(
+                                            "SimpleScheduleWebView",
+                                            "onPageStarted: $url cookies=${android.webkit.CookieManager.getInstance().getCookie(url)}"
+                                        )
                                     }
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
                                         super.onPageFinished(view, url)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                        android.util.Log.d("SimpleScheduleWebView", "onPageFinished: $url")
+                                        android.webkit.CookieManager.getInstance().flush()
+                                        android.util.Log.d(
+                                            "SimpleScheduleWebView",
+                                            "cookies: ${android.webkit.CookieManager.getInstance().getCookie(url)}"
+                                        )
+                                        val isLegacyLogin = url?.endsWith("/jsxsd/", ignoreCase = true) == true
+                                        val isGxstnuLegacyPage = try {
+                                            android.net.Uri.parse(url).host.equals("jw.gxstnu.edu.cn", ignoreCase = true)
+                                        } catch (_: Exception) {
+                                            false
+                                        }
+                                        if (isGxstnuLegacyPage && isLegacyLogin) {
+                                            view?.evaluateJavascript(enableLegacyDesktopWidthJs, null)
+                                        }
+                                        view?.evaluateJavascript(applyDesktopPageLayoutJs, null)
+                                        view?.postDelayed({
+                                            view.evaluateJavascript(applyDesktopPageLayoutJs, null)
+                                        }, 800)
                                     }
 
-                                    override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
-                                        super.doUpdateVisitedHistory(view, url, isReload)
-                                        view?.evaluateJavascript(injectUniversalFixJs, null)
+                                    override fun shouldInterceptRequest(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?
+                                    ): android.webkit.WebResourceResponse? {
+                                        val requestUri = request?.url
+                                        val isGxstnuNav3 = requestUri?.scheme.equals("https", ignoreCase = true) &&
+                                            requestUri?.host.equals("jw.gxstnu.edu.cn", ignoreCase = true) &&
+                                            requestUri?.path.equals("/assets_newL/images/index/nav3.png", ignoreCase = true)
+                                        if (isGxstnuNav3) {
+                                            android.util.Log.w(
+                                                "SimpleScheduleWebView",
+                                                "Using local fallback for incompatible HTTPS resource: ${requestUri?.toString().orEmpty()}"
+                                            )
+                                            // nav3.png 仅用于导航图标。服务器对此资源的 TLS 握手与 Android WebView 不兼容，
+                                            // 使用透明占位图避免该单个资源失败破坏旧版首页布局。
+                                            val transparentPng = byteArrayOf(
+                                                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                                                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                                                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                                                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4.toByte(),
+                                                0x89.toByte(), 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+                                                0x54, 0x78, 0x9C.toByte(), 0x63, 0x60, 0x00, 0x00,
+                                                0x00, 0x02, 0x00, 0x01, 0xE5.toByte(), 0x27, 0xD4.toByte(),
+                                                0xA2.toByte(), 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+                                                0x44, 0xAE.toByte(), 0x42, 0x60, 0x82.toByte()
+                                            )
+                                            return android.webkit.WebResourceResponse(
+                                                "image/png",
+                                                null,
+                                                java.io.ByteArrayInputStream(transparentPng)
+                                            )
+                                        }
+                                        return super.shouldInterceptRequest(view, request)
+                                    }
+
+                                    @Deprecated("Deprecated in Java")
+                                    override fun shouldInterceptRequest(
+                                        view: WebView?,
+                                        url: String?
+                                    ): android.webkit.WebResourceResponse? {
+                                        val requestUri = url?.let { android.net.Uri.parse(it) }
+                                        val isGxstnuNav3 = requestUri?.scheme.equals("https", ignoreCase = true) &&
+                                            requestUri?.host.equals("jw.gxstnu.edu.cn", ignoreCase = true) &&
+                                            requestUri?.path.equals("/assets_newL/images/index/nav3.png", ignoreCase = true)
+                                        if (isGxstnuNav3) {
+                                            android.util.Log.w(
+                                                "SimpleScheduleWebView",
+                                                "Using local fallback for incompatible HTTPS resource: $url"
+                                            )
+                                            val transparentPng = byteArrayOf(
+                                                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                                                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                                                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                                                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4.toByte(),
+                                                0x89.toByte(), 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+                                                0x54, 0x78, 0x9C.toByte(), 0x63, 0x60, 0x00, 0x00,
+                                                0x00, 0x02, 0x00, 0x01, 0xE5.toByte(), 0x27, 0xD4.toByte(),
+                                                0xA2.toByte(), 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+                                                0x44, 0xAE.toByte(), 0x42, 0x60, 0x82.toByte()
+                                            )
+                                            return android.webkit.WebResourceResponse(
+                                                "image/png",
+                                                null,
+                                                java.io.ByteArrayInputStream(transparentPng)
+                                            )
+                                        }
+                                        return super.shouldInterceptRequest(view, url)
+                                    }
+
+                                    override fun shouldOverrideUrlLoading(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?
+                                    ): Boolean = false
+
+                                    @Deprecated("Deprecated in Java")
+                                    override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean = false
+
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?,
+                                        error: android.webkit.WebResourceError?
+                                    ) {
+                                        super.onReceivedError(view, request, error)
+                                        if (request?.isForMainFrame == true) {
+                                            android.util.Log.e(
+                                                "SimpleScheduleWebView",
+                                                "main frame error: url=${request.url}, code=${error?.errorCode}, description=${error?.description}"
+                                            )
+                                            (ctx as? ComponentActivity)?.runOnUiThread {
+                                                Toast.makeText(
+                                                    ctx,
+                                                    "教务系统加载失败：${error?.description ?: "未知错误"}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        }
+                                    }
+
+                                    override fun onReceivedHttpError(
+                                        view: WebView?,
+                                        request: android.webkit.WebResourceRequest?,
+                                        errorResponse: android.webkit.WebResourceResponse?
+                                    ) {
+                                        super.onReceivedHttpError(view, request, errorResponse)
+                                        if (request?.isForMainFrame == true) {
+                                            android.util.Log.e(
+                                                "SimpleScheduleWebView",
+                                                "main frame HTTP error: url=${request.url}, status=${errorResponse?.statusCode}, reason=${errorResponse?.reasonPhrase}"
+                                            )
+                                        }
+                                    }
+                                }
+                                webChromeClient = object : android.webkit.WebChromeClient() {
+                                    override fun onConsoleMessage(message: android.webkit.ConsoleMessage): Boolean {
+                                        android.util.Log.d(
+                                            "SimpleScheduleWebView",
+                                            "console: ${message.message()} @ ${message.sourceId()}:${message.lineNumber()}"
+                                        )
+                                        return true
                                     }
                                 }
                                 addJavascriptInterface(object : Any() {
@@ -2936,9 +3073,16 @@ fun WebViewImportScreen(
                                     }
                                 }, "Android")
                                 webViewRef = this
+                                tag = loadUrl
+                                loadUrl(loadUrl)
                             }
                         },
-                        update = { it.loadUrl(loadUrl) },
+                        update = { webView ->
+                            if (webView.tag != loadUrl) {
+                                webView.tag = loadUrl
+                                webView.loadUrl(loadUrl)
+                            }
+                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -2948,7 +3092,7 @@ fun WebViewImportScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                         .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
                         onClick = {
@@ -2959,10 +3103,11 @@ fun WebViewImportScreen(
                             }
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = textColor, contentColor = if (isDark) BgDark else BgLight)
                     ) {
-                        Text("提取教务课表", fontWeight = FontWeight.Bold)
+                        Text("提取课表", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
 
                     Button(
@@ -2974,6 +3119,7 @@ fun WebViewImportScreen(
                             }
                         },
                         modifier = Modifier.weight(1f).height(50.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isDark) Color(0xFF1F2937) else Color(0xFFF3F4F6),
@@ -2981,7 +3127,40 @@ fun WebViewImportScreen(
                         ),
                         border = BorderStroke(1.dp, borderColor)
                     ) {
-                        Text("提取考试安排", fontWeight = FontWeight.Bold)
+                        Text("提取考试", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val webView = webViewRef
+                            if (webView == null) {
+                                Toast.makeText(context, "网页尚未加载完成", Toast.LENGTH_SHORT).show()
+                            } else {
+                                desktopModeEnabled = true
+                                webView.settings.userAgentString =
+                                    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+                                        "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+                                webView.settings.useWideViewPort = true
+                                webView.settings.loadWithOverviewMode = false
+                                webView.settings.textZoom = 100
+                                webView.settings.setSupportZoom(true)
+                                webView.settings.builtInZoomControls = true
+                                webView.settings.displayZoomControls = false
+                                webView.evaluateJavascript(
+                                    """(function(){var s=document.getElementById('__simple_schedule_legacy_width__');if(s)s.remove();document.documentElement.style.minWidth='';document.body.style.minWidth='';})()""",
+                                    null
+                                )
+                                webView.reload()
+                                Toast.makeText(context, "已切换到桌面模式", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.weight(1f).height(50.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, if (desktopModeEnabled) textColor else borderColor),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = textColor)
+                    ) {
+                        Text("桌面模式", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -4768,6 +4947,7 @@ fun MoreMenuBottomSheet(
     onCreateScheduleClick: () -> Unit,
     onDismiss: () -> Unit, onManageCoursesClick: () -> Unit, onTimetableManageClick: () -> Unit,
     onScheduleSettingsClick: () -> Unit, onGlobalSettingsClick: () -> Unit, onReminderSettingsClick: () -> Unit,
+    onDataManagementClick: () -> Unit,
     onDeleteScheduleClick: (String, String) -> Unit
 ) {
     val textColor = if (isDark) TextDark else TextLight
@@ -4862,7 +5042,8 @@ fun MoreMenuBottomSheet(
                 MenuItem("已添课程", Icons.Rounded.EventNote) { onDismiss(); onManageCoursesClick() },
                 MenuItem("课表设置", Icons.Rounded.Tune) { onDismiss(); onScheduleSettingsClick() },
                 MenuItem("课前提醒", Icons.Rounded.Campaign) { onDismiss(); onReminderSettingsClick() },
-                MenuItem("全局配置", Icons.Rounded.Settings) { onDismiss(); onGlobalSettingsClick() }
+                MenuItem("全局配置", Icons.Rounded.Settings) { onDismiss(); onGlobalSettingsClick() },
+                MenuItem("数据管理", Icons.Rounded.FolderSpecial) { onDismiss(); onDataManagementClick() }
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
